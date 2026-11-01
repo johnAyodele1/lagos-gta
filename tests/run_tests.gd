@@ -237,6 +237,19 @@ func _test_osm_world_generator() -> void:
 	_check(world.get_node_or_null("OSMBuildingCollision") != null, "OSM building geometry receives a static collision mesh")
 	_check(world.get_node_or_null("OSMBarrierCollision") != null, "mapped walls and fences receive static collision geometry")
 	_check(world.get_node_or_null("ProceduralCompoundWallCollision") != null, "residential building footprints receive art-directed Lagos compound walls")
+	var world_materials_valid := true
+	for mesh_node in world.find_children("*", "MeshInstance3D", true, false):
+		var mesh_instance := mesh_node as MeshInstance3D
+		if mesh_instance.mesh == null:
+			continue
+		for surface_index in range(mesh_instance.mesh.get_surface_count()):
+			if mesh_instance.get_active_material(surface_index) == null:
+				world_materials_valid = false
+	for batch_node in world.find_children("*", "MultiMeshInstance3D", true, false):
+		var batch := batch_node as MultiMeshInstance3D
+		if batch.multimesh != null and batch.material_override == null:
+			world_materials_valid = false
+	_check(world_materials_valid, "every generated Yaba world mesh and batch has an assigned material")
 	var spawn_position: Vector3 = world.get_player_spawn_position()
 	_check(spawn_position.is_finite(), "Yaba player spawn refuses invalid or blocked coordinates")
 	_check(world.is_spawn_position_clear(spawn_position), "Yaba player spawns outside building footprints and mapped barriers")
@@ -332,6 +345,11 @@ func _test_ambient_traffic() -> void:
 	_check(traffic.get_route_count() == 4, "ambient traffic derives two-way lanes from mapped OSM road centre-lines")
 	_check(traffic.get_traffic_count() == 6, "Yaba district spawns a bounded six-car model-based ambient traffic pool")
 	_check(traffic.get_traffic_model_surface_count(0) >= 5, "ambient traffic uses detailed imported multi-material vehicle meshes")
+	var traffic_materials_valid := true
+	for surface_index in range(traffic._traffic_visuals[0].mesh.get_surface_count()):
+		if traffic._traffic_visuals[0].get_active_material(surface_index) == null:
+			traffic_materials_valid = false
+	_check(traffic_materials_valid, "every ambient traffic mesh surface has an assigned material")
 	var starting_distance := traffic.get_traffic_distance(0)
 	var starting_position := traffic.get_traffic_position(0)
 	traffic._process(1.0)
@@ -354,6 +372,14 @@ func _test_pedestrians() -> void:
 	_check(pedestrians.get_pedestrian_count() == 4, "Yaba sidewalks spawn a bounded four-person pedestrian population")
 	_check(pedestrians._visuals.size() == 4 and pedestrians._animation_players.size() == 4, "each pedestrian uses an independent rigged character instance")
 	_check(pedestrians._animation_players[0] != null and pedestrians._animation_players[0].has_animation("HumanArmature|Man_Walk"), "pedestrian characters have real walk animation clips")
+	var pedestrian_meshes := pedestrians._visuals[0].find_children("*", "MeshInstance3D", true, false)
+	var pedestrian_materials_valid := not pedestrian_meshes.is_empty()
+	for mesh_node in pedestrian_meshes:
+		var mesh_instance := mesh_node as MeshInstance3D
+		for surface_index in range(mesh_instance.mesh.get_surface_count()):
+			if mesh_instance.get_active_material(surface_index) == null:
+				pedestrian_materials_valid = false
+	_check(pedestrian_materials_valid, "every pedestrian mesh surface has an assigned material")
 	_check(pedestrians.get_pedestrian_collision_count() == 4, "each pedestrian has a low-cost capsule collision proxy")
 	var starting_distance := pedestrians.get_pedestrian_distance(0)
 	var starting_position := pedestrians.get_pedestrian_position(0)
