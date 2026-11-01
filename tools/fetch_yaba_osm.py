@@ -27,7 +27,7 @@ ENDPOINTS = (
 USER_AGENT = "LagosGTA-OSMImporter/1.0 (https://github.com/johnAyodele1/lagos-gta)"
 SELECTED_TAGS = (
     "name", "highway", "surface", "width", "lanes", "oneway",
-    "building", "building:levels", "height", "roof:shape",
+    "building", "building:levels", "height", "roof:shape", "barrier", "fence_type",
     "shop", "amenity", "landuse", "addr:street",
 )
 
@@ -128,6 +128,7 @@ def fetch_overpass(query: str) -> dict:
 def normalize(payload: dict) -> dict:
     roads: list[dict] = []
     buildings: list[dict] = []
+    barriers: list[dict] = []
     for element in payload.get("elements", []):
         if element.get("type") != "way":
             continue
@@ -154,6 +155,14 @@ def normalize(payload: dict) -> dict:
                 "width_m": width,
                 "width_source": width_source,
                 "oneway": tags.get("oneway", "no"),
+                "tags": selected,
+                "coordinates": geometry,
+            })
+        if "barrier" in tags:
+            barriers.append({
+                "id": way_id,
+                "barrier": tags["barrier"],
+                "name": tags.get("name", ""),
                 "tags": selected,
                 "coordinates": geometry,
             })
@@ -192,9 +201,10 @@ def normalize(payload: dict) -> dict:
         "center": {"latitude": CENTER_LAT, "longitude": CENTER_LON},
         "bounds": BOUNDS,
         "coordinate_system": "local metres; X east, Z south; origin at Yaba place node near Tejuosho Market",
-        "counts": {"roads": len(roads), "buildings": len(buildings)},
+        "counts": {"roads": len(roads), "buildings": len(buildings), "barriers": len(barriers)},
         "roads": roads,
         "buildings": buildings,
+        "barriers": barriers,
     }
 
 
@@ -214,6 +224,7 @@ def main() -> int:
         f"Imported {normalized['counts']['roads']} roads and "
         f"{normalized['counts']['buildings']} building footprints into {args.output}"
     )
+    print(f"Imported {normalized['counts']['barriers']} mapped fence/wall ways.")
     print("Source: © OpenStreetMap contributors | License: ODbL-1.0")
     return 0
 
