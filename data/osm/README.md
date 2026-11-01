@@ -11,9 +11,10 @@ building-footprint ways rather than a hand-invented crossroad.
 - License: Open Data Commons Open Database License (ODbL) 1.0
 - Required attribution: © OpenStreetMap contributors
 
-The generated file preserves OSM way IDs, names and selected tags. Missing building
-heights and road widths are estimated from OSM tags and documented defaults; those
-estimates are not survey measurements. OSM completeness varies by street, so the
+The generated file preserves OSM way IDs, names and selected tags. Missing building heights prefer OSM height, then building:levels, then documented
+building-type defaults (for example, residential/apartment/commercial/retail). Missing
+road widths use OSM width/lanes and documented highway-class defaults. All inferred
+values are estimates, not survey measurements. OSM completeness varies by street, so the
 extract must be reviewed against current local imagery before release.
 
 Do not remove the attribution or the ODbL notice when distributing derived map data.
