@@ -372,8 +372,8 @@ func _test_pedestrians() -> void:
 	_check(pedestrians.get_pedestrian_count() == 4, "Yaba sidewalks spawn a bounded four-person pedestrian population")
 	_check(pedestrians._visuals.size() == 4 and pedestrians._animation_players.size() == 4, "each pedestrian uses an independent rigged character instance")
 	_check(pedestrians._animation_players[0] != null and pedestrians._animation_players[0].has_animation("HumanArmature|Man_Walk"), "pedestrian characters have real walk animation clips")
-	var pedestrian_meshes := pedestrians._visuals[0].find_children("*", "MeshInstance3D", true, false)
-	var pedestrian_materials_valid := not pedestrian_meshes.is_empty()
+	var pedestrian_meshes: Array[Node] = pedestrians._visuals[0].find_children("*", "MeshInstance3D", true, false)
+	var pedestrian_materials_valid: bool = not pedestrian_meshes.is_empty()
 	for mesh_node in pedestrian_meshes:
 		var mesh_instance := mesh_node as MeshInstance3D
 		for surface_index in range(mesh_instance.mesh.get_surface_count()):
