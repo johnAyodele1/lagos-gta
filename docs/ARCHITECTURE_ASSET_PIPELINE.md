@@ -12,7 +12,7 @@
 
 The import workflow calls the official Poly Haven files API with a project-specific User-Agent, prefers a 2K or 1K glTF package, verifies the API-provided MD5 when available, converts the source scene into a self-contained GLB and commits the resulting runtime asset to the current feature branch. The game has no runtime download dependency.
 
-The GLB is intentionally imported as a single hero asset first. Do not instance this 118k-triangle source across thousands of OSM footprints. Profile its draw calls, materials, texture memory and GPU cost on Android before expanding the asset set. The mapped OSM footprint and collision remain authoritative; the imported facade is a visual replacement for one selected street-facing wall only.
+The GLB is currently imported and stored as an asset only; the world generator is not yet instancing it. The existing building facades remain procedural until the model is aligned and validated in Godot. Do not instance this 118k-triangle source across thousands of OSM footprints. Profile its draw calls, materials, texture memory and GPU cost on Android before expanding the asset set. The mapped OSM footprint and collision remain authoritative; the imported facade is a visual replacement for one selected street-facing wall only.
 
 ## Local regeneration
 
