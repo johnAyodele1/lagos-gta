@@ -108,6 +108,10 @@ func _add_buildings() -> void:
 	var air_conditioners: Array[Transform3D] = []
 	var shop_signs: Array[Transform3D] = []
 	var shop_doors: Array[Transform3D] = []
+	var roof_parapets: Array[Transform3D] = []
+	var red_awnings: Array[Transform3D] = []
+	var yellow_awnings: Array[Transform3D] = []
+	var green_awnings: Array[Transform3D] = []
 	for plot in plots:
 		var width := rng.randf_range(10.0, 15.0)
 		var depth := rng.randf_range(10.0, 15.0)
@@ -116,13 +120,17 @@ func _add_buildings() -> void:
 		_add_box(self, Vector3(width, height, depth), Vector3(plot.x, height * 0.5, plot.y), color, true)
 		_add_roof_detail(plot, width, depth, height, rng)
 		_add_windows(plot, width, depth, height)
-		_add_facade_details(plot, width, depth, height, index, balcony_slabs, balcony_rails, air_conditioners, shop_signs, shop_doors)
+		_add_facade_details(plot, width, depth, height, index, balcony_slabs, balcony_rails, air_conditioners, shop_signs, shop_doors, roof_parapets, red_awnings, yellow_awnings, green_awnings)
 		index += 1
 	_add_box_batch(self, Vector3(2.6, 0.16, 1.15), balcony_slabs, Color(0.58, 0.56, 0.50))
 	_add_box_batch(self, Vector3(2.6, 0.10, 0.10), balcony_rails, Color(0.18, 0.19, 0.18))
 	_add_box_batch(self, Vector3(0.75, 0.55, 0.32), air_conditioners, Color(0.78, 0.78, 0.72))
 	_add_box_batch(self, Vector3(3.0, 0.65, 0.16), shop_signs, Color(0.12, 0.24, 0.28))
 	_add_box_batch(self, Vector3(1.25, 2.25, 0.12), shop_doors, Color(0.20, 0.16, 0.12))
+	_add_box_batch(self, Vector3.ONE, roof_parapets, Color(0.48, 0.46, 0.41))
+	_add_box_batch(self, Vector3.ONE, red_awnings, MARKET_CANOPY_COLORS[0])
+	_add_box_batch(self, Vector3.ONE, yellow_awnings, MARKET_CANOPY_COLORS[1])
+	_add_box_batch(self, Vector3.ONE, green_awnings, MARKET_CANOPY_COLORS[2])
 
 
 func _add_facade_details(
@@ -149,14 +157,16 @@ func _add_facade_details(
 		balcony_rails.append(Transform3D(Basis(), Vector3(plot.x, floor_y + 0.62, front_z - 0.98)))
 		var ac_x := plot.x + width * 0.32
 		air_conditioners.append(Transform3D(Basis(), Vector3(ac_x, floor_y + 0.65, front_z - 0.12)))
-	# A shallow parapet makes the roofline read as a built structure, not a cube.
-	_add_box(self, Vector3(width + 0.35, 0.22, 0.18), Vector3(plot.x, height + 0.11, plot.y - depth * 0.5), Color(0.48, 0.46, 0.41))
-	_add_box(self, Vector3(width + 0.35, 0.22, 0.18), Vector3(plot.x, height + 0.11, plot.y + depth * 0.5), Color(0.48, 0.46, 0.41))
-	_add_box(self, Vector3(0.18, 0.22, depth), Vector3(plot.x - width * 0.5, height + 0.11, plot.y), Color(0.48, 0.46, 0.41))
-	_add_box(self, Vector3(0.18, 0.22, depth), Vector3(plot.x + width * 0.5, height + 0.11, plot.y), Color(0.48, 0.46, 0.41))
-	# Alternate shop awnings and sign colours so the street does not repeat one palette.
-	var awning_color: Color = MARKET_CANOPY_COLORS[building_index % MARKET_CANOPY_COLORS.size()]
-	_add_box(self, Vector3(width * 0.82, 0.16, 1.0), Vector3(plot.x, 3.05, front_z - 0.58), awning_color)
+	# Scaled unit-cube transforms keep parapets and awnings in shared batches.
+	roof_parapets.append(Transform3D(Basis().scaled(Vector3(width + 0.35, 0.22, 0.18)), Vector3(plot.x, height + 0.11, plot.y - depth * 0.5)))
+	roof_parapets.append(Transform3D(Basis().scaled(Vector3(width + 0.35, 0.22, 0.18)), Vector3(plot.x, height + 0.11, plot.y + depth * 0.5)))
+	roof_parapets.append(Transform3D(Basis().scaled(Vector3(0.18, 0.22, depth)), Vector3(plot.x - width * 0.5, height + 0.11, plot.y)))
+	roof_parapets.append(Transform3D(Basis().scaled(Vector3(0.18, 0.22, depth)), Vector3(plot.x + width * 0.5, height + 0.11, plot.y)))
+	var awning := Transform3D(Basis().scaled(Vector3(width * 0.82, 0.16, 1.0)), Vector3(plot.x, 3.05, front_z - 0.58))
+	match building_index % MARKET_CANOPY_COLORS.size():
+		0: red_awnings.append(awning)
+		1: yellow_awnings.append(awning)
+		2: green_awnings.append(awning)
 
 func _add_roof_detail(plot: Vector2, width: float, depth: float, height: float, rng: RandomNumberGenerator) -> void:
 	var roof_height := rng.randf_range(0.5, 1.2)
