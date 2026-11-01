@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/yaba-world-legal-driving-mobile
+      - feat/polyhaven-lagos-underpass
     paths:
       - tools/fetch_yaba_osm.py
       - tools/enrich_yaba_buildings.py
