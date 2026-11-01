@@ -26,6 +26,7 @@ func _run() -> void:
 	_test_legal_consent_versioning()
 	_test_world_generation_batching()
 	_test_graphics_profiles()
+	_test_visual_meshes()
 	await _test_osm_world_generator()
 	_test_vehicle_speed_limits()
 	_test_ambient_traffic()
@@ -154,6 +155,24 @@ func _test_graphics_profiles() -> void:
 	_check(not bool(low["shadows"]) and int(low["shadow_atlas_size"]) == 512, "low graphics profile protects older mobile GPUs")
 	_check(bool(balanced["shadows"]) and int(balanced["shadow_splits"]) == 2, "balanced mobile profile keeps short-range directional shadows")
 	_check(int(high["shadow_atlas_size"]) == 2048 and float(high["far_clip"]) == 300.0, "high profile reserves longer view distance for desktop hardware")
+
+func _test_visual_meshes() -> void:
+	var player = PlayerScript.new()
+	root.add_child(player)
+	_check(player.body_mesh.mesh is ArrayMesh, "player avatar uses a custom tapered torso mesh rather than a capsule")
+	_check(player.camera_pivot is SpringArm3D, "player uses a collision-aware third-person spring arm")
+	_check(player.body_mesh.get_node_or_null("Head") != null or player.body_mesh.get_child_count() >= 8, "player avatar includes layered head, hair and articulated body details")
+	player.queue_free()
+
+	var vehicle = VehicleScript.new()
+	root.add_child(vehicle)
+	var danfo_body := vehicle.get_node_or_null("DanfoBodyShell") as MeshInstance3D
+	var danfo_cabin := vehicle.get_node_or_null("DanfoCabinShell") as MeshInstance3D
+	_check(danfo_body != null and danfo_body.mesh is ArrayMesh, "danfo body is a custom tapered 3D mesh, not a box primitive")
+	_check(danfo_cabin != null and danfo_cabin.mesh is ArrayMesh, "danfo cabin has shaped 3D geometry")
+	_check(vehicle.get_node_or_null("DanfoDestinationBoard") != null, "danfo includes its Yaba/Tejuosho route board")
+	vehicle.queue_free()
+	await physics_frame
 
 func _test_osm_world_generator() -> void:
 	var sample := {
