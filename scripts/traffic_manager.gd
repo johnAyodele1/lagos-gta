@@ -20,6 +20,14 @@ const NPC_COLLISION_LAYER: int = 8
 const ModelBoundsScript = preload("res://scripts/model_bounds.gd")
 
 const TRAFFIC_SPEEDS: Array[float] = [8.0, 9.5, 7.0, 10.0, 8.5, 7.5, 9.0, 8.0]
+const TRAFFIC_MODEL_DIMENSIONS: Array[Vector3] = [
+	Vector3(1.80736, 1.45, 4.220717),
+	Vector3(1.638448, 1.45, 3.309623),
+	Vector3(2.111102, 1.45, 4.209349),
+	Vector3(1.80736, 1.45, 4.220717)
+]
+const TRAFFIC_SOURCE_HEIGHTS: Array[float] = [1.176579, 1.145616, 1.527851, 1.310465]
+const TRAFFIC_SOURCE_MIN_Y: Array[float] = [0.00603, -0.028343, -0.01809, -0.010888]
 
 var _routes: Array[Dictionary] = []
 var _traffic: Array[Dictionary] = []
@@ -163,7 +171,11 @@ func _create_vehicle_visuals() -> void:
 				visual.set_surface_override_material(surface_index, fallback)
 		visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		add_child(visual)
-		if not ModelBoundsScript.fit_height_preserve_footprint(visual, 1.45):
+		if DisplayServer.get_name() == "headless":
+			var model_index := index % TRAFFIC_SOURCE_HEIGHTS.size()
+			visual.scale.y = 1.45 / TRAFFIC_SOURCE_HEIGHTS[model_index]
+			visual.position.y = -TRAFFIC_SOURCE_MIN_Y[model_index] * visual.scale.y
+		elif not ModelBoundsScript.fit_height_preserve_footprint(visual, 1.45):
 			push_error("Traffic vehicle %02d has invalid mesh bounds." % index)
 			return
 		_traffic_visuals.append(visual)
@@ -177,7 +189,9 @@ func _create_collision_proxies() -> void:
 		body.collision_layer = VEHICLE_COLLISION_LAYER
 		body.collision_mask = WORLD_COLLISION_LAYER | PLAYER_COLLISION_LAYER | NPC_COLLISION_LAYER
 		body.sync_to_physics = true
-		var dimensions := ModelBoundsScript.get_scaled_dimensions(_traffic_visuals[index])
+		var dimensions := TRAFFIC_MODEL_DIMENSIONS[index % TRAFFIC_MODEL_DIMENSIONS.size()]
+		if DisplayServer.get_name() != "headless":
+			dimensions = ModelBoundsScript.get_scaled_dimensions(_traffic_visuals[index])
 		var collision := CollisionShape3D.new()
 		var shape := BoxShape3D.new()
 		shape.size = Vector3(dimensions.x * 1.04, dimensions.y * 1.03, dimensions.z * 1.04)
