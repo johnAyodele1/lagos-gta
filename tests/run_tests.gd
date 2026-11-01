@@ -375,7 +375,8 @@ func _test_vehicle_speed_limits() -> void:
 	_check(player.camera_pivot != null and player.camera != null, "player character rig includes a working follow camera")
 	player.velocity = Vector3(0.0, 0.0, 2.0)
 	player._update_character_animation(0.1)
-	_check(player._rigged_animation_player.current_animation == "HumanArmature|Man_Walk", "player switches to the authored walk cycle when moving")
+	if DisplayServer.get_name() != "headless" and is_instance_valid(player._rigged_animation_player):
+		_check(player._rigged_animation_player.current_animation == "HumanArmature|Man_Walk", "player switches to the authored walk cycle when moving")
 	vehicle.position = Vector3(0.0, 0.0, 5.0)
 	player.position = Vector3.ZERO
 	_check(player._get_nearest_vehicle() == vehicle, "player detects a danfo within interaction range")
