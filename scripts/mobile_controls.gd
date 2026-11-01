@@ -35,6 +35,15 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		queue_redraw()
+	elif what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		joystick_touch_index = -1
+		look_touch_index = -1
+		sprint_touch_index = -1
+		jump_touch_index = -1
+		joystick_position = _joystick_center()
+		look_delta = Vector2.ZERO
+		jump_requested = false
+		queue_redraw()
 
 func _input(event: InputEvent) -> void:
 	if not _mobile_enabled:
