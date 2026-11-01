@@ -572,6 +572,53 @@ func _add_road_labels() -> void:
 		add_child(label)
 		count += 1
 
+func _nearest_road_sample() -> Dictionary:
+	var best_distance := INF
+	var best_position := Vector2.ZERO
+	var best_direction := Vector2.RIGHT
+	var best_width := 6.0
+	for road in _roads:
+		var points := _points_from_coordinates(road.get("coordinates", []))
+		for index in range(points.size() - 1):
+			var start := points[index]
+			var finish := points[index + 1]
+			var candidate := Geometry2D.get_closest_point_to_segment(Vector2.ZERO, start, finish)
+			var distance := candidate.length()
+			if distance < best_distance:
+				best_distance = distance
+				best_position = candidate
+				best_direction = (finish - start).normalized()
+				best_width = float(road.get("width_m", 6.0))
+	return {"position": best_position, "direction": best_direction, "width": best_width}
+
+func get_vehicle_spawn_position() -> Vector3:
+	var sample := _nearest_road_sample()
+	var position: Vector2 = sample["position"] + sample["direction"] * 8.0
+	return Vector3(position.x, 0.0, position.y)
+
+func get_player_spawn_position() -> Vector3:
+	var sample := _nearest_road_sample()
+	var road_position: Vector2 = sample["position"] + sample["direction"] * 8.0
+	var direction: Vector2 = sample["direction"]
+	var side := Vector2(-direction.y, direction.x)
+	var offset := float(sample["width"]) * 0.5 + 2.0
+	var left_candidate := road_position + side * offset
+	var right_candidate := road_position - side * offset
+	var left_clearance := _nearest_building_centroid_distance(left_candidate)
+	var right_clearance := _nearest_building_centroid_distance(right_candidate)
+	var chosen := left_candidate if left_clearance >= right_clearance else right_candidate
+	return Vector3(chosen.x, 0.5, chosen.y)
+
+func _nearest_building_centroid_distance(point: Vector2) -> float:
+	var nearest := INF
+	for building in _buildings:
+		nearest = minf(nearest, _outline_centroid(building.get("outline", [])).distance_to(point))
+	return nearest
+
+func get_spawn_rotation_y() -> float:
+	var direction: Vector2 = _nearest_road_sample()["direction"]
+	return atan2(-direction.x, -direction.y)
+
 func get_road_data() -> Array[Dictionary]:
 	return _roads
 
