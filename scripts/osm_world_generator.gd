@@ -179,7 +179,8 @@ func _append_ribbon(
 	points: Array[Vector2],
 	width: float,
 	offset: float,
-	height: float
+	height: float,
+	uvs: PackedVector2Array
 ) -> void:
 	if points.size() < 2:
 		return
@@ -200,7 +201,10 @@ func _append_ribbon(
 			side = miter / denominator
 		side_vectors.append(side)
 	var base := vertices.size()
+	var distance_along := 0.0
 	for index in range(points.size()):
+		if index > 0:
+			distance_along += points[index].distance_to(points[index - 1])
 		var side := side_vectors[index]
 		var center := points[index] + side * offset
 		var half_width := side * (width * 0.5)
@@ -208,6 +212,8 @@ func _append_ribbon(
 		vertices.append(Vector3(center.x - half_width.x, height, center.y - half_width.y))
 		normals.append(Vector3.UP)
 		normals.append(Vector3.UP)
+		uvs.append(Vector2(distance_along / 6.0, 0.0))
+		uvs.append(Vector2(distance_along / 6.0, 1.0))
 	for index in range(points.size() - 1):
 		var start := base + index * 2
 		indices.append_array(PackedInt32Array([start, start + 2, start + 1, start + 1, start + 2, start + 3]))
@@ -216,6 +222,7 @@ func _create_surface_mesh(
 	vertices: PackedVector3Array,
 	normals: PackedVector3Array,
 	indices: PackedInt32Array,
+	uvs: PackedVector2Array,
 	material: Material,
 	mesh_name: String
 ) -> void:
@@ -225,6 +232,7 @@ func _create_surface_mesh(
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = vertices
 	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
 	arrays[Mesh.ARRAY_INDEX] = indices
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
@@ -239,25 +247,89 @@ func _add_road_network() -> void:
 	var road_vertices := PackedVector3Array()
 	var road_normals := PackedVector3Array()
 	var road_indices := PackedInt32Array()
+	var road_uvs := PackedVector2Array()
 	var sidewalk_vertices := PackedVector3Array()
 	var sidewalk_normals := PackedVector3Array()
 	var sidewalk_indices := PackedInt32Array()
+	var sidewalk_uvs := PackedVector2Array()
 	var drain_vertices := PackedVector3Array()
 	var drain_normals := PackedVector3Array()
 	var drain_indices := PackedInt32Array()
+	var drain_uvs := PackedVector2Array()
+	var marking_vertices := PackedVector3Array()
+	var marking_normals := PackedVector3Array()
+	var marking_indices := PackedInt32Array()
+	var marking_uvs := PackedVector2Array()
 	for road in _roads:
 		var points := _points_from_coordinates(road.get("coordinates", []))
 		if points.size() < 2:
 			continue
 		var width := clampf(float(road.get("width_m", 6.0)), 2.0, 24.0)
-		_append_ribbon(road_vertices, road_normals, road_indices, points, width, 0.0, 0.015)
-		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, width * 0.5 + 0.85, 0.035)
-		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, -(width * 0.5 + 0.85), 0.035)
-		_append_ribbon(drain_vertices, drain_normals, drain_indices, points, 0.22, width * 0.5 + 0.12, 0.025)
-		_append_ribbon(drain_vertices, drain_normals, drain_indices, points, 0.22, -(width * 0.5 + 0.12), 0.025)
-	_create_surface_mesh(road_vertices, road_normals, road_indices, _material("asphalt", ROAD_COLOR), "OSMRoadSurfaces")
-	_create_surface_mesh(sidewalk_vertices, sidewalk_normals, sidewalk_indices, _material("sidewalk", SIDEWALK_COLOR), "OSMSidewalks")
-	_create_surface_mesh(drain_vertices, drain_normals, drain_indices, _material("drainage", DRAIN_COLOR), "OSMRoadsideDrainage")
+		_append_ribbon(road_vertices, road_normals, road_indices, points, width, 0.0, 0.015, road_uvs)
+		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, width * 0.5 + 0.85, 0.035, sidewalk_uvs)
+		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, -(width * 0.5 + 0.85), 0.035, sidewalk_uvs)
+		_append_ribbon(drain_vertices, drain_normals, drain_indices, points, 0.22, width * 0.5 + 0.12, 0.025, drain_uvs)
+		_append_ribbon(drain_vertices, drain_normals, drain_indices, points, 0.22, -(width * 0.5 + 0.12), 0.025, drain_uvs)
+		if width >= 7.0 and str(road.get("highway", "")) in ["primary", "secondary", "tertiary"]:
+			_append_road_markings(points, marking_vertices, marking_normals, marking_indices, marking_uvs)
+	var asphalt_material := _material("asphalt", ROAD_COLOR)
+	asphalt_material.albedo_texture = _make_noise_texture(17, 0.20)
+	asphalt_material.roughness = 0.98
+	var concrete_material := _material("sidewalk", SIDEWALK_COLOR)
+	concrete_material.albedo_texture = _make_noise_texture(29, 0.12)
+	concrete_material.roughness = 0.96
+	_create_surface_mesh(road_vertices, road_normals, road_indices, road_uvs, asphalt_material, "OSMRoadSurfaces")
+	_create_surface_mesh(sidewalk_vertices, sidewalk_normals, sidewalk_indices, sidewalk_uvs, concrete_material, "OSMSidewalks")
+	_create_surface_mesh(drain_vertices, drain_normals, drain_indices, drain_uvs, _material("drainage", DRAIN_COLOR), "OSMRoadsideDrainage")
+	_create_surface_mesh(marking_vertices, marking_normals, marking_indices, marking_uvs, _material("road_markings", Color(0.88, 0.84, 0.67)), "OSMRoadMarkings")
+
+func _make_noise_texture(seed_value: int, variation: float) -> Texture2D:
+	var noise := FastNoiseLite.new()
+	noise.seed = seed_value
+	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	noise.frequency = 0.045
+	noise.fractal_octaves = 3
+	var image := Image.create(128, 128, false, Image.FORMAT_RGBA8)
+	for y in range(128):
+		for x in range(128):
+			var value := 1.0 - absf(noise.get_noise_2d(float(x), float(y))) * variation
+			image.set_pixel(x, y, Color(value, value, value, 1.0))
+	image.generate_mipmaps()
+	return ImageTexture.create_from_image(image)
+
+func _append_road_markings(
+	points: Array[Vector2],
+	vertices: PackedVector3Array,
+	normals: PackedVector3Array,
+	indices: PackedInt32Array,
+	uvs: PackedVector2Array
+) -> void:
+	var distance_along := 0.0
+	for index in range(points.size() - 1):
+		var start := points[index]
+		var finish := points[index + 1]
+		var edge := finish - start
+		var length := edge.length()
+		if length < 5.0:
+			distance_along += length
+			continue
+		var direction := edge / length
+		var side := Vector2(-direction.y, direction.x) * 0.075
+		var cursor := 3.0
+		while cursor + 4.0 < length:
+			var dash_start := start + direction * cursor
+			var dash_end := start + direction * (cursor + 4.0)
+			var base := vertices.size()
+			vertices.append(Vector3(dash_start.x + side.x, 0.028, dash_start.y + side.y))
+			vertices.append(Vector3(dash_start.x - side.x, 0.028, dash_start.y - side.y))
+			vertices.append(Vector3(dash_end.x + side.x, 0.028, dash_end.y + side.y))
+			vertices.append(Vector3(dash_end.x - side.x, 0.028, dash_end.y - side.y))
+			for _vertex in range(4):
+				normals.append(Vector3.UP)
+			indices.append_array(PackedInt32Array([base, base + 2, base + 1, base + 1, base + 2, base + 3]))
+			uvs.append_array(PackedVector2Array([Vector2(0, 0), Vector2(0, 1), Vector2(1, 0), Vector2(1, 1)]))
+			cursor += 11.0
+		distance_along += length
 
 func _add_building_network() -> void:
 	var vertices := PackedVector3Array()
