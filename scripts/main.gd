@@ -2,6 +2,7 @@ extends Node3D
 
 const PlayerScript = preload("res://scripts/player_controller.gd")
 const WorldScript = preload("res://scripts/world_generator.gd")
+const MobileControlsScript = preload("res://scripts/mobile_controls.gd")
 
 func _ready() -> void:
 	_build_environment()
@@ -36,8 +37,15 @@ func _spawn_player() -> void:
 	player.position = Vector3(0.0, 0.5, 5.0)
 	add_child(player)
 
+	var controls = MobileControlsScript.new()
+	controls.name = "MobileControls"
+	controls.z_index = 100
+	add_child(controls)
+	player.mobile_controls = controls
+
 func _add_hud() -> void:
 	var layer := CanvasLayer.new()
+	layer.layer = 5
 	add_child(layer)
 	var label := Label.new()
 	label.position = Vector2(24.0, 20.0)
@@ -46,5 +54,8 @@ func _add_hud() -> void:
 	label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.9))
 	label.add_theme_constant_override("shadow_offset_x", 2)
 	label.add_theme_constant_override("shadow_offset_y", 2)
-	label.text = "LAGOS GTA  |  STARTER DISTRICT\nWASD: Move   SHIFT: Sprint   SPACE: Jump\nMouse: Look   ESC: Release / capture mouse"
+	if OS.has_feature("mobile"):
+		label.text = "LAGOS GTA  |  STARTER DISTRICT"
+	else:
+		label.text = "LAGOS GTA  |  STARTER DISTRICT\nWASD: Move   SHIFT: Sprint   SPACE: Jump\nMouse: Look   ESC: Release / capture mouse"
 	layer.add_child(label)
