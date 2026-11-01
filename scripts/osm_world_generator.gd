@@ -723,29 +723,33 @@ func _select_hero_facade() -> Dictionary:
 			"outward": outward,
 			"angle": angle
 		}
-	return best
-
-func _add_hero_facade_asset(details: Dictionary) -> void:
+	if best.is_empty():
+		return {}
+	# Validate the imported scene before suppressing any procedural wall geometry.
+	# This guarantees a missing or malformed asset always falls back safely.
 	const asset_path := "res://assets/models/architecture/modular_urban_apartments_facade.glb"
 	var packed := load(asset_path) as PackedScene
 	if packed == null:
-		push_warning("The Poly Haven architecture asset could not be loaded; procedural facade remains the fallback.")
-		return
+		return {}
 	var model := packed.instantiate() as Node3D
-	if model == null:
-		push_warning("The Poly Haven architecture asset has no Node3D root; skipping hero facade.")
-		return
-	if not ModelBounds.fit_height(model, float(details["height"])):
-		model.free()
-		push_warning("The Poly Haven architecture asset has no measurable runtime mesh bounds; skipping hero facade.")
-		return
+	if model == null or not ModelBounds.fit_height(model, float(best["height"])):
+		if model != null:
+			model.free()
+		return {}
 	var dimensions := ModelBounds.get_scaled_dimensions(model)
 	if dimensions.x <= 0.001:
 		model.free()
-		push_warning("The Poly Haven architecture asset has invalid frontage dimensions; skipping hero facade.")
+		return {}
+	best["model"] = model
+	best["model_width"] = dimensions.x
+	return best
+
+func _add_hero_facade_asset(details: Dictionary) -> void:
+	var model := details.get("model") as Node3D
+	if model == null:
 		return
 	# Fit the long modular frontage to the mapped street-facing footprint edge.
-	model.scale.x *= minf(1.0, float(details["frontage_length"]) / dimensions.x)
+	model.scale.x *= minf(1.0, float(details["frontage_length"]) / float(details["model_width"]))
 	var anchor := Node3D.new()
 	anchor.name = "PolyHavenYabaHeroFacade"
 	var midpoint: Vector2 = details["midpoint"]
