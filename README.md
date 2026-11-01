@@ -6,7 +6,7 @@ An original open-world 3D game project rooted in Lagos, Nigeria.
 
 **Playable prototype in development.** The current branch contains a Godot 4 third-person blockout with a procedurally generated Lagos-inspired starter district. It is a greybox foundation, not a finished GTA-scale game.
 
-Mobile touch controls are implemented. The starter district is being expanded with Yaba street identity, roadside market stalls, a danfo stop, rooftop water tanks, compound walls and utility lines. Repeated building windows use MultiMesh batching and shared materials. The game now presents an explicit first-run Terms & Conditions / Privacy Notice screen with versioned consent and a persistent LEGAL button. This remains an early greybox; it is not a signed mobile release.
+Mobile touch controls are implemented. The player avatar now uses a lightweight articulated 3D primitive rig with a simple walk cycle; the Yaba market includes a static keke tricycle and a drivable danfo. The starter district is being expanded with Yaba street identity, roadside market stalls, a danfo stop, rooftop water tanks, compound walls and utility lines. Repeated building windows use MultiMesh batching and shared materials. The game now presents an explicit first-run Terms & Conditions / Privacy Notice screen with versioned consent and a persistent LEGAL button. This remains an early greybox; it is not a signed mobile release.
 
 ## Run locally
 
