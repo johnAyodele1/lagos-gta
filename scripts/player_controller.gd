@@ -186,7 +186,13 @@ func _apply_rigged_character_materials(model: Node3D, shirt_color: Color, pants_
 		if mesh_instance.mesh == null:
 			continue
 		for surface_index in range(mesh_instance.mesh.get_surface_count()):
-			var source_material := mesh_instance.get_active_material(surface_index)
+			var source_material: Material = mesh_instance.get_active_material(surface_index)
+			if source_material == null:
+				var fallback := StandardMaterial3D.new()
+				fallback.albedo_color = shirt_color if surface_index <= 1 else pants_color if surface_index == 3 else skin_color if surface_index == 2 else Color(0.06, 0.055, 0.05)
+				fallback.roughness = 0.88
+				mesh_instance.set_surface_override_material(surface_index, fallback)
+				continue
 			if not source_material is StandardMaterial3D:
 				continue
 			var material := (source_material as StandardMaterial3D).duplicate() as StandardMaterial3D
