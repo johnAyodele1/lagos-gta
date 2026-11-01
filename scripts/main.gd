@@ -27,8 +27,42 @@ func _ready() -> void:
 	_spawn_pedestrians(world.get_road_data())
 	_spawn_vehicle(world)
 	_spawn_player(world)
+	_ensure_scene_materials()
 	_add_hud()
 	_add_legal_consent()
+
+func _ensure_scene_materials() -> void:
+	var fallback := StandardMaterial3D.new()
+	fallback.albedo_color = Color(0.42, 0.42, 0.40)
+	fallback.roughness = 0.9
+	var missing_surfaces := 0
+	var affected_nodes: Array[String] = []
+	for node in find_children("*", "MeshInstance3D", true, false):
+		var mesh_instance := node as MeshInstance3D
+		if mesh_instance.mesh == null:
+			continue
+		for surface_index in range(mesh_instance.mesh.get_surface_count()):
+			if mesh_instance.get_active_material(surface_index) == null:
+				mesh_instance.set_surface_override_material(surface_index, fallback)
+				missing_surfaces += 1
+				if affected_nodes.size() < 12:
+					affected_nodes.append("%s[%d]" % [str(mesh_instance.get_path()), surface_index])
+	for node in find_children("*", "MultiMeshInstance3D", true, false):
+		var batch := node as MultiMeshInstance3D
+		if batch.multimesh == null or batch.material_override != null or batch.multimesh.mesh == null:
+			continue
+		var has_surface_material := false
+		for surface_index in range(batch.multimesh.mesh.get_surface_count()):
+			if batch.multimesh.mesh.surface_get_material(surface_index) != null:
+				has_surface_material = true
+				break
+		if not has_surface_material:
+			batch.material_override = fallback
+			missing_surfaces += 1
+			if affected_nodes.size() < 12:
+				affected_nodes.append(str(batch.get_path()))
+	if missing_surfaces > 0:
+		push_warning("Assigned fallback materials to %d unmaterialed render surfaces: %s" % [missing_surfaces, ", ".join(affected_nodes)])
 
 func _build_environment() -> void:
 	var world_environment := WorldEnvironment.new()
