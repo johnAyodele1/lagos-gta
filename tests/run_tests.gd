@@ -9,6 +9,7 @@ const GraphicsProfileScript = preload("res://scripts/graphics_profile.gd")
 const VehicleScript = preload("res://scripts/vehicle_controller.gd")
 const TrafficManagerScript = preload("res://scripts/traffic_manager.gd")
 const PedestrianManagerScript = preload("res://scripts/pedestrian_manager.gd")
+const ModelBoundsScript = preload("res://scripts/model_bounds.gd")
 
 var failures: int = 0
 var assertions: int = 0
@@ -26,7 +27,7 @@ func _run() -> void:
 	_test_legal_consent_versioning()
 	_test_world_generation_batching()
 	_test_graphics_profiles()
-	_test_visual_meshes()
+	await _test_visual_meshes()
 	await _test_osm_world_generator()
 	await _test_vehicle_speed_limits()
 	_test_ambient_traffic()
@@ -157,6 +158,19 @@ func _test_graphics_profiles() -> void:
 	_check(int(high["shadow_atlas_size"]) == 2048 and float(high["far_clip"]) == 300.0, "high profile reserves longer view distance for desktop hardware")
 
 func _test_visual_meshes() -> void:
+	var bounds_probe := Node3D.new()
+	var bounds_mesh := MeshInstance3D.new()
+	var bounds_box := BoxMesh.new()
+	bounds_box.size = Vector3(1.0, 4.0, 1.0)
+	bounds_mesh.mesh = bounds_box
+	bounds_probe.add_child(bounds_mesh)
+	root.add_child(bounds_probe)
+	await process_frame
+	_check(ModelBoundsScript.fit_height(bounds_probe, 2.0), "model bounds utility accepts imported mesh geometry")
+	_check(is_equal_approx(bounds_probe.scale.y, 0.5) and is_equal_approx(bounds_probe.position.y, 1.0), "model bounds utility fits a four-metre mesh to a two-metre standing height")
+	bounds_probe.queue_free()
+	await process_frame
+
 	var player = PlayerScript.new()
 	root.add_child(player)
 	_check(player.body_mesh.mesh == null and player.body_mesh.get_node_or_null("RiggedLagosPlayer") != null, "player avatar is a rigged imported 3D character rather than primitive body parts")
@@ -166,7 +180,11 @@ func _test_visual_meshes() -> void:
 	_check(is_equal_approx(player.camera.rotation.x, deg_to_rad(-14.0)), "third-person camera pitches down toward the street instead of looking at the sky")
 	_check(player.camera.rotation.is_equal_approx(Vector3(deg_to_rad(-14.0), 0.0, 0.0)), "camera keeps its downward street-facing pitch")
 	var rigged_player := player.body_mesh.get_node_or_null("RiggedLagosPlayer") as Node3D
+	await process_frame
 	_check(rigged_player != null, "player uses the imported rigged Lagos character model")
+	if rigged_player != null:
+		var player_local_bounds: AABB = ModelBoundsScript._combined_local_bounds(rigged_player)
+		_check(is_equal_approx(player_local_bounds.size.y * rigged_player.scale.y, 1.76), "player visual is normalized to 1.76m rather than scaling larger than the danfo")
 	var player_animation := rigged_player.find_child("AnimationPlayer", true, false) as AnimationPlayer if rigged_player != null else null
 	_check(player_animation != null and player_animation.has_animation("HumanArmature|Man_Walk"), "player model includes real walk animation clips")
 	var player_meshes: Array[Node] = rigged_player.find_children("*", "MeshInstance3D", true, false) if rigged_player != null else []
@@ -196,7 +214,7 @@ func _test_visual_meshes() -> void:
 	_check(danfo_materials_valid, "every danfo mesh surface has a material assigned")
 	var danfo_collision := vehicle.get_child(0) as CollisionShape3D
 	var danfo_box := danfo_collision.shape as BoxShape3D if danfo_collision != null else null
-	_check(danfo_box != null and danfo_box.size.is_equal_approx(Vector3(2.35, 2.8, 4.9)), "danfo physics collider matches the model's length-along-Z orientation")
+	_check(danfo_box != null and danfo_box.size.is_equal_approx(Vector3(2.05, 2.35, 4.7)), "danfo collision proxy uses a realistic 2.05m by 2.35m by 4.7m vehicle envelope")
 	_check(vehicle.get_node_or_null("DanfoDestinationBoard") != null, "danfo includes its Yaba/Tejuosho route board")
 	vehicle.queue_free()
 	await physics_frame
