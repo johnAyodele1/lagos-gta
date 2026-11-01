@@ -203,6 +203,19 @@ func _test_visual_meshes() -> void:
 					if mesh_instance.get_active_material(surface_index) == null:
 						player_materials_valid = false
 			_check(player_materials_valid, "every imported player mesh surface has an assigned material")
+	if DisplayServer.get_name() != "headless":
+		var player_skin_surface_found := false
+		var player_instance_override_clear := true
+		for mesh_node in player_meshes:
+			var mesh_instance := mesh_node as MeshInstance3D
+			if mesh_instance.material_override != null:
+				player_instance_override_clear = false
+			for surface_index in range(mesh_instance.mesh.get_surface_count()):
+				var surface_material := mesh_instance.get_surface_override_material(surface_index) as StandardMaterial3D
+				if surface_material != null and surface_material.albedo_color.is_equal_approx(Color(0.40, 0.25, 0.17)):
+					player_skin_surface_found = true
+		_check(player_skin_surface_found, "player rig keeps a separate skin material instead of colouring the entire character as a shirt")
+		_check(player_instance_override_clear, "player does not mask its per-surface clothing and skin palette with an instance override")
 	player.global_position = Vector3(10000.0, 100.0, 10000.0)
 	player.set_physics_process(false)
 	await physics_frame
