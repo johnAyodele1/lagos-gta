@@ -1,15 +1,12 @@
 extends Node3D
 class_name TrafficManager
 
-## Lightweight ambient traffic for the Yaba starter district.
-## Three MultiMeshes draw all background vehicles; no per-car physics bodies,
-## navigation agents or individual render nodes are created.
+## Small ambient traffic pool driven by real OSM road centre-lines.
+## Vehicle meshes are shared tapered 3D lofts; each moving car has one cheap collider.
 
-const ROAD_HALF_LENGTH := 60.0
-const LOOP_LENGTH := ROAD_HALF_LENGTH * 2.0
-const LANE_OFFSET := 3.1
-const VEHICLE_COUNT_PER_LANE := 2
-const VEHICLE_SPACING := LOOP_LENGTH / float(VEHICLE_COUNT_PER_LANE)
+const MAX_TRAFFIC_VEHICLES := 8
+const MAX_SOURCE_ROADS := 4
+const VEHICLES_PER_ROUTE := 2
 const WORLD_COLLISION_LAYER: int = 1
 const VEHICLE_COLLISION_LAYER: int = 2
 const PLAYER_COLLISION_LAYER: int = 4
@@ -26,38 +23,210 @@ const BODY_COLORS: Array[Color] = [
 ]
 const TRAFFIC_SPEEDS: Array[float] = [8.0, 9.5, 7.0, 10.0, 8.5, 7.5, 9.0, 8.0]
 
+var _routes: Array[Dictionary] = []
 var _traffic: Array[Dictionary] = []
 var _body_batch: MultiMeshInstance3D
 var _cabin_batch: MultiMeshInstance3D
 var _wheel_batch: MultiMeshInstance3D
 var _collision_bodies: Array[AnimatableBody3D] = []
+var _last_directions: Array[Vector3] = []
 
-static func advance_distance(distance: float, speed: float, delta: float, loop_length: float = LOOP_LENGTH) -> float:
+static func advance_distance(distance: float, speed: float, delta: float, loop_length: float = 120.0) -> float:
 	if loop_length <= 0.0:
 		return 0.0
 	return fposmod(distance + maxf(speed, 0.0) * maxf(delta, 0.0), loop_length)
 
+func configure_from_roads(roads: Array[Dictionary]) -> void:
+	_routes = _build_routes(roads)
+
 func _ready() -> void:
 	_create_render_batches()
-	_spawn_lane(Vector3.BACK, -LANE_OFFSET)
-	_spawn_lane(Vector3.FORWARD, LANE_OFFSET)
-	_spawn_lane(Vector3.RIGHT, -LANE_OFFSET)
-	_spawn_lane(Vector3.LEFT, LANE_OFFSET)
+	if _routes.is_empty():
+		push_warning("Ambient traffic is disabled because no usable OSM road routes were supplied.")
+		return
+	_spawn_traffic()
 	_create_collision_proxies()
 	_update_render_batches()
 
 func _process(delta: float) -> void:
 	for traffic_item in _traffic:
+		var route: Dictionary = _routes[int(traffic_item["route_index"])]
 		traffic_item["distance"] = advance_distance(
 			float(traffic_item["distance"]),
 			float(traffic_item["speed"]),
-			delta
+			delta,
+			float(route["length"])
 		)
 	_update_render_batches()
 
+func _build_routes(roads: Array[Dictionary]) -> Array[Dictionary]:
+	var candidates: Array[Dictionary] = []
+	for road in roads:
+		if str(road.get("highway", "")) in ["footway", "path", "pedestrian"]:
+			continue
+		var points: Array[Vector2] = []
+		for coordinate in road.get("coordinates", []):
+			var point := Vector2(float(coordinate[0]), float(coordinate[1]))
+			if points.is_empty() or points[points.size() - 1].distance_to(point) > 0.1:
+				points.append(point)
+		if points.size() < 2:
+			continue
+		var total_length := _polyline_length(points)
+		if total_length < 45.0:
+			continue
+		var nearest := INF
+		for point in points:
+			nearest = minf(nearest, point.length())
+		candidates.append({
+			"points": points,
+			"length": total_length,
+			"nearest": nearest,
+			"width": clampf(float(road.get("width_m", 6.0)), 3.5, 18.0),
+			"oneway": str(road.get("oneway", "no")) in ["yes", "1", "true"],
+			"name": str(road.get("name", ""))
+		})
+	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a["nearest"]) < float(b["nearest"])
+	)
+	var routes: Array[Dictionary] = []
+	for index in range(mini(candidates.size(), MAX_SOURCE_ROADS)):
+		var candidate: Dictionary = candidates[index]
+		var points: Array[Vector2] = candidate["points"]
+		var lane_offset := minf(float(candidate["width"]) * 0.22, 1.65)
+		var forward_points := _offset_polyline(points, lane_offset)
+		var forward_length := _polyline_length(forward_points)
+		if forward_length >= 40.0:
+			routes.append({"points": forward_points, "length": forward_length, "name": candidate["name"]})
+		if not bool(candidate["oneway"]):
+			var reverse_points: Array[Vector2] = []
+			for point_index in range(points.size() - 1, -1, -1):
+				reverse_points.append(points[point_index])
+			reverse_points = _offset_polyline(reverse_points, lane_offset)
+			var reverse_length := _polyline_length(reverse_points)
+			if reverse_length >= 40.0:
+				routes.append({"points": reverse_points, "length": reverse_length, "name": candidate["name"]})
+		if routes.size() >= 8:
+			break
+	return routes
+
+func _offset_polyline(points: Array[Vector2], offset: float) -> Array[Vector2]:
+	var result: Array[Vector2] = []
+	for index in range(points.size()):
+		var previous := Vector2.ZERO
+		var next := Vector2.ZERO
+		if index > 0:
+			previous = (points[index] - points[index - 1]).normalized()
+		if index < points.size() - 1:
+			next = (points[index + 1] - points[index]).normalized()
+		var direction := next if index == 0 else previous if index == points.size() - 1 else (previous + next).normalized()
+		var side := Vector2(-direction.y, direction.x)
+		if index > 0 and index < points.size() - 1:
+			var next_side := Vector2(-next.y, next.x)
+			var miter := (side + next_side).normalized()
+			var denominator := maxf(absf(miter.dot(next_side)), 0.35)
+			side = miter / denominator
+		result.append(points[index] + side * offset)
+	return result
+
+func _polyline_length(points: Array[Vector2]) -> float:
+	var result := 0.0
+	for index in range(points.size() - 1):
+		result += points[index].distance_to(points[index + 1])
+	return result
+
+func _spawn_traffic() -> void:
+	for route_index in range(_routes.size()):
+		var route: Dictionary = _routes[route_index]
+		for vehicle_index in range(VEHICLES_PER_ROUTE):
+			if _traffic.size() >= MAX_TRAFFIC_VEHICLES:
+				return
+			_traffic.append({
+				"route_index": route_index,
+				"distance": float(vehicle_index) * float(route["length"]) / float(VEHICLES_PER_ROUTE) + 8.0,
+				"speed": TRAFFIC_SPEEDS[_traffic.size() % TRAFFIC_SPEEDS.size()]
+			})
+
+func _create_render_batches() -> void:
+	_body_batch = _create_batch(_create_loft_mesh([
+		{"z": -1.95, "width": 0.72, "bottom": -0.38, "top": 0.18},
+		{"z": -1.55, "width": 0.92, "bottom": -0.42, "top": 0.48},
+		{"z": 1.45, "width": 0.92, "bottom": -0.42, "top": 0.48},
+		{"z": 1.95, "width": 0.72, "bottom": -0.38, "top": 0.18}
+	]), _material(true))
+	_cabin_batch = _create_batch(_create_loft_mesh([
+		{"z": -1.28, "width": 0.70, "bottom": 0.0, "top": 0.46},
+		{"z": -0.88, "width": 0.78, "bottom": 0.0, "top": 0.78},
+		{"z": 0.95, "width": 0.78, "bottom": 0.0, "top": 0.78},
+		{"z": 1.28, "width": 0.70, "bottom": 0.0, "top": 0.46}
+	]), _material(false))
+	var wheel_mesh := CylinderMesh.new()
+	wheel_mesh.top_radius = 0.34
+	wheel_mesh.bottom_radius = 0.34
+	wheel_mesh.height = 0.18
+	wheel_mesh.radial_segments = 12
+	_wheel_batch = _create_batch(wheel_mesh, _wheel_material(), BODY_COLORS.size() * 4)
+
+func _create_loft_mesh(sections: Array[Dictionary]) -> ArrayMesh:
+	var rings: Array[PackedVector3Array] = []
+	for section in sections:
+		var width := float(section["width"])
+		var bottom := float(section["bottom"])
+		var top := float(section["top"])
+		var z := float(section["z"])
+		var bevel := minf(0.16, (top - bottom) * 0.22)
+		rings.append(PackedVector3Array([
+			Vector3(-width + bevel, bottom, z),
+			Vector3(width - bevel, bottom, z),
+			Vector3(width, bottom + bevel, z),
+			Vector3(width, top - bevel, z),
+			Vector3(width - bevel, top, z),
+			Vector3(-width + bevel, top, z),
+			Vector3(-width, top - bevel, z),
+			Vector3(-width, bottom + bevel, z)
+		]))
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for ring_index in range(rings.size() - 1):
+		for corner in range(8):
+			var next_corner := (corner + 1) % 8
+			var a := rings[ring_index][corner]
+			var b := rings[ring_index + 1][corner]
+			var c := rings[ring_index][next_corner]
+			var d := rings[ring_index + 1][next_corner]
+			surface.add_vertex(a)
+			surface.add_vertex(b)
+			surface.add_vertex(c)
+			surface.add_vertex(c)
+			surface.add_vertex(b)
+			surface.add_vertex(d)
+	for cap_index in [0, rings.size() - 1]:
+		var ring: PackedVector3Array = rings[cap_index]
+		var center := Vector3.ZERO
+		for point in ring:
+			center += point
+		center /= float(ring.size())
+		for corner in range(8):
+			var next_corner := (corner + 1) % 8
+			surface.add_vertex(center)
+			surface.add_vertex(ring[corner])
+			surface.add_vertex(ring[next_corner])
+	surface.generate_normals()
+	return surface.commit()
+
+func _create_batch(mesh: Mesh, material: StandardMaterial3D, instance_count: int = BODY_COLORS.size()) -> MultiMeshInstance3D:
+	var multi_mesh := MultiMesh.new()
+	multi_mesh.transform_format = MultiMesh.TRANSFORM_3D
+	multi_mesh.use_colors = true
+	multi_mesh.mesh = mesh
+	multi_mesh.instance_count = instance_count
+	var batch := MultiMeshInstance3D.new()
+	batch.multimesh = multi_mesh
+	batch.material_override = material
+	batch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(batch)
+	return batch
+
 func _create_collision_proxies() -> void:
-	# Keep the render path batched, but give each moving vehicle a cheap collider.
-	# AnimatableBody3D syncs these transforms with the physics server.
 	for index in range(_traffic.size()):
 		var body := AnimatableBody3D.new()
 		body.name = "TrafficCollision_%02d" % index
@@ -73,62 +242,24 @@ func _create_collision_proxies() -> void:
 		add_child(body)
 		_collision_bodies.append(body)
 
-func _create_render_batches() -> void:
-	_body_batch = _create_batch(Vector3(1.85, 0.85, 3.7), _material())
-	_cabin_batch = _create_batch(Vector3(1.55, 0.68, 1.9), _material())
-	var wheel_mesh := CylinderMesh.new()
-	wheel_mesh.top_radius = 0.34
-	wheel_mesh.bottom_radius = 0.34
-	wheel_mesh.height = 0.18
-	_wheel_batch = _create_batch_from_mesh(wheel_mesh, _material(), BODY_COLORS.size() * 4)
-
-func _create_batch(box_size: Vector3, material: StandardMaterial3D) -> MultiMeshInstance3D:
-	var box := BoxMesh.new()
-	box.size = box_size
-	return _create_batch_from_mesh(box, material)
-
-func _create_batch_from_mesh(mesh: Mesh, material: StandardMaterial3D, instance_count: int = BODY_COLORS.size()) -> MultiMeshInstance3D:
-	var multi_mesh := MultiMesh.new()
-	multi_mesh.transform_format = MultiMesh.TRANSFORM_3D
-	multi_mesh.use_colors = true
-	multi_mesh.mesh = mesh
-	multi_mesh.instance_count = instance_count
-	var batch := MultiMeshInstance3D.new()
-	batch.multimesh = multi_mesh
-	batch.material_override = material
-	batch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(batch)
-	return batch
-
-func _spawn_lane(direction: Vector3, lane_offset: float) -> void:
-	for index in range(VEHICLE_COUNT_PER_LANE):
-		var traffic_index := _traffic.size()
-		_traffic.append({
-			"direction": direction,
-			"lane_offset": lane_offset,
-			"distance": float(index) * VEHICLE_SPACING + float(traffic_index % 3) * 2.5,
-			"speed": TRAFFIC_SPEEDS[traffic_index % TRAFFIC_SPEEDS.size()]
-		})
-
 func _update_render_batches() -> void:
+	_last_directions.clear()
 	for index in range(_traffic.size()):
 		var item: Dictionary = _traffic[index]
-		var direction: Vector3 = item["direction"]
-		var lane_offset: float = float(item["lane_offset"])
-		var distance: float = float(item["distance"])
-		var position := Vector3.ZERO
-		if direction.x != 0.0:
-			position = Vector3(-ROAD_HALF_LENGTH + distance if direction.x > 0.0 else ROAD_HALF_LENGTH - distance, 0.0, lane_offset)
-		else:
-			position = Vector3(lane_offset, 0.0, -ROAD_HALF_LENGTH + distance if direction.z > 0.0 else ROAD_HALF_LENGTH - distance)
-		var vehicle_basis := Basis.looking_at(direction, Vector3.UP)
-		var vehicle_transform := Transform3D(vehicle_basis, position)
+		var route: Dictionary = _routes[int(item["route_index"])]
+		var sample := _sample_route(route, float(item["distance"]))
+		var position: Vector2 = sample["position"]
+		var direction: Vector2 = sample["direction"]
+		var direction_3d := Vector3(direction.x, 0.0, direction.y)
+		_last_directions.append(direction_3d)
+		var vehicle_basis := Basis.looking_at(direction_3d, Vector3.UP)
+		var vehicle_transform := Transform3D(vehicle_basis, Vector3(position.x, 0.0, position.y))
 		if index < _collision_bodies.size():
 			_collision_bodies[index].global_transform = global_transform * vehicle_transform
 		var tint: Color = BODY_COLORS[index % BODY_COLORS.size()]
 		_body_batch.multimesh.set_instance_transform(index, vehicle_transform * Transform3D(Basis(), Vector3(0.0, 0.82, 0.0)))
 		_body_batch.multimesh.set_instance_color(index, tint)
-		_cabin_batch.multimesh.set_instance_transform(index, vehicle_transform * Transform3D(Basis(), Vector3(0.0, 1.53, 0.05)))
+		_cabin_batch.multimesh.set_instance_transform(index, vehicle_transform * Transform3D(Basis(), Vector3(0.0, 1.35, 0.0)))
 		_cabin_batch.multimesh.set_instance_color(index, Color(0.08, 0.16, 0.19))
 		for wheel_index in range(4):
 			var x_side := -1.0 if wheel_index < 2 else 1.0
@@ -138,11 +269,35 @@ func _update_render_batches() -> void:
 			_wheel_batch.multimesh.set_instance_transform(instance_index, vehicle_transform * wheel_local)
 			_wheel_batch.multimesh.set_instance_color(instance_index, Color(0.035, 0.035, 0.035))
 
-func _material() -> StandardMaterial3D:
+func _sample_route(route: Dictionary, distance: float) -> Dictionary:
+	var points: Array[Vector2] = route["points"]
+	var remaining := fposmod(distance, float(route["length"]))
+	for index in range(points.size() - 1):
+		var start := points[index]
+		var finish := points[index + 1]
+		var segment_length := start.distance_to(finish)
+		if segment_length <= 0.001:
+			continue
+		if remaining <= segment_length:
+			var direction := (finish - start).normalized()
+			return {"position": start.lerp(finish, remaining / segment_length), "direction": direction}
+		remaining -= segment_length
+	var last_direction := (points[points.size() - 1] - points[points.size() - 2]).normalized()
+	return {"position": points[points.size() - 1], "direction": last_direction}
+
+func _material(use_vertex_color: bool) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color.WHITE if use_vertex_color else Color(0.08, 0.16, 0.19)
+	material.vertex_color_use_as_albedo = use_vertex_color
+	material.roughness = 0.82
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return material
+
+func _wheel_material() -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color.WHITE
 	material.vertex_color_use_as_albedo = true
-	material.roughness = 0.82
+	material.roughness = 0.94
 	return material
 
 func get_traffic_count() -> int:
@@ -150,6 +305,9 @@ func get_traffic_count() -> int:
 
 func get_traffic_collision_count() -> int:
 	return _collision_bodies.size()
+
+func get_route_count() -> int:
+	return _routes.size()
 
 func get_traffic_distance(index: int) -> float:
 	if index < 0 or index >= _traffic.size():
@@ -160,3 +318,8 @@ func get_traffic_position(index: int) -> Vector3:
 	if index < 0 or index >= _traffic.size():
 		return Vector3.ZERO
 	return _body_batch.multimesh.get_instance_transform(index).origin
+
+func get_traffic_direction(index: int) -> Vector3:
+	if index < 0 or index >= _last_directions.size():
+		return Vector3.ZERO
+	return _last_directions[index]
