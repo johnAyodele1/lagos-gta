@@ -2,6 +2,9 @@ extends SceneTree
 
 const PlayerScript = preload("res://scripts/player_controller.gd")
 const MobileControlsScript = preload("res://scripts/mobile_controls.gd")
+const LegalConsentScript = preload("res://scripts/legal_consent.gd")
+const WorldGeneratorScript = preload("res://scripts/world_generator.gd")
+const VehicleScript = preload("res://scripts/vehicle_controller.gd")
 
 var failures: int = 0
 var assertions: int = 0
@@ -15,6 +18,9 @@ func _run() -> void:
 	_test_mobile_joystick()
 	_test_mobile_button_state()
 	_test_mobile_touch_routing()
+	_test_legal_consent_versioning()
+	_test_world_generation_batching()
+	_test_vehicle_speed_limits()
 	_test_project_scripts_load()
 	if failures > 0:
 		push_error("%d of %d gameplay input tests failed." % [failures, assertions])
@@ -94,9 +100,59 @@ func _test_mobile_touch_routing() -> void:
 	_check(not controls.consume_jump_request(), "app focus loss clears pending jump")
 	controls.free()
 
+func _test_legal_consent_versioning() -> void:
+	_check(not LegalConsentScript.is_current_consent(0), "first launch requires explicit legal consent")
+	_check(LegalConsentScript.is_current_consent(LegalConsentScript.LEGAL_VERSION), "current legal version remains accepted")
+	_check(not LegalConsentScript.is_current_consent(LegalConsentScript.LEGAL_VERSION - 1), "updated terms require renewed acceptance")
+	_check(not LegalConsentScript.is_current_consent(LegalConsentScript.LEGAL_VERSION + 1), "unknown future consent versions are not silently accepted")
+
+func _test_world_generation_batching() -> void:
+	var world = WorldGeneratorScript.new()
+	root.add_child(world)
+	world.generate()
+	var multimesh_count := 0
+	var district_sign_count := 0
+	for child in world.get_children():
+		if child is MultiMeshInstance3D:
+			multimesh_count += 1
+		if child is Label3D:
+			district_sign_count += 1
+	_check(multimesh_count >= 4, "building windows are batched into multimesh instances")
+	_check(district_sign_count >= 2, "district and danfo stop signs are generated")
+	_check(world.get_node_or_null("ParkedDanfoMinibus") == null, "the district does not create a duplicate static danfo when the drivable vehicle is managed by the game scene")
+	_check(world._material_cache.size() < 40, "generated geometry reuses a bounded shared material set")
+	world.queue_free()
+
+func _test_vehicle_speed_limits() -> void:
+	_check(is_equal_approx(VehicleScript.target_speed(1.0), VehicleScript.MAX_FORWARD_SPEED), "danfo forward throttle respects maximum speed")
+	_check(is_equal_approx(VehicleScript.target_speed(-1.0), -VehicleScript.MAX_REVERSE_SPEED), "danfo reverse throttle respects reverse speed limit")
+	_check(is_equal_approx(VehicleScript.target_speed(0.5), VehicleScript.MAX_FORWARD_SPEED * 0.5), "partial throttle scales target speed")
+	_check(is_equal_approx(VehicleScript.target_speed(1.0, true), VehicleScript.MAX_FORWARD_SPEED * 1.15), "sprint control applies a capped danfo boost")
+	_check(is_equal_approx(VehicleScript.target_speed(2.0), VehicleScript.MAX_FORWARD_SPEED), "vehicle throttle clamps invalid input")
+
+	var vehicle = VehicleScript.new()
+	root.add_child(vehicle)
+	var player = PlayerScript.new()
+	root.add_child(player)
+	vehicle.enter_vehicle(player)
+	_check(vehicle.driver == player, "player becomes the active danfo driver")
+	_check(not player.body_mesh.visible, "player body is hidden while seated")
+	_check(not player.is_physics_processing(), "on-foot movement is disabled while driving")
+	_check(player.camera_pivot.get_parent() == vehicle, "third-person camera follows the danfo")
+	vehicle.exit_vehicle()
+	_check(vehicle.driver == null, "danfo releases the driver on exit")
+	_check(player.body_mesh.visible, "player body is restored after exiting")
+	_check(player.is_physics_processing(), "on-foot movement is restored after exiting")
+	_check(player.camera_pivot.get_parent() == player, "camera returns to the player after exiting")
+	player.queue_free()
+	vehicle.queue_free()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
 func _test_project_scripts_load() -> void:
 	var world_script = ResourceLoader.load("res://scripts/world_generator.gd")
 	_check(world_script is GDScript, "world generator script loads without parse errors")
+	var vehicle_script = ResourceLoader.load("res://scripts/vehicle_controller.gd")
+	_check(vehicle_script is GDScript, "vehicle controller script loads without parse errors")
 	var main_script = ResourceLoader.load("res://scripts/main.gd")
 	_check(main_script is GDScript, "main scene script and dependencies load without parse errors")
 
