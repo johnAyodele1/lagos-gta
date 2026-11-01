@@ -17,7 +17,15 @@ var _wheels: Array[Node3D] = []
 
 static func target_speed(throttle: float, boost: bool = false) -> float:
 	var forward_limit := MAX_FORWARD_SPEED * (1.15 if boost else 1.0)
-	return clampf(throttle, -1.0, 1.0) * (MAX_REVERSE_SPEED if throttle < 0.0 else forward_limit)
+	var safe_throttle := clampf(throttle, -1.0, 1.0)
+	return safe_throttle * (MAX_REVERSE_SPEED if safe_throttle < 0.0 else forward_limit)
+
+static func acceleration_for(current: float, target: float) -> float:
+	if absf(current) > 0.5 and current * target < 0.0:
+		return BRAKE_ACCELERATION
+	if absf(target) > absf(current):
+		return ACCELERATION
+	return COAST_DECELERATION
 
 func _ready() -> void:
 	add_to_group("drivable_vehicle")
@@ -141,14 +149,12 @@ func _physics_process(delta: float) -> void:
 	if mobile_controls != null:
 		boost = boost or mobile_controls.is_sprint_pressed()
 	var target := target_speed(throttle, boost)
-	var acceleration := COAST_DECELERATION
-	if absf(target) > absf(current_speed) or signf(target) != signf(current_speed):
-		acceleration = BRAKE_ACCELERATION if absf(current_speed) > 1.0 else ACCELERATION
+	var acceleration := acceleration_for(current_speed, target)
 	current_speed = move_toward(current_speed, target, acceleration * delta)
 
 	var steering := input_vector.x
-	var speed_factor := clampf(absf(current_speed) / MAX_FORWARD_SPEED, 0.15, 1.0)
-	rotation.y -= steering * STEERING_RATE * speed_factor * delta
+	var speed_factor := clampf(absf(current_speed) / MAX_FORWARD_SPEED, 0.0, 1.0)
+	rotation.y -= steering * STEERING_RATE * speed_factor * signf(current_speed) * delta
 	velocity.x = -global_basis.z.x * current_speed
 	velocity.z = -global_basis.z.z * current_speed
 	if not is_on_floor():
