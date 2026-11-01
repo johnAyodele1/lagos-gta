@@ -31,7 +31,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y blender
       - name: Import and optimize CC0 architecture model
-        run: python tools/import_polyhaven_architecture.py
+        run: python tools/import_polyhaven_architecture.py --output-dir assets/models/architecture
+      - name: Convert and decimate source GLTF for mobile
+        run: |
+          set -euo pipefail
+          if [ -f assets/models/architecture/modular_urban_apartments_facade.glb ]; then
+            SOURCE=assets/models/architecture/modular_urban_apartments_facade.glb
+          else
+            SOURCE=$(find assets/models/architecture/source -type f \\( -name "*.gltf" -o -name "*.glb" \\) -print -quit)
+          fi
+          test -n "$SOURCE"
+          blender --background --python tools/optimize_polyhaven_glb.py -- "$SOURCE" assets/models/architecture/modular_urban_apartments_facade.optimized.glb
+          mv assets/models/architecture/modular_urban_apartments_facade.optimized.glb assets/models/architecture/modular_urban_apartments_facade.glb
+          rm -rf assets/models/architecture/source assets/models/architecture/.polyhaven-staging
       - name: Validate optimized model budget
         run: |
           test -s assets/models/architecture/modular_urban_apartments_facade.glb
