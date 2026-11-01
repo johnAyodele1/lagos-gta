@@ -11,6 +11,8 @@ const MAX_BUILDINGS := 2200
 const MAX_ROADS := 450
 const MAX_PROCEDURAL_COMPOUNDS := 24
 const MAX_FACADE_WINDOWS := 14000
+const MAX_FACADE_FRAME_WINDOWS := 5000
+const MAX_SECURITY_GRILLE_BARS := 6000
 const ROAD_COLOR := Color(0.105, 0.115, 0.12)
 const SIDEWALK_COLOR := Color(0.43, 0.42, 0.38)
 const DRAIN_COLOR := Color(0.075, 0.08, 0.075)
@@ -463,6 +465,9 @@ func _add_building_network() -> void:
 	var uvs := PackedVector2Array()
 	var collision_faces := PackedVector3Array()
 	var windows: Array[Transform3D] = []
+	var window_frame_horizontal: Array[Transform3D] = []
+	var window_frame_vertical: Array[Transform3D] = []
+	var window_security_grilles: Array[Transform3D] = []
 	var doors: Array[Transform3D] = []
 	var signs: Array[Transform3D] = []
 	var awnings: Array[Transform3D] = []
@@ -523,7 +528,7 @@ func _add_building_network() -> void:
 				vertices[base], vertices[base + 3], vertices[base + 2]
 			]))
 			if windows.size() < MAX_FACADE_WINDOWS:
-				_append_facade_windows(windows, p0, p1, outward, height)
+				_append_facade_windows(windows, window_frame_horizontal, window_frame_vertical, window_security_grilles, p0, p1, outward, height)
 			var angle := atan2(-direction.y, direction.x)
 			var mid := (p0 + p1) * 0.5
 			parapets.append(Transform3D(
@@ -637,7 +642,10 @@ func _add_building_network() -> void:
 		static_body.add_child(collision)
 		add_child(static_body)
 
-	_add_box_batch("OSMWindows", Vector3(1.0, 1.05, 0.08), windows, WINDOW_COLOR)
+	_add_box_batch("OSMWindows", Vector3(0.90, 0.92, 0.05), windows, WINDOW_COLOR)
+	_add_box_batch("OSMWindowFrameHorizontal", Vector3.ONE, window_frame_horizontal, Color(0.66, 0.62, 0.54))
+	_add_box_batch("OSMWindowFrameVertical", Vector3.ONE, window_frame_vertical, Color(0.66, 0.62, 0.54))
+	_add_box_batch("OSMWindowSecurityGrilles", Vector3.ONE, window_security_grilles, Color(0.13, 0.14, 0.14))
 	_add_box_batch("OSMShopDoors", Vector3(1.25, 2.25, 0.12), doors, Color(0.18, 0.14, 0.11))
 	_add_box_batch("OSMShopSignboards", Vector3(2.6, 0.62, 0.12), signs, Color(0.10, 0.20, 0.22))
 	_add_box_batch("OSMShopAwnings", Vector3(1.0, 0.14, 1.0), awnings, Color(0.72, 0.26, 0.12))
@@ -856,13 +864,23 @@ static func _resolve_building_height(building: Dictionary, footprint_area: float
 		return 11.5
 	return 14.0
 
-func _append_facade_windows(windows: Array[Transform3D], p0: Vector2, p1: Vector2, outward: Vector2, height: float) -> void:
+func _append_facade_windows(
+	windows: Array[Transform3D],
+	frame_horizontal: Array[Transform3D],
+	frame_vertical: Array[Transform3D],
+	security_grilles: Array[Transform3D],
+	p0: Vector2,
+	p1: Vector2,
+	outward: Vector2,
+	height: float
+) -> void:
 	var edge := p1 - p0
 	var length := edge.length()
 	if length < 3.0:
 		return
 	var direction := edge / length
 	var angle := atan2(-direction.y, direction.x)
+	var basis := Basis(Vector3.UP, angle)
 	var columns := mini(4, maxi(1, int(floor(length / 3.2))))
 	var rows := mini(10, maxi(1, int(floor(height / 3.1))))
 	for row in range(rows):
@@ -870,10 +888,35 @@ func _append_facade_windows(windows: Array[Transform3D], p0: Vector2, p1: Vector
 			if windows.size() >= MAX_FACADE_WINDOWS:
 				return
 			var along := float(column + 1) / float(columns + 1)
-			var center := p0.lerp(p1, along) + outward * 0.055
+			var center := p0.lerp(p1, along) + outward * 0.07
 			var y := 1.65 + float(row) * 2.8
-			if y + 0.55 < height:
-				windows.append(Transform3D(Basis(Vector3.UP, angle), Vector3(center.x, y, center.y)))
+			if y + 0.55 >= height:
+				continue
+			windows.append(Transform3D(basis, Vector3(center.x, y, center.y)))
+			if frame_horizontal.size() < MAX_FACADE_FRAME_WINDOWS * 2:
+				for vertical_offset in [-0.53, 0.53]:
+					frame_horizontal.append(Transform3D(
+						basis.scaled(Vector3(1.08, 0.065, 0.07)),
+						Vector3(center.x + outward.x * 0.025, y + float(vertical_offset), center.y + outward.y * 0.025)
+					))
+				for horizontal_offset in [-0.50, 0.50]:
+					frame_vertical.append(Transform3D(
+						basis.scaled(Vector3(0.065, 1.06, 0.07)),
+						Vector3(center.x + outward.x * 0.025, y, center.y + outward.y * 0.025)
+					))
+			# Metal security bars are common on ground-floor Lagos shop and
+			# residential windows. Limit their count for mobile draw/instance cost.
+			if row == 0 and column % 2 == 0 and security_grilles.size() <= MAX_SECURITY_GRILLE_BARS - 3:
+				for grille_index in range(3):
+					var grille_x := (float(grille_index) - 1.0) * 0.25
+					security_grilles.append(Transform3D(
+						basis.scaled(Vector3(0.035, 0.88, 0.045)),
+						Vector3(
+							center.x + basis.x.x * grille_x + outward.x * 0.09,
+							y,
+							center.y + basis.x.z * grille_x + outward.y * 0.09
+						)
+					))
 
 func _polygon_signed_area(outline: Array[Vector2]) -> float:
 	var area := 0.0
