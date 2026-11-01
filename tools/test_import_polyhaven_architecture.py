@@ -2,6 +2,7 @@ import sys
 import tempfile
 import unittest
 import zipfile
+from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -25,6 +26,28 @@ class PolyHavenImporterTests(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["path"], "gltf/2k/zip")
         self.assertEqual(result[0]["size"], 1234)
+
+
+    def test_external_gltf_texture_is_resolved_from_api_manifest(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            scene_path = Path(temp_dir) / "source.gltf"
+            scene_path.write_text(
+                '{"images":[{"uri":"textures/facade_diffuse.jpg"}],"buffers":[]}',
+                encoding="utf-8",
+            )
+            manifest = {
+                "textures": {
+                    "2k": {
+                        "diffuse": {
+                            "url": "https://example.invalid/facade_diffuse.jpg",
+                            "size": 7,
+                        }
+                    }
+                }
+            }
+            with patch.object(importer, "request_bytes", return_value=b"texture"):
+                importer.resolve_gltf_dependencies(scene_path, manifest)
+            self.assertEqual((Path(temp_dir) / "textures/facade_diffuse.jpg").read_bytes(), b"texture")
 
     def test_safe_extract_rejects_path_traversal(self):
         with tempfile.TemporaryDirectory() as temp_dir:
