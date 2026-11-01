@@ -41,88 +41,46 @@ func _ready() -> void:
 	_build_vehicle()
 
 func _build_vehicle() -> void:
-	# The collider is deliberately simpler than the rendered mesh.
+	# Physics footprint matches the imported minibus model (about 4.75m long).
 	var body_collision := CollisionShape3D.new()
 	var body_shape := BoxShape3D.new()
-	# Vehicle model length runs along local Z; width runs along local X.
 	body_shape.size = Vector3(2.35, 2.8, 4.9)
 	body_collision.shape = body_shape
 	body_collision.position.y = 1.35
 	add_child(body_collision)
 
-	var body := MeshInstance3D.new()
-	body.name = "DanfoBodyShell"
-	body.mesh = _create_loft_mesh([
-		{"z": -2.30, "width": 0.78, "bottom": -0.55, "top": 0.22},
-		{"z": -1.88, "width": 1.00, "bottom": -0.62, "top": 0.48},
-		{"z": 1.72, "width": 1.00, "bottom": -0.62, "top": 0.48},
-		{"z": 2.25, "width": 0.80, "bottom": -0.55, "top": 0.22}
-	])
-	body.position.y = 1.15
-	body.material_override = _vehicle_material(Color(0.94, 0.66, 0.07), 0.74)
-	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	add_child(body)
+	var danfo_mesh := load("res://assets/models/vehicles/danfo/car-minibus-citrus.obj") as Mesh
+	if danfo_mesh == null:
+		push_error("Licensed Danfo base mesh failed to import.")
+		return
+	var model := MeshInstance3D.new()
+	model.name = "DanfoModel"
+	model.mesh = danfo_mesh
+	# Source mesh faces +Z; this controller drives forward along local -Z.
+	model.rotation.y = PI
+	model.scale = Vector3.ONE * 2.2
+	model.position = Vector3(0.0, 0.0, -0.18)
+	model.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	add_child(model)
 
-	var cabin := MeshInstance3D.new()
-	cabin.name = "DanfoCabinShell"
-	cabin.mesh = _create_loft_mesh([
-		{"z": -1.58, "width": 0.77, "bottom": 0.0, "top": 0.20},
-		{"z": -1.18, "width": 0.83, "bottom": 0.0, "top": 1.05},
-		{"z": 1.02, "width": 0.83, "bottom": 0.0, "top": 1.05},
-		{"z": 1.45, "width": 0.77, "bottom": 0.0, "top": 0.20}
-	])
-	cabin.position.y = 1.62
-	cabin.material_override = _vehicle_material(Color(0.91, 0.63, 0.055), 0.72)
-	cabin.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	add_child(cabin)
-
-	var glass := _vehicle_material(Color(0.055, 0.14, 0.18), 0.22)
-	glass.metallic = 0.18
+	# Lagos Danfo route board and waist stripes are authored separately so the
+	# imported vehicle mesh keeps its original materials, glass and wheel detail.
 	for side in [-1.0, 1.0]:
-		for window_index in range(3):
-			var window_z := -0.58 + float(window_index) * 0.62
-			_add_plane(
-				Vector2(0.56, 0.70),
-				Vector3(side * 0.846, 2.25, window_z),
-				Vector3(0.0, -side * PI * 0.5, 0.0),
-				glass,
-				"DanfoSideGlass_%s_%s" % [str(side), str(window_index)]
-			)
-		_add_box(Vector3(0.045, 0.82, 0.055), Vector3(side * 0.86, 2.22, -0.90), Color(0.88, 0.61, 0.055))
-		_add_box(Vector3(0.045, 0.82, 0.055), Vector3(side * 0.86, 2.22, 0.95), Color(0.88, 0.61, 0.055))
-		_add_box(Vector3(0.045, 0.82, 0.055), Vector3(side * 0.86, 2.22, 0.34), Color(0.88, 0.61, 0.055))
-
-	_add_plane(Vector2(1.42, 0.72), Vector3(0.0, 2.22, -1.62), Vector3(deg_to_rad(-9.0), PI, 0.0), glass, "DanfoFrontWindshield")
-	_add_plane(Vector2(1.38, 0.70), Vector3(0.0, 2.22, 1.48), Vector3(deg_to_rad(8.0), 0.0, 0.0), glass, "DanfoRearWindow")
-
-	# Sliding passenger door, black waist stripe and front/rear bumpers.
-	for side in [-1.0, 1.0]:
-		_add_box(Vector3(0.055, 1.45, 0.92), Vector3(side * 1.01, 1.28, 0.88), Color(0.84, 0.59, 0.055))
-		_add_box(Vector3(0.055, 0.12, 3.7), Vector3(side * 1.015, 1.03, 0.0), Color(0.035, 0.04, 0.035))
-	_add_box(Vector3(0.16, 0.18, 2.05), Vector3(0.0, 0.72, -2.30), Color(0.12, 0.13, 0.13))
-	_add_box(Vector3(0.16, 0.18, 2.05), Vector3(0.0, 0.72, 2.28), Color(0.12, 0.13, 0.13))
-	_add_box(Vector3(0.10, 0.28, 1.85), Vector3(0.0, 1.02, 0.90), Color(0.76, 0.48, 0.035))
-
-	var headlight := _vehicle_material(Color(1.0, 0.91, 0.68), 0.24)
-	headlight.emission_enabled = true
-	headlight.emission = Color(0.8, 0.64, 0.32)
-	var taillight := _vehicle_material(Color(0.68, 0.045, 0.025), 0.28)
-	for side in [-1.0, 1.0]:
-		_add_box(Vector3(0.30, 0.18, 0.06), Vector3(side * 0.58, 0.91, -2.34), Color(0.97, 0.88, 0.63))
-		_add_box(Vector3(0.22, 0.28, 0.06), Vector3(side * 0.68, 0.92, 2.29), Color(0.72, 0.045, 0.025))
-		_add_box(Vector3(0.08, 0.12, 0.24), Vector3(side * 1.05, 2.05, -1.35), Color(0.12, 0.13, 0.12))
-		_add_wheel(Vector3(side * 1.02, 0.50, -1.55), 0.48, 0.25, Color(0.045, 0.045, 0.045))
-		_add_wheel(Vector3(side * 1.02, 0.50, 1.48), 0.48, 0.25, Color(0.045, 0.045, 0.045))
-		_add_wheel(Vector3(side * 1.16, 0.50, -1.55), 0.24, 0.08, Color(0.56, 0.57, 0.54))
-		_add_wheel(Vector3(side * 1.16, 0.50, 1.48), 0.24, 0.08, Color(0.56, 0.57, 0.54))
+		var stripe := MeshInstance3D.new()
+		var stripe_mesh := BoxMesh.new()
+		stripe_mesh.size = Vector3(0.035, 0.11, 3.35)
+		stripe.mesh = stripe_mesh
+		stripe.position = Vector3(side * 1.055, 1.02, 0.0)
+		stripe.material_override = _vehicle_material(Color(0.045, 0.045, 0.04), 0.78)
+		add_child(stripe)
 
 	var route_label := Label3D.new()
 	route_label.name = "DanfoDestinationBoard"
 	route_label.text = "YABA  /  TEJUOSHO"
 	route_label.font_size = 26
 	route_label.outline_size = 5
-	route_label.position = Vector3(0.0, 2.54, -2.31)
-	route_label.modulate = Color(1.0, 0.91, 0.62)
+	route_label.position = Vector3(0.0, 2.30, -2.28)
+	route_label.modulate = Color(1.0, 0.94, 0.68)
 	add_child(route_label)
 
 func _create_loft_mesh(sections: Array[Dictionary]) -> ArrayMesh:
