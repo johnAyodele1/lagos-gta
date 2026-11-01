@@ -39,5 +39,8 @@ jobs:
       - name: Run gameplay input tests
         run: '"$GODOT_BIN" --headless --path . --script res://tests/run_tests.gd'
 
-      - name: Run prototype headlessly
-        run: '"$GODOT_BIN" --headless --path . --quit-after 5'
+      - name: Run prototype with the Compatibility renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a "$GODOT_BIN" --path . --rendering-method gl_compatibility --quit-after 5
