@@ -258,7 +258,7 @@ func _test_pedestrians() -> void:
 	pedestrians._process(1.0)
 	_check(pedestrians.get_pedestrian_distance(0) > starting_distance, "pedestrians walk along their mapped sidewalk routes")
 	_check(pedestrians.get_pedestrian_position(0) != starting_position, "pedestrian render transforms update as they walk")
-	_check(pedestrians.get_child_count() == 8, "pedestrian bodies use four shared mesh batches plus four collision proxies")
+	_check(pedestrians.get_child_count() == 9, "pedestrian bodies use five shared mesh batches plus four collision proxies")
 	pedestrians.queue_free()
 
 func _sample_osm_roads() -> Array[Dictionary]:
