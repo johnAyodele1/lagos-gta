@@ -48,14 +48,14 @@ func _build_environment() -> void:
 		RenderingServer.directional_shadow_atlas_set_size(1024, true)
 	add_child(sun)
 
-func _spawn_vehicle(world: Node) -> void:
+func _spawn_vehicle(world: OSMWorldGenerator) -> void:
 	var vehicle = VehicleScript.new()
 	vehicle.name = "YabaDanfo"
 	vehicle.position = world.get_vehicle_spawn_position()
 	vehicle.rotation.y = world.get_spawn_rotation_y()
 	add_child(vehicle)
 
-func _spawn_player(world: Node) -> void:
+func _spawn_player(world: OSMWorldGenerator) -> void:
 	var player = PlayerScript.new()
 	player.name = "Player"
 	player.position = world.get_player_spawn_position()
