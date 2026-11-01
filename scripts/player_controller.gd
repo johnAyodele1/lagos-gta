@@ -68,14 +68,15 @@ func _build_body() -> void:
 	_right_leg_pivot = _create_limb(Vector3(0.16, -0.32, 0.0), 0.15, 0.82, Color(0.10, 0.12, 0.14))
 
 	camera_pivot = Node3D.new()
-	camera_pivot.position.y = 1.55
+	camera_pivot.position.y = 1.72
 	add_child(camera_pivot)
 
 	camera = Camera3D.new()
-	camera.position = Vector3(0.0, 0.35, 4.8)
-	camera.rotation.x = deg_to_rad(-9.0)
+	camera.position = Vector3(0.0, 2.15, 7.2)
+	camera.rotation.x = deg_to_rad(-14.0)
+	camera.fov = 76.0
 	camera.current = true
-	camera.far = 180.0
+	camera.far = 220.0
 	camera_pivot.add_child(camera)
 
 func _character_material(color: Color) -> StandardMaterial3D:
