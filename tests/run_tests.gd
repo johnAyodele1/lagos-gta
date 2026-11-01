@@ -197,6 +197,7 @@ func _test_osm_world_generator() -> void:
 	_check(world.get_node_or_null("OSMBuildingFootprintsAndFacades") != null, "OSM building footprints become extruded 3D building geometry")
 	_check(world.get_node_or_null("OSMBuildingCollision") != null, "OSM building geometry receives a static collision mesh")
 	_check(world.get_node_or_null("OSMBarrierCollision") != null, "mapped walls and fences receive static collision geometry")
+	_check(world.get_node_or_null("ProceduralCompoundWallCollision") != null, "residential building footprints receive art-directed Lagos compound walls")
 	var player = PlayerScript.new()
 	root.add_child(player)
 	player.global_position = Vector3(0.0, 0.5, 0.0)
@@ -213,6 +214,14 @@ func _test_osm_world_generator() -> void:
 	var fence_collision = fence_player.move_and_collide(Vector3(-10.0, 0.0, 0.0))
 	_check(fence_collision != null, "player capsule collides with an OSM-mapped compound wall")
 	fence_player.queue_free()
+	await physics_frame
+	var compound_player = PlayerScript.new()
+	root.add_child(compound_player)
+	compound_player.global_position = Vector3(3.0, 0.5, -6.2)
+	await physics_frame
+	var compound_collision = compound_player.move_and_collide(Vector3(6.0, 0.0, 0.0))
+	_check(compound_collision != null, "player cannot walk through art-directed residential compound walls")
+	compound_player.queue_free()
 	await physics_frame
 	var test_vehicle = VehicleScript.new()
 	root.add_child(test_vehicle)
