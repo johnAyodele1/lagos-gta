@@ -8,6 +8,7 @@ const WALKER_COUNT := 4
 const MAX_SIDEWALK_ROUTES := 4
 const WORLD_COLLISION_LAYER: int = 1
 const PLAYER_COLLISION_LAYER: int = 4
+const VEHICLE_COLLISION_LAYER: int = 2
 const NPC_COLLISION_LAYER: int = 8
 const CharacterMeshFactoryScript = preload("res://scripts/character_mesh_factory.gd")
 
@@ -186,7 +187,7 @@ func _create_collision_proxies() -> void:
 		var body := AnimatableBody3D.new()
 		body.name = "PedestrianCollision_%02d" % index
 		body.collision_layer = NPC_COLLISION_LAYER
-		body.collision_mask = WORLD_COLLISION_LAYER | PLAYER_COLLISION_LAYER
+		body.collision_mask = WORLD_COLLISION_LAYER | PLAYER_COLLISION_LAYER | VEHICLE_COLLISION_LAYER
 		body.sync_to_physics = true
 		var collision := CollisionShape3D.new()
 		var capsule := CapsuleShape3D.new()
