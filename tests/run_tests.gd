@@ -4,6 +4,7 @@ const PlayerScript = preload("res://scripts/player_controller.gd")
 const MobileControlsScript = preload("res://scripts/mobile_controls.gd")
 const LegalConsentScript = preload("res://scripts/legal_consent.gd")
 const WorldGeneratorScript = preload("res://scripts/world_generator.gd")
+const VehicleScript = preload("res://scripts/vehicle_controller.gd")
 
 var failures: int = 0
 var assertions: int = 0
@@ -19,6 +20,7 @@ func _run() -> void:
 	_test_mobile_touch_routing()
 	_test_legal_consent_versioning()
 	_test_world_generation_batching()
+	_test_vehicle_speed_limits()
 	_test_project_scripts_load()
 	if failures > 0:
 		push_error("%d of %d gameplay input tests failed." % [failures, assertions])
@@ -117,13 +119,22 @@ func _test_world_generation_batching() -> void:
 			district_sign_count += 1
 	_check(multimesh_count >= 4, "building windows are batched into multimesh instances")
 	_check(district_sign_count >= 2, "district and danfo stop signs are generated")
-	_check(world.get_node_or_null("ParkedDanfoMinibus") != null, "Yaba street includes a parked danfo minibus landmark")
+	_check(world.get_node_or_null("ParkedDanfoMinibus") == null, "the district does not create a duplicate static danfo when the drivable vehicle is managed by the game scene")
 	_check(world._material_cache.size() < 40, "generated geometry reuses a bounded shared material set")
 	world.queue_free()
+
+func _test_vehicle_speed_limits() -> void:
+	_check(is_equal_approx(VehicleScript.target_speed(1.0), VehicleScript.MAX_FORWARD_SPEED), "danfo forward throttle respects maximum speed")
+	_check(is_equal_approx(VehicleScript.target_speed(-1.0), -VehicleScript.MAX_REVERSE_SPEED), "danfo reverse throttle respects reverse speed limit")
+	_check(is_equal_approx(VehicleScript.target_speed(0.5), VehicleScript.MAX_FORWARD_SPEED * 0.5), "partial throttle scales target speed")
+	_check(is_equal_approx(VehicleScript.target_speed(1.0, true), VehicleScript.MAX_FORWARD_SPEED * 1.15), "sprint control applies a capped danfo boost")
+	_check(is_equal_approx(VehicleScript.target_speed(2.0), VehicleScript.MAX_FORWARD_SPEED), "vehicle throttle clamps invalid input")
 
 func _test_project_scripts_load() -> void:
 	var world_script = ResourceLoader.load("res://scripts/world_generator.gd")
 	_check(world_script is GDScript, "world generator script loads without parse errors")
+	var vehicle_script = ResourceLoader.load("res://scripts/vehicle_controller.gd")
+	_check(vehicle_script is GDScript, "vehicle controller script loads without parse errors")
 	var main_script = ResourceLoader.load("res://scripts/main.gd")
 	_check(main_script is GDScript, "main scene script and dependencies load without parse errors")
 
