@@ -31,7 +31,9 @@ USER_AGENT = "LagosGTA-OSMImporter/1.0 (https://github.com/johnAyodele1/lagos-gt
 SELECTED_TAGS = (
     "name", "highway", "surface", "width", "lanes", "oneway",
     "building", "building:levels", "height", "roof:shape", "barrier", "fence_type",
-    "shop", "amenity", "landuse", "addr:street",
+    "shop", "amenity", "landuse", "addr:street", "addr:housenumber",
+    "building:material", "building:colour", "roof:material", "roof:colour", "roof:levels",
+    "building:min_level", "min_height",
 )
 
 ROAD_WIDTHS = {
