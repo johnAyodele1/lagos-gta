@@ -253,6 +253,7 @@ func _add_keke_tricycle() -> void:
 		_add_cylinder(keke, 0.30, 0.18, Vector3(-0.72, 0.32, side * 0.65), Color(0.07, 0.07, 0.07))
 	_add_cylinder(keke, 0.30, 0.18, Vector3(0.78, 0.32, 0.0), Color(0.07, 0.07, 0.07))
 	var route_label := Label3D.new()
+	route_label.font = ThemeDB.fallback_font
 	route_label.text = "KEKE"
 	route_label.font_size = 20
 	route_label.outline_size = 4
@@ -263,6 +264,7 @@ func _add_keke_tricycle() -> void:
 func _add_landmarks() -> void:
 	# A compact neighbourhood sign gives this first blockout a recognisable district identity.
 	var district_sign := Label3D.new()
+	district_sign.font = ThemeDB.fallback_font
 	district_sign.text = "YABA  |  LAGOS"
 	district_sign.font_size = 72
 	district_sign.outline_size = 10
@@ -277,6 +279,7 @@ func _add_landmarks() -> void:
 		_add_box(self, Vector3(0.14, 2.7, 0.14), Vector3(16.0 + offset, 1.35, 15.5), Color(0.24, 0.22, 0.18))
 		_add_box(self, Vector3(0.14, 2.7, 0.14), Vector3(16.0 + offset, 1.35, 18.5), Color(0.24, 0.22, 0.18))
 	var stop_label := Label3D.new()
+	stop_label.font = ThemeDB.fallback_font
 	stop_label.text = "DANFO  |  YABA"
 	stop_label.font_size = 32
 	stop_label.outline_size = 6
