@@ -581,7 +581,9 @@ func _add_market_stalls() -> void:
 	# Street trading is part of the Yaba streetscape. Place a bounded set of
 	# stalls at mapped commercial frontages, not at arbitrary grid positions.
 	const MAX_STALLS := 24
-	var umbrella_transforms: Array[Transform3D] = []
+	var red_umbrella_transforms: Array[Transform3D] = []
+	var yellow_umbrella_transforms: Array[Transform3D] = []
+	var green_umbrella_transforms: Array[Transform3D] = []
 	var table_transforms: Array[Transform3D] = []
 	var pole_transforms: Array[Transform3D] = []
 	var leg_transforms: Array[Transform3D] = []
@@ -624,7 +626,11 @@ func _add_market_stalls() -> void:
 			continue
 		var angle := atan2(-direction.y, direction.x)
 		var rotation := Basis(Vector3.UP, angle)
-		umbrella_transforms.append(Transform3D(rotation.scaled(Vector3(1.15, 1.0, 1.15)), Vector3(stall_position.x, 2.35, stall_position.y)))
+		var umbrella_transform := Transform3D(rotation.scaled(Vector3(1.15, 1.0, 1.15)), Vector3(stall_position.x, 2.35, stall_position.y))
+		match stall_count % 3:
+			0: red_umbrella_transforms.append(umbrella_transform)
+			1: yellow_umbrella_transforms.append(umbrella_transform)
+			2: green_umbrella_transforms.append(umbrella_transform)
 		table_transforms.append(Transform3D(rotation.scaled(Vector3(1.55, 0.12, 0.88)), Vector3(stall_position.x, 0.92, stall_position.y)))
 		pole_transforms.append(Transform3D(Basis().scaled(Vector3(0.035, 2.2, 0.035)), Vector3(stall_position.x, 1.1, stall_position.y)))
 		for side_x in [-0.65, 0.65]:
@@ -649,7 +655,9 @@ func _add_market_stalls() -> void:
 		stall_count += 1
 	if stall_count == 0:
 		return
-	_add_umbrella_batch("YabaMarketUmbrellas", umbrella_transforms, Color(0.72, 0.16, 0.12))
+	_add_umbrella_batch("YabaMarketUmbrellasRed", red_umbrella_transforms, Color(0.72, 0.16, 0.12))
+	_add_umbrella_batch("YabaMarketUmbrellasYellow", yellow_umbrella_transforms, Color(0.84, 0.68, 0.22))
+	_add_umbrella_batch("YabaMarketUmbrellasGreen", green_umbrella_transforms, Color(0.10, 0.38, 0.25))
 	_add_box_batch("YabaMarketTables", Vector3.ONE, table_transforms, Color(0.30, 0.23, 0.16))
 	_add_cylinder_batch("YabaMarketUmbrellaPoles", 0.035, 1.0, pole_transforms, Color(0.18, 0.17, 0.15))
 	_add_cylinder_batch("YabaMarketTableLegs", 0.035, 0.85, leg_transforms, Color(0.18, 0.17, 0.15))
