@@ -26,6 +26,8 @@ func _run() -> void:
 	_test_vehicle_speed_limits()
 	_test_ambient_traffic()
 	_test_pedestrians()
+	await _test_player_building_collision()
+	await _test_traffic_collision()
 	_test_project_scripts_load()
 	if failures > 0:
 		push_error("%d of %d gameplay input tests failed." % [failures, assertions])
@@ -196,7 +198,8 @@ func _test_ambient_traffic() -> void:
 	traffic._process(1.0)
 	_check(traffic.get_traffic_distance(0) > starting_distance, "ambient traffic advances every vehicle along its lane")
 	_check(traffic.get_traffic_position(0).z > starting_position.z, "north-south traffic advances along the road instead of remaining static")
-	_check(traffic.get_child_count() == 3, "all background traffic is rendered through three shared multimesh batches")
+	_check(traffic.get_child_count() == 11, "traffic uses three shared render batches plus eight lightweight collision proxies")
+	_check(traffic.get_traffic_collision_count() == 8, "every ambient traffic vehicle has a physics collision proxy")
 	traffic.queue_free()
 
 
@@ -215,6 +218,35 @@ func _test_pedestrians() -> void:
 	_check(pedestrians.get_pedestrian_position(0) != starting_position, "pedestrian render transforms update as they walk")
 	_check(pedestrians.get_child_count() == 4, "pedestrian bodies and animated limbs use four shared multimesh batches")
 	pedestrians.queue_free()
+
+func _test_player_building_collision() -> void:
+	var world = WorldGeneratorScript.new()
+	root.add_child(world)
+	world.generate()
+	var player = PlayerScript.new()
+	root.add_child(player)
+	player.global_position = Vector3(13.0, 0.5, 0.0)
+	await physics_frame
+	var collision = player.move_and_collide(Vector3(15.0, 0.0, 0.0))
+	_check(collision != null, "player capsule collides with generated building walls")
+	_check(player.global_position.x < 20.5, "player cannot move through a generated building footprint")
+	player.queue_free()
+	world.queue_free()
+	await physics_frame
+
+func _test_traffic_collision() -> void:
+	var traffic = TrafficManagerScript.new()
+	root.add_child(traffic)
+	var player = PlayerScript.new()
+	root.add_child(player)
+	player.global_position = Vector3(-3.1, 0.5, -5.0)
+	await physics_frame
+	var collision = player.move_and_collide(Vector3(0.0, 0.0, 10.0))
+	_check(collision != null, "player capsule collides with an ambient traffic vehicle")
+	_check(player.global_position.z < 1.5, "player cannot walk through an ambient traffic vehicle")
+	player.queue_free()
+	traffic.queue_free()
+	await physics_frame
 
 func _test_project_scripts_load() -> void:
 	var world_script = ResourceLoader.load("res://scripts/world_generator.gd")
