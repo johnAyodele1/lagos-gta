@@ -309,6 +309,11 @@ func _test_vehicle_speed_limits() -> void:
 	root.add_child(vehicle)
 	var player = PlayerScript.new()
 	root.add_child(player)
+	for visual_child in vehicle.get_children():
+		if visual_child is MeshInstance3D or visual_child is Label3D:
+			visual_child.visible = false
+	if player._rigged_character != null:
+		player._rigged_character.visible = false
 	await physics_frame
 	_check(player._rigged_animation_player != null and player._rigged_animation_player.has_animation("HumanArmature|Man_Walk"), "player spawns with a rigged character and authored animation clips")
 	_check(player.camera_pivot != null and player.camera != null, "player character rig includes a working follow camera")
