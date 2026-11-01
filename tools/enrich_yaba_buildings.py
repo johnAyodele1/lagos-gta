@@ -10,6 +10,7 @@ DEFAULT_INPUT = ROOT / "assets/data/yaba_osm.json"
 LAT, LON, ZOOM = 6.51147, 3.37000, 6
 URL = "https://datapub.gfz.de/download/10.5880.GFZ.LKUT.2025.002-Caweb/2025-002_Oostwegel-et-al_data/building.{quadkey}.gpkg.bz2"
 UA = "LagosGTA-OpenBuildingMapImporter/1.0 (https://github.com/johnAyodele1/lagos-gta)"
+MAX_COMPRESSED_BYTES = 1024 * 1024 * 1024
 
 def quadkey_for(lat: float, lon: float, zoom: int = ZOOM) -> str:
     n = 1 << zoom
