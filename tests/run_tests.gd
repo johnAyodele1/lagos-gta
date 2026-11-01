@@ -281,6 +281,9 @@ func _test_osm_world_generator() -> void:
 	var building_visual := world.get_node_or_null("OSMBuildingFootprintsAndFacades") as MeshInstance3D
 	_check(building_visual != null and building_visual.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON, "mapped buildings cast shadows for street depth")
 	if DisplayServer.get_name() != "headless":
+		var ground_visual := world.get_node_or_null("YabaDistrictGround") as MeshInstance3D
+		var ground_material := ground_visual.material_override as StandardMaterial3D if ground_visual != null else null
+		_check(ground_material != null and ground_material.uv1_scale.x >= 100.0 and ground_material.normal_scale <= 0.1, "district soil texture tiles at real-world scale without exaggerated ground ripples")
 		var road_material: StandardMaterial3D
 		if road_visual != null:
 			road_material = road_visual.mesh.surface_get_material(0) as StandardMaterial3D
