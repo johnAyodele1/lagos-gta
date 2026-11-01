@@ -233,7 +233,8 @@ func _test_osm_world_generator() -> void:
 	_check(world.get_node_or_null("OSMBuildingFootprintsAndFacades") != null, "OSM building footprints become extruded 3D building geometry")
 	var building_visual := world.get_node_or_null("OSMBuildingFootprintsAndFacades") as MeshInstance3D
 	_check(building_visual != null and building_visual.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON, "mapped buildings cast shadows for street depth")
-	_check(world.get_node_or_null("YabaShopSign_00") != null, "commercial OSM buildings display their mapped shop name")
+	var shop_sign := world.get_node_or_null("YabaShopSign_00") as Label3D
+	_check(shop_sign != null and shop_sign.font != null and shop_sign.material_override != null, "3D shop signage uses a bundled font and explicit text material")
 	_check(world.get_node_or_null("OSMBuildingCollision") != null, "OSM building geometry receives a static collision mesh")
 	_check(world.get_node_or_null("OSMBarrierCollision") != null, "mapped walls and fences receive static collision geometry")
 	_check(world.get_node_or_null("ProceduralCompoundWallCollision") != null, "residential building footprints receive art-directed Lagos compound walls")
