@@ -4,7 +4,7 @@ class_name CharacterMeshFactory
 ## Shared low-poly human body meshes. The torso is a tapered organic loft,
 ## not a box or a single capsule; limb animation remains inexpensive.
 
-static func create_torso_mesh(segments: int = 12) -> ArrayMesh:
+static func create_torso_mesh(segments: int = 12, material: Material = null) -> ArrayMesh:
 	var sections: Array[Dictionary] = [
 		{"y": -0.42, "rx": 0.22, "rz": 0.13},
 		{"y": -0.27, "rx": 0.24, "rz": 0.145},
@@ -55,4 +55,6 @@ static func create_torso_mesh(segments: int = 12) -> ArrayMesh:
 				surface.add_vertex(ring[next_index])
 				surface.add_vertex(ring[index])
 	surface.generate_normals()
+	if material != null:
+		surface.set_material(material)
 	return surface.commit()
