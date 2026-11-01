@@ -336,6 +336,7 @@ func _add_building_network() -> void:
 	var normals := PackedVector3Array()
 	var colors := PackedColorArray()
 	var indices := PackedInt32Array()
+	var uvs := PackedVector2Array()
 	var collision_faces := PackedVector3Array()
 	var windows: Array[Transform3D] = []
 	var doors: Array[Transform3D] = []
@@ -383,6 +384,12 @@ func _add_building_network() -> void:
 			for _vertex in range(4):
 				normals.append(normal)
 				colors.append(base_color)
+			uvs.append_array(PackedVector2Array([
+				Vector2(0.0, 0.0),
+				Vector2(length / 4.0, 0.0),
+				Vector2(length / 4.0, height / 4.0),
+				Vector2(0.0, height / 4.0)
+			]))
 			indices.append_array(PackedInt32Array([base, base + 2, base + 1, base, base + 3, base + 2]))
 			collision_faces.append_array(PackedVector3Array([
 				vertices[base], vertices[base + 2], vertices[base + 1],
@@ -407,6 +414,7 @@ func _add_building_network() -> void:
 				vertices.append(Vector3(point.x, height, point.y))
 				normals.append(Vector3.UP)
 				colors.append(base_color.darkened(0.22))
+				uvs.append(Vector2(point.x / 8.0, point.y / 8.0))
 			indices.append_array(PackedInt32Array([roof_base, roof_base + 1, roof_base + 2]))
 			collision_faces.append_array(PackedVector3Array([
 				vertices[roof_base], vertices[roof_base + 1], vertices[roof_base + 2],
@@ -441,11 +449,14 @@ func _add_building_network() -> void:
 	building_arrays[Mesh.ARRAY_VERTEX] = vertices
 	building_arrays[Mesh.ARRAY_NORMAL] = normals
 	building_arrays[Mesh.ARRAY_COLOR] = colors
+	building_arrays[Mesh.ARRAY_TEX_UV] = uvs
 	building_arrays[Mesh.ARRAY_INDEX] = indices
 	var building_mesh := ArrayMesh.new()
 	if not vertices.is_empty() and not indices.is_empty():
 		building_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, building_arrays)
-		building_mesh.surface_set_material(0, _material("building_vertex", Color.WHITE, 0.92, true))
+		var facade_material := _material("building_vertex", Color.WHITE, 0.94, true)
+		facade_material.albedo_texture = _make_noise_texture(43, 0.14)
+		building_mesh.surface_set_material(0, facade_material)
 		var building_instance := MeshInstance3D.new()
 		building_instance.name = "OSMBuildingFootprintsAndFacades"
 		building_instance.mesh = building_mesh
