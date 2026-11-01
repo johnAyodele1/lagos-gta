@@ -33,6 +33,7 @@ func _validate_render_materials(scene: Node) -> bool:
 		var label := node as Label3D
 		if label.material_override == null:
 			missing_materials += 1
+			print("PREVIEW_NULL_LABEL_MATERIAL_PATH=", label.get_path())
 	print("PREVIEW_EMPTY_RENDER_NODES=", empty_meshes)
 	print("PREVIEW_MISSING_BASE_MATERIALS=", missing_materials)
 	if empty_meshes > 0 or missing_materials > 0:
