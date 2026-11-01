@@ -237,8 +237,8 @@ func _test_osm_world_generator() -> void:
 	var sample := {
 		"schema_version": 1,
 		"roads": [
-			{"id": "100", "name": "Hughes Avenue", "highway": "residential", "width_m": 6.0, "coordinates": [[-20.0, 0.0], [20.0, 0.0]]},
-			{"id": "101", "name": "Herbert Macaulay Way", "highway": "secondary", "width_m": 8.0, "coordinates": [[0.0, -20.0], [0.0, 20.0]]}
+			{"id": "100", "name": "Hughes Avenue", "highway": "residential", "surface": "unpaved", "width_m": 6.0, "coordinates": [[-20.0, 0.0], [20.0, 0.0]]},
+			{"id": "101", "name": "Herbert Macaulay Way", "highway": "secondary", "surface": "paved", "width_m": 8.0, "coordinates": [[0.0, -20.0], [0.0, 20.0]]}
 		],
 		"buildings": [
 			{"id": "200", "building": "residential", "height_m": 6.2, "outline": [[5.0, -5.0], [10.0, -5.0], [10.0, 5.0], [5.0, 5.0], [5.0, -5.0]]},
@@ -254,7 +254,7 @@ func _test_osm_world_generator() -> void:
 	_check(world.get_road_count() == 2, "OSM world generator retains mapped street centre-lines")
 	_check(world.get_building_count() == 2, "OSM world generator retains real building footprints")
 	_check(world.get_barrier_count() == 1, "OSM world generator retains mapped compound barriers")
-	_check(world.get_node_or_null("OSMRoadSurfaces") != null, "OSM roads are generated as continuous 3D road surfaces")
+	_check(world.get_node_or_null("OSMPavedRoadSurfaces") != null and world.get_node_or_null("OSMUnpavedLateriteRoadSurfaces") != null, "OSM paved and unpaved streets generate distinct 3D road surfaces")
 	_check(world.get_node_or_null("OSMRoadsideDrainage") != null, "mapped streets include roadside drainage channels")
 	_check(world.get_node_or_null("OSMRoadsideCurbs") != null and world.get_node_or_null("OSMDrainageGrates") != null, "mapped streets include raised concrete kerbs and periodic drain grates")
 	_check(world.get_node_or_null("YabaMarketUmbrellasRed") != null and world.get_node_or_null("YabaMarketTables") != null, "mapped commercial frontages receive recognizable roadside market stalls")
@@ -273,7 +273,9 @@ func _test_osm_world_generator() -> void:
 		_check(stall_hit != null, "player capsule collides with a Yaba roadside market stall")
 		stall_player.queue_free()
 		await physics_frame
-	var road_visual := world.get_node_or_null("OSMRoadSurfaces") as MeshInstance3D
+	var road_visual := world.get_node_or_null("OSMPavedRoadSurfaces") as MeshInstance3D
+	var laterite_visual := world.get_node_or_null("OSMUnpavedLateriteRoadSurfaces") as MeshInstance3D
+	_check(laterite_visual != null, "OSM unpaved streets use a separate laterite material batch")
 	_check(world.get_node_or_null("OSMRoadMarkings") != null, "mapped secondary roads receive lane markings")
 	_check(world.get_node_or_null("OSMBuildingFootprintsAndFacades") != null, "OSM building footprints become extruded 3D building geometry")
 	var building_visual := world.get_node_or_null("OSMBuildingFootprintsAndFacades") as MeshInstance3D
