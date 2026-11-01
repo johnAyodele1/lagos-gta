@@ -65,6 +65,7 @@ func generate_from_data(data: Dictionary) -> bool:
 	_add_road_network()
 	_add_building_network()
 	_add_barrier_network()
+	_add_residential_compounds()
 	_add_utility_network()
 	_add_road_labels()
 	_generated = true
@@ -610,6 +611,115 @@ func _add_barrier_network() -> void:
 	_add_box_batch("OSMCompoundFences", Vector3.ONE, fence_transforms, Color(0.22, 0.23, 0.21))
 	if collider_count > 0:
 		add_child(collision_root)
+
+func _nearest_road_distance(point: Vector2) -> float:
+	var nearest := INF
+	for road in _roads:
+		var points := _points_from_coordinates(road.get("coordinates", []))
+		for index in range(points.size() - 1):
+			var closest := Geometry2D.get_closest_point_to_segment(point, points[index], points[index + 1])
+			nearest = minf(nearest, point.distance_to(closest))
+	return nearest
+
+func _add_residential_compounds() -> void:
+	# OSM rarely maps individual compound boundaries consistently. These are
+	# clearly art-directed low walls around isolated residential footprints,
+	# not claims that the OSM building outline is a surveyed property boundary.
+	var wall_transforms: Array[Transform3D] = []
+	var collision_root := Node3D.new()
+	collision_root.name = "ProceduralCompoundWallCollision"
+	var compound_count := 0
+	for building in _buildings:
+		if compound_count >= 60:
+			break
+		var building_type := str(building.get("building", "yes"))
+		if building_type not in ["house", "detached", "semidetached_house", "residential"]:
+			continue
+		var outline: Array[Vector2] = []
+		for coordinate in building.get("outline", []):
+			outline.append(Vector2(float(coordinate[0]), float(coordinate[1])))
+		if outline.size() > 1 and outline[0].is_equal_approx(outline[outline.size() - 1]):
+			outline.pop_back()
+		if outline.size() < 4:
+			continue
+		if absf(_polygon_signed_area(outline)) > 180.0:
+			continue
+		var centroid := _outline_centroid_from_vectors(outline)
+		if _nearest_road_distance(centroid) > 22.0:
+			continue
+		var isolated := true
+		for other in _buildings:
+			if other.get("id", "") == building.get("id", ""):
+				continue
+			var other_centroid := _outline_centroid(other.get("outline", []))
+			if other_centroid.distance_to(centroid) < 8.0:
+				isolated = false
+				break
+		if not isolated:
+			continue
+
+		var expanded: Array[Vector2] = []
+		for point in outline:
+			expanded.append(point + (point - centroid).normalized() * 1.35)
+		var gate_edge := 0
+		var gate_distance := INF
+		for edge_index in range(expanded.size()):
+			var midpoint := (expanded[edge_index] + expanded[(edge_index + 1) % expanded.size()]) * 0.5
+			var road_distance := _nearest_road_distance(midpoint)
+			if road_distance < gate_distance:
+				gate_distance = road_distance
+				gate_edge = edge_index
+
+		for edge_index in range(expanded.size()):
+			var p0 := expanded[edge_index]
+			var p1 := expanded[(edge_index + 1) % expanded.size()]
+			var edge := p1 - p0
+			var length := edge.length()
+			if length < 0.8:
+				continue
+			var direction := edge / length
+			var angle := atan2(-direction.y, direction.x)
+			if edge_index == gate_edge and length > 3.2:
+				var gate_center := (p0 + p1) * 0.5
+				var left_end := gate_center - direction * 1.1
+				var right_start := gate_center + direction * 1.1
+				_append_compound_wall_segment(p0, left_end, angle, wall_transforms, collision_root)
+				_append_compound_wall_segment(right_start, p1, angle, wall_transforms, collision_root)
+			else:
+				_append_compound_wall_segment(p0, p1, angle, wall_transforms, collision_root)
+		compound_count += 1
+
+	_add_box_batch("ArtDirectedResidentialCompoundWalls", Vector3.ONE, wall_transforms, Color(0.57, 0.51, 0.43))
+	if collision_root.get_child_count() > 0:
+		add_child(collision_root)
+
+func _append_compound_wall_segment(
+	p0: Vector2,
+	p1: Vector2,
+	angle: float,
+	wall_transforms: Array[Transform3D],
+	collision_root: Node3D
+) -> void:
+	var length := p0.distance_to(p1)
+	if length < 0.35:
+		return
+	var midpoint := (p0 + p1) * 0.5
+	wall_transforms.append(Transform3D(
+		Basis(Vector3.UP, angle).scaled(Vector3(length, 1.45, 0.16)),
+		Vector3(midpoint.x, 0.725, midpoint.y)
+	))
+	var body := StaticBody3D.new()
+	body.name = "CompoundWallSegment_%d" % collision_root.get_child_count()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	body.position = Vector3(midpoint.x, 0.725, midpoint.y)
+	body.rotation.y = angle
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(length, 1.45, 0.18)
+	collision.shape = shape
+	body.add_child(collision)
+	collision_root.add_child(body)
 
 func _add_utility_network() -> void:
 	var pole_transforms: Array[Transform3D] = []
