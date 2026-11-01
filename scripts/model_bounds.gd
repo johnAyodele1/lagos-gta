@@ -4,6 +4,31 @@ class_name ModelBounds
 ## Normalizes imported scene geometry to measured world-space dimensions.
 ## Run after adding the model to the scene tree so nested mesh transforms resolve.
 
+static func ensure_surface_materials(root: Node3D, fallback_colors: Array[Color]) -> int:
+	var assigned := 0
+	var mesh_nodes: Array[Node] = []
+	if root is MeshInstance3D:
+		mesh_nodes.append(root)
+	mesh_nodes.append_array(root.find_children("*", "MeshInstance3D", true, false))
+	for node in mesh_nodes:
+		var mesh_instance := node as MeshInstance3D
+		if mesh_instance.mesh == null or not (mesh_instance.mesh is ArrayMesh):
+			continue
+		var mesh_copy := mesh_instance.mesh.duplicate() as ArrayMesh
+		var changed := false
+		for surface_index in range(mesh_copy.get_surface_count()):
+			if mesh_copy.surface_get_material(surface_index) != null:
+				continue
+			var material := StandardMaterial3D.new()
+			material.albedo_color = fallback_colors[surface_index % fallback_colors.size()] if not fallback_colors.is_empty() else Color(0.42, 0.42, 0.40)
+			material.roughness = 0.88
+			mesh_copy.surface_set_material(surface_index, material)
+			assigned += 1
+			changed = true
+		if changed:
+			mesh_instance.mesh = mesh_copy
+	return assigned
+
 static func fit_height(root: Node3D, target_height: float, center_horizontal: bool = true) -> bool:
 	if target_height <= 0.0:
 		return false
