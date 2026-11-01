@@ -55,6 +55,7 @@ func _build_body() -> void:
 	camera.position = Vector3(0.0, 0.35, 4.8)
 	camera.rotation.x = deg_to_rad(-9.0)
 	camera.current = true
+	camera.far = 180.0
 	camera_pivot.add_child(camera)
 
 func _physics_process(delta: float) -> void:
