@@ -2,8 +2,6 @@ extends SceneTree
 
 const PlayerScript = preload("res://scripts/player_controller.gd")
 const MobileControlsScript = preload("res://scripts/mobile_controls.gd")
-const WorldGeneratorScript = preload("res://scripts/world_generator.gd")
-const MainSceneScript = preload("res://scripts/main.gd")
 
 var failures: int = 0
 var assertions: int = 0
@@ -15,8 +13,7 @@ func _run() -> void:
 	_test_normalize_move_input()
 	_test_camera_pitch_clamp()
 	_test_mobile_joystick()
-	_check(WorldGeneratorScript != null, "world generator script compiles")
-	_check(MainSceneScript != null, "main scene script and dependencies compile")
+	_test_project_scripts_load()
 	if failures > 0:
 		push_error("%d of %d gameplay input tests failed." % [failures, assertions])
 		quit(1)
@@ -42,6 +39,12 @@ func _test_camera_pitch_clamp() -> void:
 	_check(is_equal_approx(PlayerScript.clamp_camera_pitch(-10.0), deg_to_rad(-55.0)), "camera pitch clamps at the lower limit")
 	_check(is_equal_approx(PlayerScript.clamp_camera_pitch(10.0), deg_to_rad(35.0)), "camera pitch clamps at the upper limit")
 	_check(is_equal_approx(PlayerScript.clamp_camera_pitch(0.2), 0.2), "camera pitch remains unchanged inside limits")
+
+func _test_project_scripts_load() -> void:
+	var world_script = ResourceLoader.load("res://scripts/world_generator.gd")
+	_check(world_script is GDScript, "world generator script loads without parse errors")
+	var main_script = ResourceLoader.load("res://scripts/main.gd")
+	_check(main_script is GDScript, "main scene script and dependencies load without parse errors")
 
 func _test_mobile_joystick() -> void:
 	var center := Vector2(100.0, 100.0)
