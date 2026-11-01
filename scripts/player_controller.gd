@@ -65,11 +65,10 @@ func _build_body() -> void:
 	# A custom tapered torso, layered clothing, face, hair and articulated limbs.
 	body_mesh = MeshInstance3D.new()
 	body_mesh.name = "PlayerCharacterVisual"
-	body_mesh.mesh = CharacterMeshFactoryScript.create_torso_mesh()
+	var fallback_torso_material := _character_material(Color(0.10, 0.34, 0.38))
+	body_mesh.mesh = CharacterMeshFactoryScript.create_torso_mesh(12, fallback_torso_material)
 	body_mesh.position.y = 1.08
-	body_mesh.material_override = _character_material(Color(0.10, 0.34, 0.38))
-	if body_mesh.mesh != null and body_mesh.mesh.get_surface_count() > 0:
-		body_mesh.mesh.surface_set_material(0, body_mesh.material_override)
+	body_mesh.material_override = fallback_torso_material
 	body_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	add_child(body_mesh)
 	if _try_attach_rigged_character():
