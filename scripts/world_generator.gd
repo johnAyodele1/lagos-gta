@@ -27,6 +27,7 @@ func generate() -> void:
 	_add_landmarks()
 	_add_market_stalls()
 	_add_compound_details()
+	_add_danfo_minibus()
 
 func _material(color: Color, roughness: float = 0.9) -> StandardMaterial3D:
 	var key := "%s_%.2f" % [color.to_html(true), roughness]
@@ -142,6 +143,48 @@ func _add_street_lights() -> void:
 			var pole_x: float = float(side) * 12.8
 			_add_box(self, Vector3(0.16, 5.5, 0.16), Vector3(pole_x, 2.75, float(z)), Color(0.18, 0.19, 0.18))
 			_add_box(self, Vector3(1.0, 0.16, 0.16), Vector3(pole_x + side * 0.4, 5.35, float(z)), Color(0.18, 0.19, 0.18))
+
+func _add_cylinder(parent: Node3D, radius: float, height: float, position: Vector3, color: Color, rotation: Vector3 = Vector3.ZERO) -> void:
+	var wheel := MeshInstance3D.new()
+	var cylinder := CylinderMesh.new()
+	cylinder.top_radius = radius
+	cylinder.bottom_radius = radius
+	cylinder.height = height
+	wheel.mesh = cylinder
+	wheel.position = position
+	wheel.rotation = rotation
+	wheel.material_override = _material(color)
+	wheel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(wheel)
+
+func _add_danfo_minibus() -> void:
+	var bus := Node3D.new()
+	bus.name = "ParkedDanfoMinibus"
+	bus.position = Vector3(3.5, 0.0, 28.0)
+	add_child(bus)
+	# A parked yellow commercial minibus: simple meshes keep the asset cheap to render.
+	_add_box(bus, Vector3(5.0, 1.35, 2.15), Vector3.ZERO + Vector3(0.0, 1.25, 0.0), Color(0.92, 0.68, 0.08))
+	_add_box(bus, Vector3(3.45, 1.15, 2.05), Vector3(-0.15, 2.35, 0.0), Color(0.90, 0.65, 0.06))
+	_add_box(bus, Vector3(3.65, 0.10, 2.18), Vector3(-0.15, 2.98, 0.0), Color(0.16, 0.17, 0.16))
+	# Dark window bands on both sides and a front windscreen.
+	for side in [-1.0, 1.0]:
+		_add_box(bus, Vector3(2.8, 0.72, 0.045), Vector3(-0.18, 2.42, side * 1.045), Color(0.10, 0.20, 0.25))
+		_add_box(bus, Vector3(0.10, 0.72, 0.045), Vector3(-1.75, 2.42, side * 1.045), Color(0.10, 0.20, 0.25))
+		_add_box(bus, Vector3(0.10, 0.72, 0.045), Vector3(1.35, 2.42, side * 1.045), Color(0.10, 0.20, 0.25))
+	_add_box(bus, Vector3(0.06, 0.78, 1.75), Vector3(2.52, 2.38, 0.0), Color(0.10, 0.20, 0.25))
+	_add_box(bus, Vector3(0.18, 0.20, 2.25), Vector3(2.55, 0.72, 0.0), Color(0.12, 0.12, 0.12))
+	_add_box(bus, Vector3(0.18, 0.20, 2.25), Vector3(-2.55, 0.72, 0.0), Color(0.12, 0.12, 0.12))
+	for x in [-1.65, 1.65]:
+		for side in [-1.0, 1.0]:
+			_add_cylinder(bus, 0.48, 0.24, Vector3(x, 0.48, side * 1.05), Color(0.07, 0.07, 0.07), Vector3(0.0, 0.0, PI * 0.5))
+			_add_cylinder(bus, 0.22, 0.25, Vector3(x, 0.48, side * 1.05), Color(0.55, 0.56, 0.54), Vector3(0.0, 0.0, PI * 0.5))
+	var route_label := Label3D.new()
+	route_label.text = "LAGOS  |  DANFO"
+	route_label.font_size = 24
+	route_label.outline_size = 5
+	route_label.position = Vector3(0.0, 1.8, -1.11)
+	route_label.rotation.y = PI
+	bus.add_child(route_label)
 
 func _add_landmarks() -> void:
 	# A compact neighbourhood sign gives this first blockout a recognisable district identity.
