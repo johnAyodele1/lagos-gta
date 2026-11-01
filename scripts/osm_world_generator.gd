@@ -477,56 +477,43 @@ func _add_cylinder_batch(batch_name: String, radius: float, height: float, trans
 func _add_barrier_network() -> void:
 	var wall_transforms: Array[Transform3D] = []
 	var fence_transforms: Array[Transform3D] = []
-	var collision_faces := PackedVector3Array()
+	var barrier_body := StaticBody3D.new()
+	barrier_body.name = "OSMBarrierCollision"
+	barrier_body.collision_layer = 1
+	barrier_body.collision_mask = 0
+	var collider_count := 0
 	for barrier in _barriers:
 		var points := _points_from_coordinates(barrier.get("coordinates", []))
 		var barrier_type := str(barrier.get("barrier", "fence"))
-		var wall_height := 1.55 if barrier_type in ["wall", "city_wall", "retaining_wall"] else 1.1
+		var is_wall := barrier_type in ["wall", "city_wall", "retaining_wall"]
+		var wall_height := 1.55 if is_wall else 1.1
 		for index in range(points.size() - 1):
-			var p0 := points[index]
-			var p1 := points[index + 1]
-			var edge := p1 - p0
+			var edge := points[index + 1] - points[index]
 			var length := edge.length()
 			if length < 0.5:
 				continue
-			var direction := edge / length
-			var normal := Vector2(-direction.y, direction.x) * 0.06
 			var angle := atan2(-edge.y, edge.x)
-			var midpoint := (p0 + p1) * 0.5
+			var midpoint := (points[index] + points[index + 1]) * 0.5
 			var transform := Transform3D(Basis(Vector3.UP, angle).scaled(Vector3(length, wall_height, 0.12)), Vector3(midpoint.x, wall_height * 0.5, midpoint.y))
-			if barrier_type in ["wall", "city_wall", "retaining_wall"]:
+			if is_wall:
 				wall_transforms.append(transform)
 			else:
 				fence_transforms.append(transform)
-			var a := Vector3(p0.x + normal.x, 0.0, p0.y + normal.y)
-			var b := Vector3(p1.x + normal.x, 0.0, p1.y + normal.y)
-			var c := Vector3(p1.x - normal.x, 0.0, p1.y - normal.y)
-			var d := Vector3(p0.x - normal.x, 0.0, p0.y - normal.y)
-			var at := a + Vector3.UP * wall_height
-			var bt := b + Vector3.UP * wall_height
-			var ct := c + Vector3.UP * wall_height
-			var dt := d + Vector3.UP * wall_height
-			collision_faces.append_array(PackedVector3Array([
-				a, at, bt, a, bt, b,
-				b, bt, ct, b, ct, c,
-				c, ct, dt, c, dt, d,
-				d, dt, at, d, at, a,
-				a, c, b, a, d, c,
-				at, bt, ct, at, ct, dt
-			]))
+
+			# Box colliders are more reliable for thin mapped walls/fences than an open triangle strip.
+			var collision := CollisionShape3D.new()
+			var shape := BoxShape3D.new()
+			shape.size = Vector3(length, wall_height, 0.18)
+			collision.shape = shape
+			collision.position = Vector3(midpoint.x, wall_height * 0.5, midpoint.y)
+			collision.rotation.y = angle
+			barrier_body.add_child(collision)
+			collider_count += 1
+
 	_add_box_batch("OSMCompoundWalls", Vector3.ONE, wall_transforms, Color(0.60, 0.55, 0.46))
 	_add_box_batch("OSMCompoundFences", Vector3.ONE, fence_transforms, Color(0.22, 0.23, 0.21))
-	if not collision_faces.is_empty():
-		var barrier_body := StaticBody3D.new()
-		barrier_body.name = "OSMBarrierCollision"
-		var barrier_collision := CollisionShape3D.new()
-		var barrier_shape := ConcavePolygonShape3D.new()
-		barrier_shape.backface_collision = true
-		barrier_shape.set_faces(collision_faces)
-		barrier_collision.shape = barrier_shape
-		barrier_body.add_child(barrier_collision)
+	if collider_count > 0:
 		add_child(barrier_body)
-
 func _add_utility_network() -> void:
 	var pole_transforms: Array[Transform3D] = []
 	var wire_transforms: Array[Transform3D] = []
