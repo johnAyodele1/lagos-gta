@@ -193,7 +193,7 @@ func _test_visual_meshes() -> void:
 	for mesh_node in player_meshes:
 		var mesh_instance := mesh_node as MeshInstance3D
 		for surface_index in range(mesh_instance.mesh.get_surface_count()):
-			if mesh_instance.get_active_material(surface_index) == null:
+			if mesh_instance.mesh.surface_get_material(surface_index) == null or mesh_instance.get_active_material(surface_index) == null:
 				player_materials_valid = false
 	_check(player_materials_valid, "every imported player mesh surface has an assigned material")
 	player.global_position = Vector3(10000.0, 100.0, 10000.0)
@@ -383,7 +383,7 @@ func _test_ambient_traffic() -> void:
 	_check(traffic.get_traffic_model_surface_count(0) >= 5, "ambient traffic uses detailed imported multi-material vehicle meshes")
 	var traffic_materials_valid := true
 	for surface_index in range(traffic._traffic_visuals[0].mesh.get_surface_count()):
-		if traffic._traffic_visuals[0].get_active_material(surface_index) == null:
+		if traffic._traffic_visuals[0].mesh.surface_get_material(surface_index) == null or traffic._traffic_visuals[0].get_active_material(surface_index) == null:
 			traffic_materials_valid = false
 	_check(traffic_materials_valid, "every ambient traffic mesh surface has an assigned material")
 	var first_traffic_shape := traffic._collision_bodies[0].get_child(0) as CollisionShape3D
@@ -419,7 +419,7 @@ func _test_pedestrians() -> void:
 	for mesh_node in pedestrian_meshes:
 		var mesh_instance := mesh_node as MeshInstance3D
 		for surface_index in range(mesh_instance.mesh.get_surface_count()):
-			if mesh_instance.get_active_material(surface_index) == null:
+			if mesh_instance.mesh.surface_get_material(surface_index) == null or mesh_instance.get_active_material(surface_index) == null:
 				pedestrian_materials_valid = false
 	_check(pedestrian_materials_valid, "every pedestrian mesh surface has an assigned material")
 	_check(pedestrians.get_pedestrian_collision_count() == 4, "each pedestrian has a low-cost capsule collision proxy")
