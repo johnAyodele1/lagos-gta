@@ -312,6 +312,12 @@ func _create_leg(limb_position: Vector3) -> Node3D:
 	body_mesh.add_child(pivot)
 	return pivot
 
+func set_character_visual_visible(visible: bool) -> void:
+	if body_mesh != null:
+		body_mesh.visible = visible
+	if is_instance_valid(_rigged_character):
+		_rigged_character.visible = visible
+
 func _update_character_animation(delta: float) -> void:
 	_animation_clock += delta
 	var horizontal_speed := Vector2(velocity.x, velocity.z).length()
