@@ -1,9 +1,9 @@
 extends Control
 class_name MobileControls
 
-const JOYSTICK_RADIUS: float = 64.0
+const MAX_JOYSTICK_RADIUS: float = 64.0
 const JOYSTICK_DEADZONE: float = 0.12
-const BUTTON_RADIUS: float = 42.0
+const MAX_BUTTON_RADIUS: float = 42.0
 
 var joystick_touch_index: int = -1
 var look_touch_index: int = -1
@@ -77,26 +77,35 @@ func _end_touch(index: int) -> void:
 		jump_touch_index = -1
 	queue_redraw()
 
+func _joystick_radius() -> float:
+	return minf(MAX_JOYSTICK_RADIUS, get_viewport_rect().size.x * 0.17)
+
+func _button_radius(size: Vector2) -> float:
+	return minf(MAX_BUTTON_RADIUS, size.x * 0.105)
+
 func _joystick_center() -> Vector2:
 	var size := get_viewport_rect().size
-	return Vector2(112.0, size.y - 128.0)
+	var margin := _joystick_radius() + 24.0
+	return Vector2(maxf(margin, size.x * 0.22), size.y - maxf(margin, size.y * 0.19))
 
 func _sprint_center(size: Vector2) -> Vector2:
-	return Vector2(size.x - 190.0, size.y - 92.0)
+	var radius := _button_radius(size)
+	return Vector2(size.x - radius * 3.5, size.y - radius * 2.3)
 
 func _jump_center(size: Vector2) -> Vector2:
-	return Vector2(size.x - 88.0, size.y - 164.0)
+	var radius := _button_radius(size)
+	return Vector2(size.x - radius, size.y - radius * 4.2)
 
 func _is_sprint_button(position: Vector2, size: Vector2) -> bool:
-	return position.distance_to(_sprint_center(size)) <= BUTTON_RADIUS * 1.35
+	return position.distance_to(_sprint_center(size)) <= _button_radius(size) * 1.15
 
 func _is_jump_button(position: Vector2, size: Vector2) -> bool:
-	return position.distance_to(_jump_center(size)) <= BUTTON_RADIUS * 1.35
+	return position.distance_to(_jump_center(size)) <= _button_radius(size) * 1.15
 
 func get_move_vector() -> Vector2:
 	if joystick_touch_index == -1:
 		return Vector2.ZERO
-	return joystick_vector(_joystick_center(), joystick_position, JOYSTICK_RADIUS)
+	return joystick_vector(_joystick_center(), joystick_position, _joystick_radius())
 
 func is_sprint_pressed() -> bool:
 	return sprint_touch_index != -1
@@ -116,20 +125,22 @@ func _draw() -> void:
 		return
 	var size := get_viewport_rect().size
 	var center := _joystick_center()
+	var joystick_radius := _joystick_radius()
 	var knob := center
 	if joystick_touch_index != -1:
 		var offset := joystick_position - center
-		knob += offset.limit_length(JOYSTICK_RADIUS)
-	draw_circle(center, JOYSTICK_RADIUS, Color(0.04, 0.06, 0.08, 0.34))
-	draw_arc(center, JOYSTICK_RADIUS, 0.0, TAU, 48, Color(1.0, 1.0, 1.0, 0.55), 2.0)
-	draw_circle(knob, 27.0, Color(0.88, 0.91, 0.94, 0.68))
+		knob += offset.limit_length(joystick_radius)
+	draw_circle(center, joystick_radius, Color(0.04, 0.06, 0.08, 0.34))
+	draw_arc(center, joystick_radius, 0.0, TAU, 48, Color(1.0, 1.0, 1.0, 0.55), 2.0)
+	draw_circle(knob, joystick_radius * 0.42, Color(0.88, 0.91, 0.94, 0.68))
 	_draw_action_button(_sprint_center(size), "RUN", sprint_touch_index != -1)
 	_draw_action_button(_jump_center(size), "JUMP", jump_touch_index != -1)
 
 func _draw_action_button(center: Vector2, caption: String, pressed: bool) -> void:
+	var radius := _button_radius(get_viewport_rect().size)
 	var fill := Color(0.12, 0.16, 0.20, 0.78) if not pressed else Color(0.24, 0.48, 0.72, 0.92)
-	draw_circle(center, BUTTON_RADIUS, fill)
-	draw_arc(center, BUTTON_RADIUS, 0.0, TAU, 40, Color(1.0, 1.0, 1.0, 0.72), 2.0)
+	draw_circle(center, radius, fill)
+	draw_arc(center, radius, 0.0, TAU, 40, Color(1.0, 1.0, 1.0, 0.72), 2.0)
 	var font := ThemeDB.fallback_font
 	var font_size := 15
 	var text_size := font.get_string_size(caption, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)
