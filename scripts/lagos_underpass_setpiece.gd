@@ -41,7 +41,7 @@ static func _build_mechanic_bay(parent:Node3D,points:Array,width:float)->void:
  var span_midpoint:Vector2=(a+b)*0.5+direction*minf(a.distance_to(b)*0.25,8.0)
  var centre:Vector2=span_midpoint+side*(width*0.5+1.5)
  var bay:=Node3D.new(); bay.name="YabaUnderpassMechanicBay"
- bay.position=Vector3(centre.x,0,centre.y); bay.rotation.y=atan2(direction.x,direction.y); parent.add_child(bay)
+ bay.position=Vector3(centre.x,0,centre.y); bay.rotation.y=atan2(direction.x,direction.y)-PI/2.0; parent.add_child(bay)
  var wall:=_mat(Color(0.42,0.37,0.29)); var dark:=_mat(Color(0.12,0.13,0.12)); var yellow:=_mat(Color(0.94,0.68,0.08))
  _box(bay,Vector3(8,3.4,0.35),Vector3(0,1.7,0),0,wall,"WorkshopWall")
  _box(bay,Vector3(8.4,0.22,3.5),Vector3(0,3.48,1.55),0,dark,"CorrugatedCanopy")
@@ -51,9 +51,9 @@ static func _build_mechanic_bay(parent:Node3D,points:Array,width:float)->void:
  sign.position=Vector3(0,2.72,-0.145); sign.modulate=Color(0.08,0.08,0.06); bay.add_child(sign)
  _box(bay,Vector3(2.7,2.45,0.16),Vector3(-2.25,1.22,-0.24),0,dark,"RollerDoor")
  _model(bay,"modular_factory_facade",Vector3(0,0,0.65),4.2)
- _model(bay,"portable_generator",Vector3(3,0,2.2),0.95)
- _model(bay,"concrete_road_barrier",Vector3(-4.7,0,2),0.8)
- _model(bay,"modular_industrial_pipes_01",Vector3(4.5,0,0.8),1.2)
+ _model(bay,"portable_generator",Vector3(3,0,-1.3),0.95)
+ _model(bay,"concrete_road_barrier",Vector3(-4.7,0,-2.0),0.8)
+ _model(bay,"modular_industrial_pipes_01",Vector3(4.5,0,-0.8),1.2)
 static func _model(parent:Node3D,id:String,pos:Vector3,height:float)->void:
  if DisplayServer.get_name()=="headless": return
  var path:=ROOT+id+".glb"
