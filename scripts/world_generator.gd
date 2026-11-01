@@ -143,7 +143,11 @@ func _add_facade_details(
 	balcony_rails: Array[Transform3D],
 	air_conditioners: Array[Transform3D],
 	shop_signs: Array[Transform3D],
-	shop_doors: Array[Transform3D]
+	shop_doors: Array[Transform3D],
+	roof_parapets: Array[Transform3D],
+	red_awnings: Array[Transform3D],
+	yellow_awnings: Array[Transform3D],
+	green_awnings: Array[Transform3D]
 ) -> void:
 	# Street-facing commercial frontage: recessed-looking entrance, sign band,
 	# projecting balcony slabs and visible outdoor AC units break up flat masses.
