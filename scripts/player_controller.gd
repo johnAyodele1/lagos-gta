@@ -179,6 +179,9 @@ func _try_attach_rigged_character() -> bool:
 		push_warning("Rigged player scene has no Node3D root; using the lightweight fallback rig.")
 		return false
 	_rigged_character.name = "RiggedLagosPlayer"
+	# This imported Quaternius rig faces +Z; the controller and camera use -Z
+	# as the character's forward axis. Rotate the visual root, not the collider.
+	_rigged_character.rotation.y = PI
 	body_mesh.mesh = null
 	body_mesh.position = Vector3.ZERO
 	body_mesh.add_child(_rigged_character)
