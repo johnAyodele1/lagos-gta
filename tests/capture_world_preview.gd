@@ -23,9 +23,14 @@ func _capture_world() -> void:
 	var player := main_scene.get_node_or_null("Player") as PlayerController
 	var world := main_scene.get_node_or_null("YabaOpenStreetMapDistrict") as OSMWorldGenerator
 	if player != null:
+		player.mouse_captured = false
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		player.camera_pivot.rotation = Vector3.ZERO
+		player.camera_mount.rotation.x = deg_to_rad(-14.0)
 		print("PREVIEW_PLAYER_POSITION=", player.global_position)
 		print("PREVIEW_PLAYER_ROTATION=", player.global_rotation)
 		print("PREVIEW_PIVOT_ROTATION=", player.camera_pivot.global_rotation)
+		print("PREVIEW_CAMERA_MOUNT_ROTATION=", player.camera_mount.global_rotation)
 		print("PREVIEW_CAMERA_ROTATION=", player.camera.global_rotation)
 		print("PREVIEW_CAMERA_POSITION=", player.camera.global_position)
 		print("PREVIEW_CAMERA_FORWARD=", -player.camera.global_basis.z)
