@@ -175,12 +175,12 @@ func _try_attach_rigged_character() -> bool:
 	body_mesh.position = Vector3.ZERO
 	body_mesh.add_child(_rigged_character)
 	_rigged_animation_player = _rigged_character.find_child("AnimationPlayer", true, false) as AnimationPlayer
-	_apply_rigged_character_materials(_rigged_character, Color(0.10, 0.34, 0.38), Color(0.085, 0.10, 0.13))
+	_apply_rigged_character_materials(_rigged_character, Color(0.10, 0.34, 0.38), Color(0.40, 0.25, 0.17), Color(0.085, 0.10, 0.13))
 	if _rigged_animation_player != null and _rigged_animation_player.has_animation("HumanArmature|Man_Idle"):
 		_rigged_animation_player.play("HumanArmature|Man_Idle")
 	return true
 
-func _apply_rigged_character_materials(model: Node3D, shirt_color: Color, pants_color: Color) -> void:
+func _apply_rigged_character_materials(model: Node3D, shirt_color: Color, skin_color: Color, pants_color: Color) -> void:
 	for node in model.find_children("*", "MeshInstance3D", true, false):
 		var mesh_instance := node as MeshInstance3D
 		if mesh_instance.mesh == null:
