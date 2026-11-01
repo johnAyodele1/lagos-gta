@@ -15,6 +15,7 @@ const MIN_CAMERA_PITCH: float = deg_to_rad(-55.0)
 const MAX_CAMERA_PITCH: float = deg_to_rad(35.0)
 
 var camera_pivot: SpringArm3D
+var camera_mount: Node3D
 var camera: Camera3D
 var body_mesh: MeshInstance3D
 var mouse_captured: bool = false
@@ -332,8 +333,8 @@ func _apply_look_delta(look_delta: Vector2) -> void:
 	if look_delta.is_zero_approx():
 		return
 	camera_pivot.rotate_y(-look_delta.x * MOUSE_SENSITIVITY)
-	camera_pivot.rotation.x = clamp_camera_pitch(
-		camera_pivot.rotation.x - look_delta.y * MOUSE_SENSITIVITY
+	camera_mount.rotation.x = clamp_camera_pitch(
+		camera_mount.rotation.x - look_delta.y * MOUSE_SENSITIVITY
 	)
 
 func _capture_mouse() -> void:
