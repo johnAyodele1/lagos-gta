@@ -630,7 +630,7 @@ func _add_residential_compounds() -> void:
 	collision_root.name = "ProceduralCompoundWallCollision"
 	var compound_count := 0
 	for building in _buildings:
-		if compound_count >= 60:
+		if compound_count >= MAX_PROCEDURAL_COMPOUNDS:
 			break
 		var building_type := str(building.get("building", "yes"))
 		if building_type not in ["house", "detached", "semidetached_house", "residential"]:
