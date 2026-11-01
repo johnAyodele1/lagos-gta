@@ -10,7 +10,9 @@ Build an original open-world 3D game rooted in Lagos, Nigeria. The project shoul
 - Third-person character movement, sprinting and edge-triggered jumping.
 - Desktop mouse-look and keyboard movement.
 - Touchscreen virtual joystick, drag-to-look, sprint and jump controls.
-- Procedurally generated road junction, sidewalks, buildings, windows, street lights and a market canopy.
+- Procedurally generated Yaba-inspired road junction, sidewalks, multi-storey buildings, batched windows, rooftop tanks, compound walls, utility poles, market stalls, produce crates, a danfo stop and district signage.
+- Shared material cache and MultiMesh batching for repeated building windows.
+- First-run Terms & Conditions and Privacy Notice with explicit consent, versioning, local storage and a persistent legal-access button.
 - Automated headless tests for movement normalization, camera pitch limits and joystick deadzone/clamping.
 
 This remains a greybox. It is not a complete GTA-scale game, and mobile touch controls still require physical-device QA.
@@ -28,7 +30,7 @@ This remains a greybox. It is not a complete GTA-scale game, and mobile touch co
 1. **Vertical slice:** stable player movement, camera, collision and a compact neighbourhood on desktop and touchscreens.
 2. **Driving:** one controllable vehicle, enter/exit interaction and basic vehicle physics.
 3. **Street life:** traffic, pedestrians, market activity and Lagos-specific props.
-4. **Mobile release foundation:** Android/iOS export templates and presets, signing configuration, safe-area checks, device profiling and store compliance.
+4. **Mobile release foundation:** Android/iOS export templates and presets, signing configuration, safe-area checks, device profiling and store compliance. Player-facing legal drafts and a versioned consent gate are now in place; final publisher details, legal review and public policy hosting remain release blockers.
 5. **Mission loop:** objectives, interaction prompts, money and save/load.
 6. **World expansion:** researched district layouts and a scalable streaming strategy.
 7. **Polish:** performance profiling, accessibility, audio, QA and release builds.
