@@ -12,19 +12,19 @@ Build an original open-world 3D game rooted in Lagos, Nigeria. The project shoul
 - Touchscreen virtual joystick, drag-to-look, sprint and jump controls, with display safe-area inset handling for notches and home indicators.
 - Procedurally generated Yaba-inspired road junction, sidewalks, multi-storey buildings, batched windows, rooftop tanks, compound walls, utility poles, market stalls, produce crates, a danfo stop and district signage.
 - A controllable yellow danfo minibus with arcade steering, forward/reverse limits, mobile joystick driving, sprint boost, camera follow and enter/exit interaction.
-- Eight ambient traffic vehicles moving in four opposing road lanes, with vehicle transforms updated in three shared MultiMesh batches and no per-car physics bodies.
-- Four animated low-poly pedestrians walking along the four sidewalk edges, using shared torso/head/limb MultiMesh batches.
+- Eight ambient traffic vehicles moving in four opposing road lanes, rendered through three shared MultiMesh batches and backed by lightweight AnimatableBody3D collision proxies.
+- Four animated placeholder pedestrians walking along the four sidewalk edges using shared MultiMesh batches; replacement with rigged, authored character assets remains an art milestone.
 - A lightweight articulated 3D player avatar with a procedural walk cycle, plus a parked keke tricycle landmark.
 - Shared material cache and MultiMesh batching for repeated building windows.
 - First-run Terms & Conditions and Privacy Notice with explicit consent, versioning, local storage and a persistent legal-access button.
 - Automated headless tests for movement normalization, camera pitch limits, joystick deadzone/clamping, vehicle handling, ambient traffic movement/route wrapping and pedestrian sidewalk routes/animation.
 
-This remains a greybox. It is not a complete GTA-scale game, and mobile touch controls still require physical-device QA.
+This remains a greybox. Player/building and player/traffic collision proxies are now covered by automated physics tests, but the road layout, architecture, vehicles and character art still need replacement before this can be called a convincing Lagos 3D game. It is not a complete GTA-scale game, and mobile touch controls still require physical-device QA.
 
 ## Not included yet
 
-- Real-world 1:1 Lagos map data.
-- Traffic lights, collision-aware traffic, pedestrian crossing behaviour, vehicle damage, vehicle variety or passenger systems.
+- Real-world Yaba road centre-lines and building footprints from a versioned OpenStreetMap extract (not yet integrated).
+- Traffic lights, pedestrian crossing/navigation behaviour, vehicle damage, production vehicle models and passenger systems.
 - Missions, save system or audio.
 - Production-quality art, animation or mobile store release packages.
 - Device-specific profiling, physical safe-area validation and accessibility testing.
