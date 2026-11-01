@@ -298,16 +298,22 @@ func _add_road_network() -> void:
 		_append_ribbon(drain_vertices, drain_normals, drain_indices, points, 0.30, -(width * 0.5 + 0.20), 0.025, drain_uvs)
 		_append_ribbon(curb_vertices, curb_normals, curb_indices, points, 0.18, width * 0.5 + 0.45, 0.11, curb_uvs)
 		_append_ribbon(curb_vertices, curb_normals, curb_indices, points, 0.18, -(width * 0.5 + 0.45), 0.11, curb_uvs)
-		var side_direction := Vector2(-points[1].direction_to(points[0]).y, points[1].direction_to(points[0]).x)
-		var grate_basis := Basis(Vector3.UP, atan2(points[1].x - points[0].x, points[1].y - points[0].y))
-		var segment_cursor := 5.0
-		while segment_cursor < _polyline_length(points) and drain_grate_transforms.size() < 160:
-			var grate_point := points[0] + (points[1] - points[0]).normalized() * segment_cursor
-			var grate_side := Vector2(-((points[1] - points[0]).normalized()).y, ((points[1] - points[0]).normalized()).x)
-			for side_sign in [-1.0, 1.0]:
-				var grate_position := grate_point + grate_side * (width * 0.5 + 0.20) * float(side_sign)
-				drain_grate_transforms.append(Transform3D(grate_basis.scaled(Vector3(0.30, 0.035, 0.55)), Vector3(grate_position.x, 0.065, grate_position.y)))
-			segment_cursor += 9.0
+		for segment_index in range(points.size() - 1):
+			var segment_start := points[segment_index]
+			var segment := points[segment_index + 1] - segment_start
+			var segment_length := segment.length()
+			if segment_length < 5.0:
+				continue
+			var segment_direction := segment / segment_length
+			var grate_side := Vector2(-segment_direction.y, segment_direction.x)
+			var grate_basis := Basis(Vector3.UP, atan2(segment_direction.x, segment_direction.y))
+			var segment_cursor := 5.0
+			while segment_cursor < segment_length and drain_grate_transforms.size() < 160:
+				var grate_point := segment_start + segment_direction * segment_cursor
+				for side_sign in [-1.0, 1.0]:
+					var grate_position: Vector2 = grate_point + grate_side * (width * 0.5 + 0.20) * float(side_sign)
+					drain_grate_transforms.append(Transform3D(grate_basis.scaled(Vector3(0.30, 0.035, 0.55)), Vector3(grate_position.x, 0.065, grate_position.y)))
+				segment_cursor += 9.0
 		if width >= 7.0 and str(road.get("highway", "")) in ["primary", "secondary", "tertiary"]:
 			_append_road_markings(points, marking_vertices, marking_normals, marking_indices, marking_uvs)
 	var asphalt_material := _material("asphalt", ROAD_COLOR)
