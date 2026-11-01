@@ -6,6 +6,7 @@ const LegalConsentScript = preload("res://scripts/legal_consent.gd")
 const WorldGeneratorScript = preload("res://scripts/world_generator.gd")
 const VehicleScript = preload("res://scripts/vehicle_controller.gd")
 const TrafficManagerScript = preload("res://scripts/traffic_manager.gd")
+const PedestrianManagerScript = preload("res://scripts/pedestrian_manager.gd")
 
 var failures: int = 0
 var assertions: int = 0
@@ -23,6 +24,7 @@ func _run() -> void:
 	_test_world_generation_batching()
 	_test_vehicle_speed_limits()
 	_test_ambient_traffic()
+	_test_pedestrians()
 	_test_project_scripts_load()
 	if failures > 0:
 		push_error("%d of %d gameplay input tests failed." % [failures, assertions])
@@ -185,6 +187,23 @@ func _test_ambient_traffic() -> void:
 	_check(traffic.get_child_count() == 3, "all background traffic is rendered through three shared multimesh batches")
 	traffic.queue_free()
 
+
+func _test_pedestrians() -> void:
+	_check(is_equal_approx(PedestrianManagerScript.advance_distance(109.0, 2.0, 1.0), 1.0), "pedestrian sidewalk routes wrap without leaving their route")
+	_check(is_equal_approx(PedestrianManagerScript.advance_distance(12.0, -2.0, 1.0), 12.0), "pedestrian speed is clamped to a non-negative value")
+	_check(is_equal_approx(PedestrianManagerScript.advance_distance(12.0, 2.0, -1.0), 12.0), "negative frame delta cannot rewind pedestrians")
+
+	var pedestrians = PedestrianManagerScript.new()
+	root.add_child(pedestrians)
+	_check(pedestrians.get_pedestrian_count() == 4, "Yaba sidewalks spawn a bounded four-person pedestrian population")
+	var starting_distance := pedestrians.get_pedestrian_distance(0)
+	var starting_position := pedestrians.get_pedestrian_position(0)
+	pedestrians._process(1.0)
+	_check(pedestrians.get_pedestrian_distance(0) > starting_distance, "pedestrians walk along their sidewalk routes")
+	_check(pedestrians.get_pedestrian_position(0) != starting_position, "pedestrian render transforms update as they walk")
+	_check(pedestrians.get_child_count() == 4, "pedestrian bodies and animated limbs use four shared multimesh batches")
+	pedestrians.queue_free()
+
 func _test_project_scripts_load() -> void:
 	var world_script = ResourceLoader.load("res://scripts/world_generator.gd")
 	_check(world_script is GDScript, "world generator script loads without parse errors")
@@ -192,6 +211,8 @@ func _test_project_scripts_load() -> void:
 	_check(vehicle_script is GDScript, "vehicle controller script loads without parse errors")
 	var traffic_script = ResourceLoader.load("res://scripts/traffic_manager.gd")
 	_check(traffic_script is GDScript, "ambient traffic manager script loads without parse errors")
+	var pedestrian_script = ResourceLoader.load("res://scripts/pedestrian_manager.gd")
+	_check(pedestrian_script is GDScript, "pedestrian manager script loads without parse errors")
 	var main_script = ResourceLoader.load("res://scripts/main.gd")
 	_check(main_script is GDScript, "main scene script and dependencies load without parse errors")
 
