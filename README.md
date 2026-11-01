@@ -52,7 +52,7 @@ No third-party asset packs are required to launch the initial scene.
 5. Build mission, interaction and save systems.
 6. Expand the world using researched district layouts and properly licensed geographic data.
 
-See [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for scope and engineering constraints.
+See [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for scope and engineering constraints, and [docs/MOBILE_RELEASE.md](docs/MOBILE_RELEASE.md) for the Android/iOS export and device-QA checklist.
 
 ## Project principles
 
