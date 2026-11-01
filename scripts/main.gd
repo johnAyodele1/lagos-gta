@@ -125,8 +125,8 @@ func _add_hud() -> void:
 func _cycle_graphics_quality() -> void:
 	var options := ["low", "balanced", "high"]
 	var current := str(_graphics_profile.get("name", "balanced"))
-	var next_index := (options.find(current) + 1) % options.size()
-	var next_quality := options[next_index]
+	var next_index: int = (options.find(current) + 1) % options.size()
+	var next_quality: String = options[next_index]
 	_graphics_profile = GraphicsProfileScript.apply(_sun_light, next_quality)
 	_world_environment.ambient_light_energy = 0.72 if next_quality == "low" else 0.62
 	if _player != null and is_instance_valid(_player):
