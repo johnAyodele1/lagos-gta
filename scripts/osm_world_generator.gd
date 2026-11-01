@@ -328,14 +328,19 @@ func _add_building_network() -> void:
 		var roof_triangles := Geometry2D.triangulate_polygon(PackedVector2Array(outline))
 		for triangle_index in range(0, roof_triangles.size(), 3):
 			var roof_base := vertices.size()
+			var triangle_points: Array[Vector2] = []
 			for corner in range(3):
 				var point := outline[roof_triangles[triangle_index + corner]]
+				triangle_points.append(point)
 				vertices.append(Vector3(point.x, height, point.y))
 				normals.append(Vector3.UP)
 				colors.append(base_color.darkened(0.22))
 			indices.append_array(PackedInt32Array([roof_base, roof_base + 1, roof_base + 2]))
 			collision_faces.append_array(PackedVector3Array([
-				vertices[roof_base], vertices[roof_base + 1], vertices[roof_base + 2]
+				vertices[roof_base], vertices[roof_base + 1], vertices[roof_base + 2],
+				Vector3(triangle_points[0].x, 0.0, triangle_points[0].y),
+				Vector3(triangle_points[2].x, 0.0, triangle_points[2].y),
+				Vector3(triangle_points[1].x, 0.0, triangle_points[1].y)
 			]))
 
 		if longest_edge >= 0:
@@ -382,6 +387,7 @@ func _add_building_network() -> void:
 		static_body.collision_mask = 0
 		var collision := CollisionShape3D.new()
 		var concave := ConcavePolygonShape3D.new()
+		concave.backface_collision = true
 		concave.set_faces(collision_faces)
 		collision.shape = concave
 		static_body.add_child(collision)
