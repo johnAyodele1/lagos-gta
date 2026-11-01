@@ -266,7 +266,7 @@ func _test_ambient_traffic() -> void:
 	traffic._process(1.0)
 	_check(traffic.get_traffic_distance(0) > starting_distance, "ambient traffic advances along its mapped road polyline")
 	_check(traffic.get_traffic_position(0) != starting_position, "ambient traffic transforms follow the road geometry")
-	_check(traffic.get_child_count() == 11, "traffic uses three shared render batches plus eight lightweight collision proxies")
+	_check(traffic.get_child_count() == 13, "traffic uses five shared render batches plus eight lightweight collision proxies")
 	_check(traffic.get_traffic_collision_count() == 8, "every ambient traffic vehicle has a physics collision proxy")
 	traffic.queue_free()
 
