@@ -14,8 +14,8 @@ const CharacterMeshFactoryScript = preload("res://scripts/character_mesh_factory
 const MIN_CAMERA_PITCH: float = deg_to_rad(-55.0)
 const MAX_CAMERA_PITCH: float = deg_to_rad(35.0)
 
+var camera_yaw_pivot: Node3D
 var camera_pivot: SpringArm3D
-var camera_mount: Node3D
 var camera: Camera3D
 var body_mesh: MeshInstance3D
 var mouse_captured: bool = false
@@ -154,9 +154,14 @@ func _build_body() -> void:
 	_right_leg_pivot = _create_leg(Vector3(0.16, -0.36, 0.0))
 
 	# SpringArm3D keeps the third-person camera outside mapped walls and vehicles.
+	camera_yaw_pivot = Node3D.new()
+	camera_yaw_pivot.name = "CameraYawPivot"
+	camera_yaw_pivot.position.y = 1.72
+	add_child(camera_yaw_pivot)
+
 	camera_pivot = SpringArm3D.new()
 	camera_pivot.name = "ThirdPersonSpringArm"
-	camera_pivot.position.y = 1.72
+	camera_pivot.position = Vector3.ZERO
 	camera_pivot.rotation = Vector3.ZERO
 	camera_pivot.spring_length = 7.2
 	camera_pivot.collision_mask = WORLD_COLLISION_LAYER
@@ -164,22 +169,16 @@ func _build_body() -> void:
 	var camera_probe := SphereShape3D.new()
 	camera_probe.radius = 0.28
 	camera_pivot.shape = camera_probe
-	add_child(camera_pivot)
-
-	# The SpringArm casts horizontally; pitch belongs on a child mount so the
-	# collision probe does not point into the road and collapse the camera.
-	camera_mount = Node3D.new()
-	camera_mount.name = "CameraMount"
-	camera_mount.rotation.x = deg_to_rad(-14.0)
-	camera_pivot.add_child(camera_mount)
+	camera_yaw_pivot.add_child(camera_pivot)
+	camera_pivot.add_excluded_object(get_rid())
 
 	camera = Camera3D.new()
 	camera.position = Vector3.ZERO
-	camera.rotation = Vector3.ZERO
+	camera.rotation = Vector3(deg_to_rad(-14.0), 0.0, 0.0)
 	camera.fov = 76.0
 	camera.current = true
 	camera.far = 220.0
-	camera_mount.add_child(camera)
+	camera_pivot.add_child(camera)
 
 func _character_material(color: Color) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
@@ -340,9 +339,9 @@ func _get_nearest_vehicle() -> Node3D:
 func _apply_look_delta(look_delta: Vector2) -> void:
 	if look_delta.is_zero_approx():
 		return
-	camera_pivot.rotate_y(-look_delta.x * MOUSE_SENSITIVITY)
-	camera_mount.rotation.x = clamp_camera_pitch(
-		camera_mount.rotation.x - look_delta.y * MOUSE_SENSITIVITY
+	camera_yaw_pivot.rotate_y(-look_delta.x * MOUSE_SENSITIVITY)
+	camera.rotation.x = clamp_camera_pitch(
+		camera.rotation.x - look_delta.y * MOUSE_SENSITIVITY
 	)
 
 func _capture_mouse() -> void:
