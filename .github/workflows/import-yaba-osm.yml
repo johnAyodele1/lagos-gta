@@ -6,6 +6,8 @@ on:
       - feat/yaba-world-legal-driving-mobile
     paths:
       - tools/fetch_yaba_osm.py
+      - tools/enrich_yaba_buildings.py
+      - tools/test_enrich_yaba_buildings.py
       - data/osm/yaba.overpassql
       - .github/workflows/import-yaba-osm.yml
 
@@ -37,6 +39,9 @@ jobs:
 
       - name: Fetch and normalize Yaba OSM geometry
         run: python tools/fetch_yaba_osm.py --output assets/data/yaba_osm.json
+
+      - name: Enrich mapped building heights and occupancy from OpenBuildingMap
+        run: python tools/enrich_yaba_buildings.py --input assets/data/yaba_osm.json
 
       - name: Commit generated map data to this feature branch
         shell: bash
