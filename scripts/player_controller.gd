@@ -10,6 +10,7 @@ const WORLD_COLLISION_LAYER: int = 1
 const VEHICLE_COLLISION_LAYER: int = 2
 const PLAYER_COLLISION_LAYER: int = 4
 const NPC_COLLISION_LAYER: int = 8
+const CharacterMeshFactoryScript = preload("res://scripts/character_mesh_factory.gd")
 const MIN_CAMERA_PITCH: float = deg_to_rad(-55.0)
 const MAX_CAMERA_PITCH: float = deg_to_rad(35.0)
 
@@ -52,30 +53,104 @@ func _build_body() -> void:
 	collision.position.y = 0.9
 	add_child(collision)
 
-	# A lightweight stylised human rig made from low-poly primitives.
-	# The visual root is hidden while the player is seated in a vehicle.
+	# A custom tapered torso, layered clothing, face, hair and articulated limbs.
 	body_mesh = MeshInstance3D.new()
-	var torso := CapsuleMesh.new()
-	torso.radius = 0.29
-	torso.height = 0.92
-	body_mesh.mesh = torso
+	body_mesh.name = "PlayerCharacterVisual"
+	body_mesh.mesh = CharacterMeshFactoryScript.create_torso_mesh()
 	body_mesh.position.y = 1.08
-	body_mesh.material_override = _character_material(Color(0.12, 0.38, 0.34))
+	body_mesh.material_override = _character_material(Color(0.10, 0.34, 0.38))
+	body_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	add_child(body_mesh)
+
+	var neck := MeshInstance3D.new()
+	var neck_mesh := CapsuleMesh.new()
+	neck_mesh.radius = 0.09
+	neck_mesh.height = 0.24
+	neck.mesh = neck_mesh
+	neck.position = Vector3(0.0, 0.43, 0.0)
+	neck.material_override = _character_material(Color(0.40, 0.25, 0.17))
+	body_mesh.add_child(neck)
 
 	var head := MeshInstance3D.new()
 	var head_mesh := SphereMesh.new()
-	head_mesh.radius = 0.23
+	head_mesh.radius = 0.22
 	head_mesh.height = 0.46
+	head_mesh.radial_segments = 16
+	head_mesh.rings = 10
 	head.mesh = head_mesh
-	head.position = Vector3(0.0, 0.72, 0.0)
-	head.material_override = _character_material(Color(0.38, 0.22, 0.14))
+	head.scale = Vector3(0.9, 1.0, 0.88)
+	head.position = Vector3(0.0, 0.66, 0.0)
+	head.material_override = _character_material(Color(0.40, 0.24, 0.16))
 	body_mesh.add_child(head)
 
-	_left_arm_pivot = _create_limb(Vector3(-0.34, 0.28, 0.0), 0.12, 0.76, Color(0.38, 0.22, 0.14))
-	_right_arm_pivot = _create_limb(Vector3(0.34, 0.28, 0.0), 0.12, 0.76, Color(0.38, 0.22, 0.14))
-	_left_leg_pivot = _create_limb(Vector3(-0.16, -0.32, 0.0), 0.15, 0.82, Color(0.10, 0.12, 0.14))
-	_right_leg_pivot = _create_limb(Vector3(0.16, -0.32, 0.0), 0.15, 0.82, Color(0.10, 0.12, 0.14))
+	var hair := MeshInstance3D.new()
+	var hair_mesh := SphereMesh.new()
+	hair_mesh.radius = 0.225
+	hair_mesh.height = 0.24
+	hair_mesh.radial_segments = 12
+	hair_mesh.rings = 6
+	hair.mesh = hair_mesh
+	hair.scale = Vector3(1.0, 0.72, 0.94)
+	hair.position = Vector3(0.0, 0.80, 0.005)
+	hair.material_override = _character_material(Color(0.035, 0.028, 0.022))
+	body_mesh.add_child(hair)
+
+	for side in [-1.0, 1.0]:
+		var eye := MeshInstance3D.new()
+		var eye_mesh := SphereMesh.new()
+		eye_mesh.radius = 0.035
+		eye_mesh.height = 0.035
+		eye.mesh = eye_mesh
+		eye.position = Vector3(side * 0.075, 0.67, -0.185)
+		eye.material_override = _character_material(Color(0.025, 0.022, 0.018))
+		body_mesh.add_child(eye)
+		var ear := MeshInstance3D.new()
+		var ear_mesh := SphereMesh.new()
+		ear_mesh.radius = 0.055
+		ear_mesh.height = 0.09
+		ear.mesh = ear_mesh
+		ear.position = Vector3(side * 0.205, 0.63, 0.0)
+		ear.material_override = _character_material(Color(0.38, 0.22, 0.15))
+		body_mesh.add_child(ear)
+
+	var nose := MeshInstance3D.new()
+	var nose_mesh := SphereMesh.new()
+	nose_mesh.radius = 0.045
+	nose_mesh.height = 0.085
+	nose.mesh = nose_mesh
+	nose.scale = Vector3(0.78, 1.0, 0.78)
+	nose.position = Vector3(0.0, 0.58, -0.215)
+	nose.material_override = _character_material(Color(0.42, 0.25, 0.17))
+	body_mesh.add_child(nose)
+
+	var mouth := MeshInstance3D.new()
+	var mouth_mesh := BoxMesh.new()
+	mouth_mesh.size = Vector3(0.075, 0.018, 0.018)
+	mouth.mesh = mouth_mesh
+	mouth.position = Vector3(0.0, 0.50, -0.195)
+	mouth.material_override = _character_material(Color(0.10, 0.035, 0.025))
+	body_mesh.add_child(mouth)
+
+	var shirt_pocket := MeshInstance3D.new()
+	var pocket_mesh := BoxMesh.new()
+	pocket_mesh.size = Vector3(0.10, 0.13, 0.025)
+	shirt_pocket.mesh = pocket_mesh
+	shirt_pocket.position = Vector3(-0.15, 0.16, -0.155)
+	shirt_pocket.material_override = _character_material(Color(0.07, 0.25, 0.29))
+	body_mesh.add_child(shirt_pocket)
+
+	var belt := MeshInstance3D.new()
+	var belt_mesh := BoxMesh.new()
+	belt_mesh.size = Vector3(0.46, 0.075, 0.28)
+	belt.mesh = belt_mesh
+	belt.position = Vector3(0.0, -0.28, 0.0)
+	belt.material_override = _character_material(Color(0.07, 0.055, 0.045))
+	body_mesh.add_child(belt)
+
+	_left_arm_pivot = _create_arm(Vector3(-0.34, 0.28, 0.0))
+	_right_arm_pivot = _create_arm(Vector3(0.34, 0.28, 0.0))
+	_left_leg_pivot = _create_leg(Vector3(-0.16, -0.36, 0.0))
+	_right_leg_pivot = _create_leg(Vector3(0.16, -0.36, 0.0))
 
 	# SpringArm3D keeps the third-person camera outside mapped walls and vehicles.
 	camera_pivot = SpringArm3D.new()
@@ -100,20 +175,65 @@ func _build_body() -> void:
 func _character_material(color: Color) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
-	material.roughness = 0.9
+	material.roughness = 0.88
 	return material
 
-func _create_limb(limb_position: Vector3, radius: float, height: float, color: Color) -> Node3D:
+func _create_arm(limb_position: Vector3) -> Node3D:
 	var pivot := Node3D.new()
 	pivot.position = limb_position
-	var mesh_instance := MeshInstance3D.new()
-	var capsule := CapsuleMesh.new()
-	capsule.radius = radius
-	capsule.height = height
-	mesh_instance.mesh = capsule
-	mesh_instance.position.y = -height * 0.38
-	mesh_instance.material_override = _character_material(color)
-	pivot.add_child(mesh_instance)
+	var upper := MeshInstance3D.new()
+	var upper_mesh := CapsuleMesh.new()
+	upper_mesh.radius = 0.12
+	upper_mesh.height = 0.56
+	upper_mesh.radial_segments = 8
+	upper.mesh = upper_mesh
+	upper.position.y = -0.22
+	upper.material_override = _character_material(Color(0.10, 0.34, 0.38))
+	pivot.add_child(upper)
+
+	var forearm := MeshInstance3D.new()
+	var forearm_mesh := CapsuleMesh.new()
+	forearm_mesh.radius = 0.09
+	forearm_mesh.height = 0.42
+	forearm_mesh.radial_segments = 8
+	forearm.mesh = forearm_mesh
+	forearm.position.y = -0.66
+	forearm.material_override = _character_material(Color(0.40, 0.24, 0.16))
+	pivot.add_child(forearm)
+
+	var hand := MeshInstance3D.new()
+	var hand_mesh := SphereMesh.new()
+	hand_mesh.radius = 0.09
+	hand_mesh.height = 0.16
+	hand.mesh = hand_mesh
+	hand.position.y = -0.91
+	hand.material_override = _character_material(Color(0.40, 0.24, 0.16))
+	pivot.add_child(hand)
+	body_mesh.add_child(pivot)
+	return pivot
+
+func _create_leg(limb_position: Vector3) -> Node3D:
+	var pivot := Node3D.new()
+	pivot.position = limb_position
+	var trousers := MeshInstance3D.new()
+	var trouser_mesh := CapsuleMesh.new()
+	trouser_mesh.radius = 0.135
+	trouser_mesh.height = 0.78
+	trouser_mesh.radial_segments = 8
+	trousers.mesh = trouser_mesh
+	trousers.position.y = -0.34
+	trousers.material_override = _character_material(Color(0.085, 0.10, 0.13))
+	pivot.add_child(trousers)
+
+	var shoe := MeshInstance3D.new()
+	var shoe_mesh := SphereMesh.new()
+	shoe_mesh.radius = 0.16
+	shoe_mesh.height = 0.20
+	shoe.mesh = shoe_mesh
+	shoe.scale = Vector3(1.0, 0.65, 1.45)
+	shoe.position = Vector3(0.0, -0.72, -0.055)
+	shoe.material_override = _character_material(Color(0.035, 0.035, 0.032))
+	pivot.add_child(shoe)
 	body_mesh.add_child(pivot)
 	return pivot
 
