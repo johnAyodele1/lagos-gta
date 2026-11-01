@@ -384,6 +384,10 @@ func _test_ambient_traffic() -> void:
 		if traffic._traffic_visuals[0].get_active_material(surface_index) == null:
 			traffic_materials_valid = false
 	_check(traffic_materials_valid, "every ambient traffic mesh surface has an assigned material")
+	var first_traffic_shape := traffic._collision_bodies[0].get_child(0) as CollisionShape3D
+	var first_traffic_box := first_traffic_shape.shape as BoxShape3D if first_traffic_shape != null else null
+	var first_traffic_dimensions := ModelBoundsScript.get_scaled_dimensions(traffic._traffic_visuals[0])
+	_check(first_traffic_box != null and first_traffic_box.size.is_equal_approx(first_traffic_dimensions * Vector3(1.04, 1.03, 1.04)), "traffic collision proxy is derived from each imported car's actual dimensions")
 	var starting_distance := traffic.get_traffic_distance(0)
 	var starting_position := traffic.get_traffic_position(0)
 	var fitted_car_scale: Vector3 = traffic._traffic_visuals[0].scale
