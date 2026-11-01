@@ -56,6 +56,16 @@ func _build_vehicle() -> void:
 	var model := MeshInstance3D.new()
 	model.name = "DanfoModel"
 	model.mesh = danfo_mesh
+	var danfo_surface_colors: Array[Color] = [
+		Color(0.92, 0.72, 0.055), Color(0.055, 0.14, 0.18), Color(0.95, 0.90, 0.68),
+		Color(0.8, 0.24, 0.02), Color(0.72, 0.035, 0.025), Color(0.36, 0.36, 0.34), Color(0.025, 0.025, 0.025)
+	]
+	for surface_index in range(danfo_mesh.get_surface_count()):
+		if danfo_mesh.surface_get_material(surface_index) == null:
+			var fallback := StandardMaterial3D.new()
+			fallback.albedo_color = danfo_surface_colors[mini(surface_index, danfo_surface_colors.size() - 1)]
+			fallback.roughness = 0.82
+			model.set_surface_override_material(surface_index, fallback)
 	# Source mesh faces +Z; this controller drives forward along local -Z.
 	model.rotation.y = PI
 	model.scale = Vector3.ONE * 2.2
