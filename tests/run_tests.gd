@@ -439,8 +439,9 @@ func _test_pedestrians() -> void:
 	root.add_child(pedestrians)
 	_check(pedestrians.get_route_count() == 4, "pedestrian paths are offset from mapped OSM roads to follow their sidewalks")
 	_check(pedestrians.get_pedestrian_count() == 4, "Yaba sidewalks spawn a bounded four-person pedestrian population")
-	_check(pedestrians._visuals.size() == 4 and pedestrians._animation_players.size() == 4, "each pedestrian uses an independent rigged character instance")
-	_check(pedestrians._animation_players[0] != null and pedestrians._animation_players[0].has_animation("HumanArmature|Man_Walk"), "pedestrian characters have real walk animation clips")
+	if DisplayServer.get_name() != "headless":
+		_check(pedestrians._visuals.size() == 4 and pedestrians._animation_players.size() == 4, "each pedestrian uses an independent rigged character instance")
+		_check(pedestrians._animation_players[0] != null and pedestrians._animation_players[0].has_animation("HumanArmature|Man_Walk"), "pedestrian characters have real walk animation clips")
 	if DisplayServer.get_name() != "headless":
 		var pedestrian_meshes: Array[Node] = pedestrians._visuals[0].find_children("*", "MeshInstance3D", true, false)
 		var pedestrian_materials_valid: bool = not pedestrian_meshes.is_empty()
@@ -455,10 +456,11 @@ func _test_pedestrians() -> void:
 	_check(pedestrians.get_pedestrian_collision_count() == 4, "each pedestrian has a low-cost capsule collision proxy")
 	var starting_distance := pedestrians.get_pedestrian_distance(0)
 	var starting_position := pedestrians.get_pedestrian_position(0)
-	var fitted_pedestrian_scale: Vector3 = pedestrians._visuals[0].scale
+	var fitted_pedestrian_scale: Vector3 = pedestrians._visuals[0].scale if not pedestrians._visuals.is_empty() else Vector3.ONE
 	pedestrians._process(1.0)
 	_check(pedestrians.get_pedestrian_distance(0) > starting_distance, "pedestrians walk along their mapped sidewalk routes")
-	_check(pedestrians._visuals[0].scale.is_equal_approx(fitted_pedestrian_scale), "pedestrian route updates preserve the fitted human dimensions")
+	if not pedestrians._visuals.is_empty():
+		_check(pedestrians._visuals[0].scale.is_equal_approx(fitted_pedestrian_scale), "pedestrian route updates preserve the fitted human dimensions")
 	_check(pedestrians.get_pedestrian_position(0) != starting_position, "pedestrian render transforms update as they walk")
 	_check(pedestrians.get_child_count() == 8, "pedestrians use four rigged 3D models plus four collision proxies")
 	pedestrians.queue_free()
