@@ -1,7 +1,7 @@
 extends Node3D
 
 const PlayerScript = preload("res://scripts/player_controller.gd")
-const WorldScript = preload("res://scripts/world_generator.gd")
+const OSMWorldScript = preload("res://scripts/osm_world_generator.gd")
 const MobileControlsScript = preload("res://scripts/mobile_controls.gd")
 const LegalConsentScript = preload("res://scripts/legal_consent.gd")
 const VehicleScript = preload("res://scripts/vehicle_controller.gd")
@@ -10,14 +10,16 @@ const PedestrianManagerScript = preload("res://scripts/pedestrian_manager.gd")
 
 func _ready() -> void:
 	_build_environment()
-	var world = WorldScript.new()
-	world.name = "StarterDistrict"
+	var world = OSMWorldScript.new()
+	world.name = "YabaOpenStreetMapDistrict"
 	add_child(world)
-	world.generate()
-	_spawn_traffic()
-	_spawn_pedestrians()
-	_spawn_vehicle()
-	_spawn_player()
+	if not world.generate_from_file("res://assets/data/yaba_osm.json"):
+		push_error("The playable Yaba district could not be built from its OpenStreetMap extract.")
+		return
+	_spawn_traffic(world.get_road_data())
+	_spawn_pedestrians(world.get_road_data())
+	_spawn_vehicle(world)
+	_spawn_player(world)
 	_add_hud()
 	_add_legal_consent()
 
@@ -36,20 +38,28 @@ func _build_environment() -> void:
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-48.0, -28.0, 0.0)
 	sun.light_energy = 1.15
-	# Dynamic shadows are disabled on mobile to reduce GPU and bandwidth cost.
-	sun.shadow_enabled = not OS.has_feature("mobile")
+	# Use a short, two-split shadow range on mobile rather than removing all depth cues.
+	sun.shadow_enabled = true
+	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+	sun.directional_shadow_max_distance = 90.0
+	sun.shadow_bias = 0.06
+	sun.shadow_normal_bias = 1.0
+	if OS.has_feature("mobile"):
+		RenderingServer.directional_shadow_atlas_set_size(1024, true)
 	add_child(sun)
 
-func _spawn_vehicle() -> void:
+func _spawn_vehicle(world: Node) -> void:
 	var vehicle = VehicleScript.new()
 	vehicle.name = "YabaDanfo"
-	vehicle.position = Vector3(3.5, 0.0, 10.0)
+	vehicle.position = world.get_vehicle_spawn_position()
+	vehicle.rotation.y = world.get_spawn_rotation_y()
 	add_child(vehicle)
 
-func _spawn_player() -> void:
+func _spawn_player(world: Node) -> void:
 	var player = PlayerScript.new()
 	player.name = "Player"
-	player.position = Vector3(0.0, 0.5, 5.0)
+	player.position = world.get_player_spawn_position()
+	player.rotation.y = world.get_spawn_rotation_y()
 	add_child(player)
 
 	var controls_layer := CanvasLayer.new()
@@ -79,17 +89,19 @@ func _add_hud() -> void:
 	label.add_theme_constant_override("shadow_offset_x", 2)
 	label.add_theme_constant_override("shadow_offset_y", 2)
 	if OS.has_feature("mobile"):
-		label.text = "LAGOS GTA  |  YABA DISTRICT  |  TAP JUMP NEAR DANFO TO ENTER / EXIT"
+		label.text = "LAGOS GTA  |  YABA, LAGOS  |  TAP JUMP NEAR DANFO TO ENTER / EXIT"
 	else:
 		label.text = "LAGOS GTA  |  YABA DISTRICT\nWASD: Move   SHIFT: Sprint   SPACE: Jump   E: Enter / exit Danfo\nMouse: Look   ESC: Release / capture mouse"
 	layer.add_child(label)
 
-func _spawn_traffic() -> void:
+func _spawn_traffic(roads: Array[Dictionary]) -> void:
 	var traffic = TrafficManagerScript.new()
 	traffic.name = "AmbientLagosTraffic"
+	traffic.configure_from_roads(roads)
 	add_child(traffic)
 
-func _spawn_pedestrians() -> void:
+func _spawn_pedestrians(roads: Array[Dictionary]) -> void:
 	var pedestrians = PedestrianManagerScript.new()
 	pedestrians.name = "YabaSidewalkPedestrians"
+	pedestrians.configure_from_roads(roads)
 	add_child(pedestrians)
