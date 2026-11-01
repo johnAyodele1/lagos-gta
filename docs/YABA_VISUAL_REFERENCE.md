@@ -65,3 +65,10 @@ These figures matter. The map geometry is real OSM geometry, but it is not a sur
 ## Imported architectural asset pass
 
 The project has imported the CC0 [Poly Haven Modular Urban Apartments Facade](https://polyhaven.com/a/modular_urban_apartments_facade) (James Ray Cock) into the asset library. It is not yet wired into the runtime scene, so current building facades are still procedural. This is a generic modern residential asset, not a surveyed Yaba building, and must not be described as an exact reconstruction. Runtime placement is pending alignment, scale, material and Android performance validation.
+
+## Real building attributes
+
+The OSM import now retains mapped `building:material`, `building:colour`, `roof:material`, `roof:colour`, `roof:shape`, `building:levels` and related tags where they exist. The world generator uses explicit wall/roof material and colour tags instead of applying the same arbitrary palette to every mapped footprint.
+
+A separate enrichment step joins OpenBuildingMap records to existing OSM buildings by OSM way ID. It adds GEM taxonomy height/storey and occupancy estimates without adding Google/Microsoft-only duplicate footprints. Explicit OSM heights take precedence. OpenBuildingMap estimates are not ground-truth survey measurements; use them to improve massing and building-use variation, not to claim exact architectural reconstruction.
+
