@@ -34,6 +34,28 @@ static func fit_dimensions(root: Node3D, target_size: Vector3) -> bool:
 	)
 	return true
 
+static func fit_height_preserve_footprint(root: Node3D, target_height: float, center_horizontal: bool = true) -> bool:
+	if target_height <= 0.0:
+		return false
+	var bounds := _combined_local_bounds(root)
+	if bounds.size.y <= 0.001:
+		push_warning("Cannot normalize model height: no valid mesh bounds were found.")
+		return false
+	var factor := target_height / bounds.size.y
+	root.scale.y *= factor
+	var offset_x := -bounds.position.x - (bounds.size.x * 0.5 if center_horizontal else 0.0)
+	var offset_z := -bounds.position.z - (bounds.size.z * 0.5 if center_horizontal else 0.0)
+	root.position += Vector3(offset_x, -bounds.position.y * factor, offset_z)
+	return true
+
+static func get_scaled_dimensions(root: Node3D) -> Vector3:
+	var bounds := _combined_local_bounds(root)
+	return Vector3(
+		bounds.size.x * absf(root.scale.x),
+		bounds.size.y * absf(root.scale.y),
+		bounds.size.z * absf(root.scale.z)
+	)
+
 static func _combined_local_bounds(root: Node3D) -> AABB:
 	var has_bounds := false
 	var combined := AABB()
