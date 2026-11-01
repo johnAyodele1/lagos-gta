@@ -839,7 +839,7 @@ func _nearest_road_sample() -> Dictionary:
 		for index in range(points.size() - 1):
 			var start := points[index]
 			var finish := points[index + 1]
-			var candidate := Geometry2D.get_closest_point_to_segment(Vector2.ZERO, start, finish)
+			var candidate: Vector2 = Geometry2D.get_closest_point_to_segment(Vector2.ZERO, start, finish)
 			var distance := candidate.length()
 			if distance < best_distance:
 				best_distance = distance
@@ -864,7 +864,7 @@ func get_player_spawn_position() -> Vector3:
 	var best_position := Vector2(INF, INF)
 	var best_clearance := -INF
 	for longitudinal_offset in longitudinal_offsets:
-		var road_candidate := road_position + direction * longitudinal_offset
+		var road_candidate: Vector2 = road_position + direction * longitudinal_offset
 		for side_sign in [1.0, -1.0]:
 			var candidate: Vector2 = road_candidate + side * sidewalk_offset * side_sign
 			var clearance := _spawn_clearance(candidate)
