@@ -32,10 +32,11 @@ static func _build_bridge(parent:Node3D,raw:Array,width:float)->void:
     _box(parent,Vector3(0.85,4.45,0.85),Vector3(p.x,2.225,p.y),0.0,concrete,"BridgePier")
     _box(parent,Vector3(1.3,0.24,1.3),Vector3(p.x,4.45,p.y),0.0,concrete,"PierCapital")
 static func _build_mechanic_bay(parent:Node3D,points:Array,width:float)->void:
- var a:=Vector2(float(points[0][0]),float(points[0][1]))
- var b:=Vector2(float(points[1][0]),float(points[1][1]))
+ var segment_index:=1 if points.size()>2 else 0
+ var a:=Vector2(float(points[segment_index][0]),float(points[segment_index][1]))
+ var b:=Vector2(float(points[segment_index+1][0]),float(points[segment_index+1][1]))
  var direction:Vector2=(b-a).normalized(); var side:=Vector2(-direction.y,direction.x)
- var centre:Vector2=(a+b)*0.5+side*(width*0.5+4.8)
+ var centre:Vector2=(a+b)*0.5+side*(width*0.5+1.5)
  var bay:=Node3D.new(); bay.name="YabaUnderpassMechanicBay"
  bay.position=Vector3(centre.x,0,centre.y); bay.rotation.y=atan2(direction.x,direction.y); parent.add_child(bay)
  var wall:=_mat(Color(0.42,0.37,0.29)); var dark:=_mat(Color(0.12,0.13,0.12)); var yellow:=_mat(Color(0.94,0.68,0.08))
@@ -57,7 +58,7 @@ static func _model(parent:Node3D,id:String,pos:Vector3,height:float)->void:
  if packed==null: return
  var node:=packed.instantiate() as Node3D
  if node==null: return
- node.name="PolyHaven_"+id; parent.add_child(node); Bounds.fit_height(node,height); node.position=pos
+ node.name="PolyHaven_"+id; node.position=pos; parent.add_child(node); Bounds.fit_height(node,height)
 static func _mat(color:Color)->StandardMaterial3D:
  var m:=StandardMaterial3D.new(); m.albedo_color=color; m.roughness=0.96; return m
 static func _box(parent:Node3D,size:Vector3,pos:Vector3,yaw:float,material:Material,node_name:String)->void:
