@@ -32,10 +32,10 @@ static func advance_distance(distance: float, speed: float, delta: float, loop_l
 	return fposmod(distance + maxf(speed, 0.0) * maxf(delta, 0.0), loop_length)
 
 func _ready() -> void:
-	_spawn_lane(Vector3.LEFT, -LANE_OFFSET)
-	_spawn_lane(Vector3.RIGHT, LANE_OFFSET)
-	_spawn_lane(Vector3.FORWARD, -LANE_OFFSET)
-	_spawn_lane(Vector3.BACK, LANE_OFFSET)
+	_spawn_lane(Vector3.BACK, -LANE_OFFSET)
+	_spawn_lane(Vector3.FORWARD, LANE_OFFSET)
+	_spawn_lane(Vector3.RIGHT, -LANE_OFFSET)
+	_spawn_lane(Vector3.LEFT, LANE_OFFSET)
 
 func _process(delta: float) -> void:
 	for traffic_item in _traffic:
@@ -49,9 +49,9 @@ func _process(delta: float) -> void:
 		var direction: Vector3 = traffic_item["direction"]
 		var lane_offset: float = traffic_item["lane_offset"]
 		if direction.x != 0.0:
-			vehicle.position = Vector3(-ROAD_HALF_LENGTH + distance, 0.0, lane_offset)
+			vehicle.position = Vector3(-ROAD_HALF_LENGTH + distance if direction.x > 0.0 else ROAD_HALF_LENGTH - distance, 0.0, lane_offset)
 		else:
-			vehicle.position = Vector3(lane_offset, 0.0, -ROAD_HALF_LENGTH + distance)
+			vehicle.position = Vector3(lane_offset, 0.0, -ROAD_HALF_LENGTH + distance if direction.z > 0.0 else ROAD_HALF_LENGTH - distance)
 		vehicle.look_at(vehicle.position + direction, Vector3.UP)
 
 func _spawn_lane(direction: Vector3, lane_offset: float) -> void:
