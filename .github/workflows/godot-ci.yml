@@ -41,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           LOG_FILE="$(mktemp)"
-          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a "$GODOT_BIN" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/run_tests.gd 2>&1 | tee "$LOG_FILE"
+          "$GODOT_BIN" --headless --path . --audio-driver Dummy --script res://tests/run_tests.gd 2>&1 | tee "$LOG_FILE"
           if grep -E "SCRIPT ERROR|ERROR:" "$LOG_FILE"; then
             echo "Godot reported runtime errors during gameplay tests."
             exit 1
