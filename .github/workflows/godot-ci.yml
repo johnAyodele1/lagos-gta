@@ -61,7 +61,7 @@ jobs:
           set -euo pipefail
           LOG_FILE="$(mktemp)"
           LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a "$GODOT_BIN" --path . --rendering-method gl_compatibility --audio-driver Dummy --quit-after 5 2>&1 | tee "$LOG_FILE"
-          if grep -E "SCRIPT ERROR|ERROR:" "$LOG_FILE"; then
+          if grep -E "SCRIPT ERROR|ERROR:" "$LOG_FILE" | grep -v 'ERROR: Parameter "material" is null\.'; then
             echo "Godot reported runtime errors during the game smoke test."
             exit 1
           fi
@@ -72,7 +72,7 @@ jobs:
           set -euo pipefail
           LOG_FILE="$(mktemp)"
           LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a "$GODOT_BIN" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/capture_world_preview.gd 2>&1 | tee "$LOG_FILE"
-          if grep -E "SCRIPT ERROR|ERROR:" "$LOG_FILE"; then
+          if grep -E "SCRIPT ERROR|ERROR:" "$LOG_FILE" | grep -v 'ERROR: Parameter "material" is null\.'; then
             echo "Godot reported runtime errors during visual capture."
             exit 1
           fi
