@@ -232,7 +232,7 @@ func _test_osm_world_generator() -> void:
 		],
 		"buildings": [
 			{"id": "200", "building": "residential", "height_m": 6.2, "outline": [[5.0, -5.0], [10.0, -5.0], [10.0, 5.0], [5.0, 5.0], [5.0, -5.0]]},
-			{"id": "201", "building": "commercial", "shop": "convenience", "name": "Yaba Kiosk", "height_m": 4.0, "outline": [[15.0, -5.0], [20.0, -5.0], [20.0, 5.0], [15.0, 5.0], [15.0, -5.0]]}
+			{"id": "201", "building": "commercial", "shop": "convenience", "name": "Yaba Kiosk", "height_m": 4.0, "outline": [[15.0, 7.0], [20.0, 7.0], [20.0, 17.0], [15.0, 17.0], [15.0, 7.0]]}
 		],
 		"barriers": [
 			{"id": "300", "barrier": "wall", "coordinates": [[-5.0, -5.0], [-5.0, 5.0]]}
