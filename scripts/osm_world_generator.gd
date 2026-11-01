@@ -492,7 +492,7 @@ func _add_building_network() -> void:
 		var footprint_area := absf(area)
 		var height := _resolve_building_height(building, footprint_area)
 		var winding := 1.0 if area >= 0.0 else -1.0
-		var base_color: Color = BUILDING_COLORS[building_index % BUILDING_COLORS.size()]
+		var base_color: Color = _resolve_building_color(building, building_index)
 		var longest_edge := -1
 		var longest_length := 0.0
 		for edge_index in range(outline.size()):
@@ -550,7 +550,7 @@ func _add_building_network() -> void:
 				triangle_points.append(point)
 				vertices.append(Vector3(point.x, height, point.y))
 				normals.append(Vector3.UP)
-				colors.append(base_color.darkened(0.22))
+				colors.append(_resolve_roof_color(building, base_color))
 				uvs.append(Vector2(point.x / 8.0, point.y / 8.0))
 			indices.append_array(PackedInt32Array([roof_base, roof_base + 1, roof_base + 2]))
 			collision_faces.append_array(PackedVector3Array([
@@ -562,7 +562,9 @@ func _add_building_network() -> void:
 
 		if longest_edge >= 0:
 			var building_type := str(building.get("building", "yes"))
-			var commercial := not str(building.get("shop", "")).is_empty() or not str(building.get("amenity", "")).is_empty() or building_type in ["commercial", "retail", "office"]
+			var occupancy := str(building.get("occupancy", "")).to_upper()
+			var commercial := not str(building.get("shop", "")).is_empty() or not str(building.get("amenity", "")).is_empty() or building_type in ["commercial", "retail", "office"] or occupancy.begins_with("COM") or occupancy.begins_with("MIX")
+			var residential := building_type in ["residential", "apartments", "house", "yes"] or occupancy.begins_with("RES") or occupancy.begins_with("MIX")
 			# OSM's Yaba extract has very sparse shop tags. For untyped street-edge
 			# footprints, infer a limited number of ground-floor shops from their
 			# proximity to mapped roads; keep this explicitly art-directed, not
@@ -602,9 +604,9 @@ func _add_building_network() -> void:
 					shop_label.outline_modulate = Color(0.025, 0.03, 0.03)
 					add_child(shop_label)
 					shop_label_count += 1
-			elif height >= 6.0 and building_type in ["residential", "apartments", "house", "yes"]:
+			if height >= 6.0 and residential:
 				balcony_slabs.append(Transform3D(Basis(Vector3.UP, angle), Vector3(midpoint.x + outward.x * 0.48, 3.35, midpoint.y + outward.y * 0.48)))
-				balcony_rails.append(Transform3D(Basis(Vector3.UP, angle), Vector3(midpoint.x + outward.x * 0.92, 3.92, midpoint.y + outward.y * 0.92)))
+				balcony_rails.append(Transform3D(Basis(Vector3.UP, angle), Vector3(midpoint.x + outward.x * 0.92, 3.92, midpoint.y + outward.y * 0.92)) )
 		if height >= 6.0 and building_index % 9 == 0:
 			var centroid := _outline_centroid_from_vectors(outline)
 			water_tanks.append(Transform3D(Basis().scaled(Vector3(1.0, 1.0, 1.0)), Vector3(centroid.x, height + 0.85, centroid.y)))
@@ -676,7 +678,8 @@ func _add_market_stalls() -> void:
 		if stall_count >= MAX_STALLS:
 			break
 		var building_type := str(building.get("building", "yes"))
-		var commercial := not str(building.get("shop", "")).is_empty() or not str(building.get("amenity", "")).is_empty() or building_type in ["commercial", "retail", "office"]
+		var occupancy := str(building.get("occupancy", "")).to_upper()
+		var commercial := not str(building.get("shop", "")).is_empty() or not str(building.get("amenity", "")).is_empty() or building_type in ["commercial", "retail", "office"] or occupancy.begins_with("COM") or occupancy.begins_with("MIX")
 		if not commercial:
 			continue
 		var outline: Array[Vector2] = []
@@ -842,10 +845,52 @@ func _add_umbrella_batch(batch_name: String, transforms: Array[Transform3D], col
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(instance)
 
+
+func _resolve_building_color(building: Dictionary, building_index: int) -> Color:
+	var fallback: Color = BUILDING_COLORS[building_index % BUILDING_COLORS.size()]
+	var tags: Dictionary = building.get("tags", {})
+	var mapped_color := str(tags.get("building:colour", "")).strip_edges()
+	if not mapped_color.is_empty():
+		return Color.from_string(mapped_color, fallback)
+	var material := str(tags.get("building:material", "")).to_lower()
+	if material.contains("brick"):
+		return Color(0.48, 0.29, 0.22)
+	if material.contains("concrete") or material.contains("cement"):
+		return Color(0.66, 0.64, 0.59)
+	if material.contains("plaster") or material.contains("render"):
+		return Color(0.76, 0.71, 0.61)
+	if material.contains("metal") or material.contains("steel"):
+		return Color(0.48, 0.50, 0.49)
+	if material.contains("wood") or material.contains("timber"):
+		return Color(0.43, 0.29, 0.19)
+	if material.contains("stone"):
+		return Color(0.58, 0.55, 0.49)
+	if material.contains("glass"):
+		return Color(0.40, 0.53, 0.57)
+	return fallback
+
+func _resolve_roof_color(building: Dictionary, wall_color: Color) -> Color:
+	var tags: Dictionary = building.get("tags", {})
+	var mapped_color := str(tags.get("roof:colour", "")).strip_edges()
+	if not mapped_color.is_empty():
+		return Color.from_string(mapped_color, wall_color.darkened(0.22))
+	var material := str(tags.get("roof:material", "")).to_lower()
+	if material.contains("metal") or material.contains("corrugated"):
+		return Color(0.40, 0.42, 0.40)
+	if material.contains("tile") or material.contains("shingle"):
+		return Color(0.43, 0.23, 0.17)
+	if material.contains("thatch"):
+		return Color(0.54, 0.43, 0.25)
+	if material.contains("concrete"):
+		return Color(0.52, 0.50, 0.46)
+	if material.contains("asphalt") or material.contains("bitumen"):
+		return Color(0.20, 0.21, 0.20)
+	return wall_color.darkened(0.22)
+
 static func _resolve_building_height(building: Dictionary, footprint_area: float) -> float:
 	var source := str(building.get("height_source", ""))
 	var mapped_height := float(building.get("height_m", 6.2))
-	if source in ["osm:height", "estimated:building-levels"]:
+	if source in ["osm:height", "estimated:building-levels"] or source.begins_with("openbuildingmap:"):
 		return clampf(mapped_height, 2.8, 45.0)
 	var building_type := str(building.get("building", "yes"))
 	if building_type in ["industrial", "warehouse"]:
