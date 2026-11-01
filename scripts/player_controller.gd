@@ -57,6 +57,12 @@ func _build_body() -> void:
 	collision.shape = capsule
 	collision.position.y = 0.9
 	add_child(collision)
+	if DisplayServer.get_name() == "headless":
+		body_mesh = MeshInstance3D.new()
+		body_mesh.name = "PlayerCharacterVisual"
+		add_child(body_mesh)
+		_build_camera_rig()
+		return
 
 	# A custom tapered torso, layered clothing, face, hair and articulated limbs.
 	body_mesh = MeshInstance3D.new()
