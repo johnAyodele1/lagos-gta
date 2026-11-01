@@ -60,7 +60,7 @@ def local_coordinates(lat: float, lon: float) -> list[float]:
 def parse_distance(value: str | None) -> float | None:
     if not value:
         return None
-    match = re.search(r"([0-9]+(?:\\.[0-9]+)?)\\s*(m|meter|metre|ft|feet)?", value.lower())
+    match = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*(m|meter|metre|ft|feet)?", value.lower())
     if not match:
         return None
     amount = float(match.group(1))
