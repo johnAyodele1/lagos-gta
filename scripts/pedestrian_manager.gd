@@ -9,6 +9,7 @@ const MAX_SIDEWALK_ROUTES := 4
 const WORLD_COLLISION_LAYER: int = 1
 const PLAYER_COLLISION_LAYER: int = 4
 const NPC_COLLISION_LAYER: int = 8
+const CharacterMeshFactoryScript = preload("res://scripts/character_mesh_factory.gd")
 
 const CLOTHING_COLORS: Array[Color] = [
 	Color(0.16, 0.30, 0.62),
@@ -27,6 +28,7 @@ var _routes: Array[Dictionary] = []
 var _walkers: Array[Dictionary] = []
 var _torso_batch: MultiMeshInstance3D
 var _head_batch: MultiMeshInstance3D
+var _hair_batch: MultiMeshInstance3D
 var _arm_batch: MultiMeshInstance3D
 var _leg_batch: MultiMeshInstance3D
 var _collision_bodies: Array[AnimatableBody3D] = []
@@ -134,11 +136,7 @@ func _spawn_walkers() -> void:
 		})
 
 func _create_batches() -> void:
-	var torso := CapsuleMesh.new()
-	torso.radius = 0.25
-	torso.height = 0.95
-	torso.radial_segments = 8
-	torso.rings = 4
+	var torso := CharacterMeshFactoryScript.create_torso_mesh()
 	_torso_batch = _create_batch(torso, _material(), WALKER_COUNT)
 
 	var head := SphereMesh.new()
@@ -147,6 +145,13 @@ func _create_batches() -> void:
 	head.radial_segments = 10
 	head.rings = 6
 	_head_batch = _create_batch(head, _material(), WALKER_COUNT)
+
+	var hair := SphereMesh.new()
+	hair.radius = 0.225
+	hair.height = 0.24
+	hair.radial_segments = 10
+	hair.rings = 5
+	_hair_batch = _create_batch(hair, _material(), WALKER_COUNT)
 
 	var limb := CapsuleMesh.new()
 	limb.radius = 0.085
@@ -213,6 +218,9 @@ func _update_batches() -> void:
 		_torso_batch.multimesh.set_instance_color(index, CLOTHING_COLORS[index % CLOTHING_COLORS.size()])
 		_head_batch.multimesh.set_instance_transform(index, head_transform)
 		_head_batch.multimesh.set_instance_color(index, SKIN_COLORS[index % SKIN_COLORS.size()])
+		var hair_basis := basis.scaled(Vector3(1.0, 0.72, 0.94))
+		_hair_batch.multimesh.set_instance_transform(index, Transform3D(hair_basis, world_position + Vector3.UP * 1.88))
+		_hair_batch.multimesh.set_instance_color(index, Color(0.035, 0.028, 0.022))
 		for side_index in range(2):
 			var side := -1.0 if side_index == 0 else 1.0
 			var limb_index := index * 2 + side_index
