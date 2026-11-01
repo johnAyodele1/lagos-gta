@@ -74,6 +74,13 @@ func _ensure_scene_materials() -> void:
 			mesh_instance.mesh = mesh_copy
 		if mesh_instance.material_override == null and mesh_instance.mesh.get_surface_count() == 0:
 			mesh_instance.material_override = fallback
+	for node in find_children("*", "Label3D", true, false):
+		var label := node as Label3D
+		if label.material_override == null:
+			label.material_override = fallback
+			missing_surfaces += 1
+			if affected_nodes.size() < 12:
+				affected_nodes.append(str(label.get_path()))
 	for node in find_children("*", "MultiMeshInstance3D", true, false):
 		var batch := node as MultiMeshInstance3D
 		if batch.multimesh == null or batch.multimesh.mesh == null:
