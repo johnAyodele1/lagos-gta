@@ -6,6 +6,9 @@ const SPRINT_SPEED: float = 8.0
 const JUMP_VELOCITY: float = 5.5
 const MOUSE_SENSITIVITY: float = 0.0025
 const GRAVITY: float = 18.0
+const WORLD_COLLISION_LAYER: int = 1
+const VEHICLE_COLLISION_LAYER: int = 2
+const PLAYER_COLLISION_LAYER: int = 4
 const MIN_CAMERA_PITCH: float = deg_to_rad(-55.0)
 const MAX_CAMERA_PITCH: float = deg_to_rad(35.0)
 
@@ -29,6 +32,12 @@ static func clamp_camera_pitch(pitch: float) -> float:
 	return clampf(pitch, MIN_CAMERA_PITCH, MAX_CAMERA_PITCH)
 
 func _ready() -> void:
+	collision_layer = PLAYER_COLLISION_LAYER
+	collision_mask = WORLD_COLLISION_LAYER | VEHICLE_COLLISION_LAYER
+	floor_snap_length = 0.35
+	safe_margin = 0.04
+	max_slides = 8
+	floor_stop_on_slope = true
 	_build_body()
 	if not OS.has_feature("mobile"):
 		_capture_mouse()
@@ -174,9 +183,20 @@ func _get_nearest_vehicle() -> Node3D:
 		if not is_instance_valid(candidate) or not candidate is Node3D:
 			continue
 		var distance := global_position.distance_to(candidate.global_position)
-		if distance < nearest_distance:
-			nearest = candidate
-			nearest_distance = distance
+		if distance >= nearest_distance:
+			continue
+		# Interaction is blocked by solid walls and other world geometry.
+		var ray_query := PhysicsRayQueryParameters3D.create(
+			global_position + Vector3.UP,
+			candidate.global_position + Vector3.UP,
+			WORLD_COLLISION_LAYER | VEHICLE_COLLISION_LAYER,
+			[get_rid()]
+		)
+		var hit := get_world_3d().direct_space_state.intersect_ray(ray_query)
+		if not hit.is_empty() and hit.get("collider") != candidate:
+			continue
+		nearest = candidate
+		nearest_distance = distance
 	return nearest
 
 func _apply_look_delta(look_delta: Vector2) -> void:
