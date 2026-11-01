@@ -155,8 +155,9 @@ func _build_body() -> void:
 
 	# SpringArm3D keeps the third-person camera outside mapped walls and vehicles.
 	camera_pivot = SpringArm3D.new()
+	camera_pivot.name = "ThirdPersonSpringArm"
 	camera_pivot.position.y = 1.72
-	camera_pivot.rotation = Vector3(deg_to_rad(14.0), 0.0, 0.0)
+	camera_pivot.rotation = Vector3.ZERO
 	camera_pivot.spring_length = 7.2
 	camera_pivot.collision_mask = WORLD_COLLISION_LAYER
 	camera_pivot.margin = 0.2
@@ -165,13 +166,20 @@ func _build_body() -> void:
 	camera_pivot.shape = camera_probe
 	add_child(camera_pivot)
 
+	# The SpringArm casts horizontally; pitch belongs on a child mount so the
+	# collision probe does not point into the road and collapse the camera.
+	camera_mount = Node3D.new()
+	camera_mount.name = "CameraMount"
+	camera_mount.rotation.x = deg_to_rad(-14.0)
+	camera_pivot.add_child(camera_mount)
+
 	camera = Camera3D.new()
 	camera.position = Vector3.ZERO
 	camera.rotation = Vector3.ZERO
 	camera.fov = 76.0
 	camera.current = true
 	camera.far = 220.0
-	camera_pivot.add_child(camera)
+	camera_mount.add_child(camera)
 
 func _character_material(color: Color) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
