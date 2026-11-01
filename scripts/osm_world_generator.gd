@@ -66,6 +66,7 @@ func generate_from_data(data: Dictionary) -> bool:
 	_add_ground()
 	_add_road_network()
 	_add_building_network()
+	_add_market_stalls()
 	_add_barrier_network()
 	_add_residential_compounds()
 	_add_utility_network()
@@ -575,6 +576,106 @@ func _add_building_network() -> void:
 	_add_box_batch("OSMRoofParapets", Vector3.ONE, parapets, Color(0.50, 0.47, 0.42))
 	_add_box_batch("OSMAirConditioningUnits", Vector3.ONE, ac_units, Color(0.68, 0.68, 0.62))
 	_add_cylinder_batch("OSMRooftopWaterTanks", 0.68, 1.5, water_tanks, Color(0.10, 0.24, 0.38))
+
+func _add_market_stalls() -> void:
+	# Street trading is part of the Yaba streetscape. Place a bounded set of
+	# stalls at mapped commercial frontages, not at arbitrary grid positions.
+	const MAX_STALLS := 24
+	var umbrella_transforms: Array[Transform3D] = []
+	var table_transforms: Array[Transform3D] = []
+	var pole_transforms: Array[Transform3D] = []
+	var leg_transforms: Array[Transform3D] = []
+	var goods_transforms: Array[Transform3D] = []
+	var collision_root := Node3D.new()
+	collision_root.name = "YabaMarketStallCollision"
+	var stall_count := 0
+	for building in _buildings:
+		if stall_count >= MAX_STALLS:
+			break
+		var building_type := str(building.get("building", "yes"))
+		var commercial := not str(building.get("shop", "")).is_empty() or not str(building.get("amenity", "")).is_empty() or building_type in ["commercial", "retail", "office"]
+		if not commercial:
+			continue
+		var outline: Array[Vector2] = []
+		for coordinate in building.get("outline", []):
+			outline.append(Vector2(float(coordinate[0]), float(coordinate[1])))
+		if outline.size() > 1 and outline[0].is_equal_approx(outline[outline.size() - 1]):
+			outline.pop_back()
+		if outline.size() < 3:
+			continue
+		var longest_edge := -1
+		var longest_length := 0.0
+		for edge_index in range(outline.size()):
+			var edge_length := outline[edge_index].distance_to(outline[(edge_index + 1) % outline.size()])
+			if edge_length > longest_length:
+				longest_length = edge_length
+				longest_edge = edge_index
+		if longest_edge < 0 or longest_length < 5.0:
+			continue
+		var p0 := outline[longest_edge]
+		var p1 := outline[(longest_edge + 1) % outline.size()]
+		var direction := (p1 - p0).normalized()
+		var winding := 1.0 if _polygon_signed_area(outline) >= 0.0 else -1.0
+		var outward := Vector2(direction.y, -direction.x) * winding
+		var midpoint := (p0 + p1) * 0.5
+		var stall_position := midpoint + outward * 2.8
+		var road_clearance := _nearest_road_distance(stall_position)
+		if road_clearance < 3.0 or road_clearance > 18.0:
+			continue
+		var angle := atan2(-direction.y, direction.x)
+		var rotation := Basis(Vector3.UP, angle)
+		umbrella_transforms.append(Transform3D(rotation.scaled(Vector3(1.15, 1.0, 1.15)), Vector3(stall_position.x, 2.35, stall_position.y)))
+		table_transforms.append(Transform3D(rotation.scaled(Vector3(1.55, 0.12, 0.88)), Vector3(stall_position.x, 0.92, stall_position.y)))
+		pole_transforms.append(Transform3D(Basis().scaled(Vector3(0.035, 2.2, 0.035)), Vector3(stall_position.x, 1.1, stall_position.y)))
+		for side_x in [-0.65, 0.65]:
+			for side_z in [-0.32, 0.32]:
+				var leg_offset := rotation * Vector3(side_x, 0.0, side_z)
+				leg_transforms.append(Transform3D(Basis(), Vector3(stall_position.x + leg_offset.x, 0.44, stall_position.y + leg_offset.z)))
+		for goods_index in range(3):
+			var goods_offset := rotation * Vector3(-0.48 + float(goods_index) * 0.48, 0.0, -0.05)
+			goods_transforms.append(Transform3D(rotation.scaled(Vector3(0.28, 0.34, 0.28)), Vector3(stall_position.x + goods_offset.x, 1.15, stall_position.y + goods_offset.z)))
+		var stall_body := StaticBody3D.new()
+		stall_body.name = "MarketStall_%02d" % stall_count
+		stall_body.collision_layer = 1
+		stall_body.collision_mask = 0
+		stall_body.position = Vector3(stall_position.x, 0.45, stall_position.y)
+		stall_body.rotation.y = angle
+		var stall_shape := CollisionShape3D.new()
+		var stall_box := BoxShape3D.new()
+		stall_box.size = Vector3(1.6, 0.9, 0.9)
+		stall_shape.shape = stall_box
+		stall_body.add_child(stall_shape)
+		collision_root.add_child(stall_body)
+		stall_count += 1
+	if stall_count == 0:
+		return
+	_add_umbrella_batch("YabaMarketUmbrellas", umbrella_transforms, Color(0.72, 0.16, 0.12))
+	_add_box_batch("YabaMarketTables", Vector3.ONE, table_transforms, Color(0.30, 0.23, 0.16))
+	_add_cylinder_batch("YabaMarketUmbrellaPoles", 0.035, 1.0, pole_transforms, Color(0.18, 0.17, 0.15))
+	_add_cylinder_batch("YabaMarketTableLegs", 0.035, 0.85, leg_transforms, Color(0.18, 0.17, 0.15))
+	_add_box_batch("YabaMarketGoodsCrates", Vector3.ONE, goods_transforms, Color(0.52, 0.34, 0.16))
+	add_child(collision_root)
+
+func _add_umbrella_batch(batch_name: String, transforms: Array[Transform3D], color: Color) -> void:
+	if transforms.is_empty():
+		return
+	var multimesh := MultiMesh.new()
+	multimesh.transform_format = MultiMesh.TRANSFORM_3D
+	var canopy := CylinderMesh.new()
+	canopy.top_radius = 0.10
+	canopy.bottom_radius = 1.0
+	canopy.height = 0.48
+	canopy.radial_segments = 8
+	multimesh.mesh = canopy
+	multimesh.instance_count = transforms.size()
+	for index in range(transforms.size()):
+		multimesh.set_instance_transform(index, transforms[index])
+	var instance := MultiMeshInstance3D.new()
+	instance.name = batch_name
+	instance.multimesh = multimesh
+	instance.material_override = _material(batch_name, color, 0.92)
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(instance)
 
 func _append_facade_windows(windows: Array[Transform3D], p0: Vector2, p1: Vector2, outward: Vector2, height: float) -> void:
 	var edge := p1 - p0
