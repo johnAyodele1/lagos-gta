@@ -12,7 +12,7 @@ const PedestrianManagerScript = preload("res://scripts/pedestrian_manager.gd")
 var _graphics_profile: Dictionary = {}
 var _sun_light: DirectionalLight3D
 var _world_environment: Environment
-var _player: CharacterBody3D
+var _player: PlayerController
 var _quality_button: Button
 
 func _ready() -> void:
