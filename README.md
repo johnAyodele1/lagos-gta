@@ -61,7 +61,7 @@ The latest verified branch run passed **118 gameplay tests** and the main-scene 
 
 ## Roadmap and release gates
 
-1. Replace low-poly procedural vehicle and character meshes with optimized, properly licensed production assets and rigged animations; expand the licensed architecture library with locally appropriate building variants.
+1. Optimize the newly imported rigged player/pedestrian models with LODs and animation/texture budgets; expand the architecture library with locally appropriate building variants and replace remaining procedural facades.
 2. Add LODs and chunk streaming beyond the current 450m district.
 3. Profile GPU/CPU frame time, memory, draw calls, physics and thermals on representative low-end Android, Samsung S21-class and iOS devices.
 4. Add more Lagos districts, traffic rules, pedestrian crossings, missions, audio and save/load.
@@ -79,4 +79,4 @@ See [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md), [docs/LOW_END_DEVICE_PROFILE.m
 - Preserve source-data attribution and licences.
 
 
-A second build-time pipeline generates rigged low-detail Lagos civilian and Nigerian traffic/police characters from the pinned Ara 3D Gen / MakeHuman CC0 source. The models are being validated before replacing the current player and pedestrian visuals; see [the character asset pipeline](docs/CHARACTER_ASSET_PIPELINE.md). Building heights and occupancy are also being enriched from the ODbL OpenBuildingMap dataset, while the OSM footprint IDs remain authoritative; see [asset and data credits](assets/models/ASSET_CREDITS.md).
+A second build-time pipeline imports rigged Lagos civilian, female, FRSC and Nigerian Police characters from the pinned Ara 3D Gen / MakeHuman CC0 source. The player and sidewalk pedestrians now load these textured models with the existing character as a fallback; see [the character asset pipeline](docs/CHARACTER_ASSET_PIPELINE.md). The Yaba OSM extract is enriched with OpenBuildingMap heights and occupancy (7,417 OSM matches, 285 height enrichments and 5,008 occupancy classifications), while OSM footprints remain authoritative; see [asset and data credits](assets/models/ASSET_CREDITS.md).
