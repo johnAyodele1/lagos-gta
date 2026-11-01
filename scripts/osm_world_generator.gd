@@ -743,6 +743,7 @@ func _select_hero_facade() -> Dictionary:
 		return {}
 	best["model"] = model
 	best["model_width"] = dimensions.x
+	best["model_depth"] = dimensions.z
 	return best
 
 func _add_hero_facade_asset(details: Dictionary) -> void:
@@ -754,8 +755,11 @@ func _add_hero_facade_asset(details: Dictionary) -> void:
 	anchor.name = "PolyHavenResidentialHeroFacade"
 	var midpoint: Vector2 = details["midpoint"]
 	var outward: Vector2 = details["outward"]
-	anchor.position = Vector3(midpoint.x + outward.x * 0.10, 0.0, midpoint.y + outward.y * 0.10)
-	anchor.rotation.y = float(details["angle"])
+	# GLB's front faces -Z. Put the model centre half a facade-depth inside
+	# the footprint so its front plane aligns with the mapped street frontage.
+	var half_depth := float(details["model_depth"]) * 0.5
+	anchor.position = Vector3(midpoint.x - outward.x * half_depth, 0.0, midpoint.y - outward.y * half_depth)
+	anchor.rotation.y = float(details["angle"]) + PI
 	add_child(anchor)
 	anchor.add_child(model)
 	for mesh_node in model.find_children("*", "MeshInstance3D", true, false):
