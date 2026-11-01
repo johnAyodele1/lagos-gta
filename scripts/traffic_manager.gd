@@ -10,6 +10,9 @@ const LOOP_LENGTH := ROAD_HALF_LENGTH * 2.0
 const LANE_OFFSET := 3.1
 const VEHICLE_COUNT_PER_LANE := 2
 const VEHICLE_SPACING := LOOP_LENGTH / float(VEHICLE_COUNT_PER_LANE)
+const WORLD_COLLISION_LAYER: int = 1
+const VEHICLE_COLLISION_LAYER: int = 2
+const PLAYER_COLLISION_LAYER: int = 4
 
 const BODY_COLORS: Array[Color] = [
 	Color(0.88, 0.72, 0.10),
@@ -27,6 +30,7 @@ var _traffic: Array[Dictionary] = []
 var _body_batch: MultiMeshInstance3D
 var _cabin_batch: MultiMeshInstance3D
 var _wheel_batch: MultiMeshInstance3D
+var _collision_bodies: Array[AnimatableBody3D] = []
 
 static func advance_distance(distance: float, speed: float, delta: float, loop_length: float = LOOP_LENGTH) -> float:
 	if loop_length <= 0.0:
@@ -39,6 +43,7 @@ func _ready() -> void:
 	_spawn_lane(Vector3.FORWARD, LANE_OFFSET)
 	_spawn_lane(Vector3.RIGHT, -LANE_OFFSET)
 	_spawn_lane(Vector3.LEFT, LANE_OFFSET)
+	_create_collision_proxies()
 	_update_render_batches()
 
 func _process(delta: float) -> void:
@@ -49,6 +54,24 @@ func _process(delta: float) -> void:
 			delta
 		)
 	_update_render_batches()
+
+func _create_collision_proxies() -> void:
+	# Keep the render path batched, but give each moving vehicle a cheap collider.
+	# AnimatableBody3D syncs these transforms with the physics server.
+	for index in range(_traffic.size()):
+		var body := AnimatableBody3D.new()
+		body.name = "TrafficCollision_%02d" % index
+		body.collision_layer = VEHICLE_COLLISION_LAYER
+		body.collision_mask = WORLD_COLLISION_LAYER | PLAYER_COLLISION_LAYER
+		body.sync_to_physics = true
+		var collision := CollisionShape3D.new()
+		var shape := BoxShape3D.new()
+		shape.size = Vector3(1.95, 1.8, 3.85)
+		collision.shape = shape
+		collision.position.y = 1.0
+		body.add_child(collision)
+		add_child(body)
+		_collision_bodies.append(body)
 
 func _create_render_batches() -> void:
 	_body_batch = _create_batch(Vector3(1.85, 0.85, 3.7), _material())
@@ -100,6 +123,8 @@ func _update_render_batches() -> void:
 			position = Vector3(lane_offset, 0.0, -ROAD_HALF_LENGTH + distance if direction.z > 0.0 else ROAD_HALF_LENGTH - distance)
 		var vehicle_basis := Basis.looking_at(direction, Vector3.UP)
 		var vehicle_transform := Transform3D(vehicle_basis, position)
+		if index < _collision_bodies.size():
+			_collision_bodies[index].global_transform = global_transform * vehicle_transform
 		var tint: Color = BODY_COLORS[index % BODY_COLORS.size()]
 		_body_batch.multimesh.set_instance_transform(index, vehicle_transform * Transform3D(Basis(), Vector3(0.0, 0.82, 0.0)))
 		_body_batch.multimesh.set_instance_color(index, tint)
@@ -122,6 +147,9 @@ func _material() -> StandardMaterial3D:
 
 func get_traffic_count() -> int:
 	return _traffic.size()
+
+func get_traffic_collision_count() -> int:
+	return _collision_bodies.size()
 
 func get_traffic_distance(index: int) -> float:
 	if index < 0 or index >= _traffic.size():
