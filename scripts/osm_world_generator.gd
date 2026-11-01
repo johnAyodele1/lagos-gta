@@ -510,7 +510,9 @@ func _add_barrier_network() -> void:
 				a, at, bt, a, bt, b,
 				b, bt, ct, b, ct, c,
 				c, ct, dt, c, dt, d,
-				d, dt, at, d, at, a
+				d, dt, at, d, at, a,
+				a, c, b, a, d, c,
+				at, bt, ct, at, ct, dt
 			]))
 	_add_box_batch("OSMCompoundWalls", Vector3.ONE, wall_transforms, Color(0.60, 0.55, 0.46))
 	_add_box_batch("OSMCompoundFences", Vector3.ONE, fence_transforms, Color(0.22, 0.23, 0.21))
@@ -519,6 +521,7 @@ func _add_barrier_network() -> void:
 		barrier_body.name = "OSMBarrierCollision"
 		var barrier_collision := CollisionShape3D.new()
 		var barrier_shape := ConcavePolygonShape3D.new()
+		barrier_shape.backface_collision = true
 		barrier_shape.set_faces(collision_faces)
 		barrier_collision.shape = barrier_shape
 		barrier_body.add_child(barrier_collision)
