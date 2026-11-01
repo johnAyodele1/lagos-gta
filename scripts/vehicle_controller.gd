@@ -234,11 +234,13 @@ func enter_vehicle(player: Node) -> void:
 	player.collision_layer = 0
 	player.collision_mask = 0
 	player.body_mesh.visible = false
-	player.camera_pivot.reparent(self, false)
-	player.camera_pivot.position = Vector3(0.0, 2.4, 0.0)
+	player.camera_yaw_pivot.reparent(self, false)
+	player.camera_yaw_pivot.position = Vector3(0.0, 2.4, 0.0)
+	player.camera_yaw_pivot.rotation = Vector3.ZERO
+	player.camera_pivot.position = Vector3.ZERO
 	player.camera_pivot.rotation = Vector3.ZERO
 	player.camera_pivot.spring_length = 8.0
-	player.camera_mount.rotation.x = deg_to_rad(-12.0)
+	player.camera.rotation = Vector3(deg_to_rad(-12.0), 0.0, 0.0)
 	player.camera_pivot.collision_mask = WORLD_COLLISION_LAYER
 	player.camera.position = Vector3.ZERO
 	player.camera.rotation = Vector3.ZERO
@@ -275,11 +277,13 @@ func exit_vehicle() -> void:
 		push_warning("Cannot exit the danfo: all nearby exit positions are blocked.")
 		return
 	driver = null
-	player.camera_pivot.reparent(player, false)
-	player.camera_pivot.position = Vector3(0.0, 1.72, 0.0)
+	player.camera_yaw_pivot.reparent(player, false)
+	player.camera_yaw_pivot.position = Vector3(0.0, 1.72, 0.0)
+	player.camera_yaw_pivot.rotation = Vector3.ZERO
+	player.camera_pivot.position = Vector3.ZERO
 	player.camera_pivot.rotation = Vector3.ZERO
 	player.camera_pivot.spring_length = 7.2
-	player.camera_mount.rotation.x = deg_to_rad(-14.0)
+	player.camera.rotation = Vector3(deg_to_rad(-14.0), 0.0, 0.0)
 	player.camera_pivot.collision_mask = WORLD_COLLISION_LAYER
 	player.camera.position = Vector3.ZERO
 	player.camera.rotation = Vector3.ZERO
