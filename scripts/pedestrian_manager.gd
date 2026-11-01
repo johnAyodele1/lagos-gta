@@ -10,7 +10,7 @@ const WORLD_COLLISION_LAYER: int = 1
 const PLAYER_COLLISION_LAYER: int = 4
 const VEHICLE_COLLISION_LAYER: int = 2
 const NPC_COLLISION_LAYER: int = 8
-const CharacterMeshFactoryScript = preload("res://scripts/character_mesh_factory.gd")
+const RIGGED_CHARACTER_SCENE = preload("res://assets/models/characters/lagos_player.glb")
 
 const CLOTHING_COLORS: Array[Color] = [
 	Color(0.16, 0.30, 0.62),
@@ -27,11 +27,8 @@ const SKIN_COLORS: Array[Color] = [
 
 var _routes: Array[Dictionary] = []
 var _walkers: Array[Dictionary] = []
-var _torso_batch: MultiMeshInstance3D
-var _head_batch: MultiMeshInstance3D
-var _hair_batch: MultiMeshInstance3D
-var _arm_batch: MultiMeshInstance3D
-var _leg_batch: MultiMeshInstance3D
+var _visuals: Array[Node3D] = []
+var _animation_players: Array[AnimationPlayer] = []
 var _collision_bodies: Array[AnimatableBody3D] = []
 var _last_directions: Array[Vector3] = []
 var _elapsed := 0.0
@@ -45,13 +42,13 @@ func configure_from_roads(roads: Array[Dictionary]) -> void:
 	_routes = _build_sidewalk_routes(roads)
 
 func _ready() -> void:
-	_create_batches()
 	if _routes.is_empty():
 		push_warning("Pedestrians are disabled because no usable OSM sidewalk routes were supplied.")
 		return
 	_spawn_walkers()
 	_create_collision_proxies()
-	_update_batches()
+	_create_rigged_visuals()
+	_update_rigged_visuals()
 
 func _process(delta: float) -> void:
 	_elapsed += maxf(delta, 0.0)
@@ -63,7 +60,7 @@ func _process(delta: float) -> void:
 			delta,
 			float(route["length"])
 		)
-	_update_batches()
+	_update_rigged_visuals()
 
 func _build_sidewalk_routes(roads: Array[Dictionary]) -> Array[Dictionary]:
 	var candidates: Array[Dictionary] = []
@@ -136,51 +133,43 @@ func _spawn_walkers() -> void:
 			"phase": float(index) * 1.4
 		})
 
-func _create_batches() -> void:
-	var torso := CharacterMeshFactoryScript.create_torso_mesh()
-	_torso_batch = _create_batch(torso, _material(), WALKER_COUNT)
+func _create_rigged_visuals() -> void:
+	var model_scene := RIGGED_CHARACTER_SCENE as PackedScene
+	if model_scene == null:
+		push_error("Rigged pedestrian model could not be loaded.")
+		return
+	for index in range(_walkers.size()):
+		var visual := model_scene.instantiate() as Node3D
+		if visual == null:
+			push_error("Pedestrian model instance has no Node3D root.")
+			continue
+		visual.name = "PedestrianVisual_%02d" % index
+		_apply_pedestrian_materials(visual, CLOTHING_COLORS[index % CLOTHING_COLORS.size()], SKIN_COLORS[index % SKIN_COLORS.size()])
+		add_child(visual)
+		_visuals.append(visual)
+		var animation_player := visual.find_child("AnimationPlayer", true, false) as AnimationPlayer
+		_animation_players.append(animation_player)
+		if animation_player != null and animation_player.has_animation("HumanArmature|Man_Walk"):
+			animation_player.play("HumanArmature|Man_Walk")
+			animation_player.speed_scale = float(_walkers[index]["speed"])
 
-	var head := SphereMesh.new()
-	head.radius = 0.22
-	head.height = 0.44
-	head.radial_segments = 10
-	head.rings = 6
-	_head_batch = _create_batch(head, _material(), WALKER_COUNT)
-
-	var hair := SphereMesh.new()
-	hair.radius = 0.225
-	hair.height = 0.24
-	hair.radial_segments = 10
-	hair.rings = 5
-	_hair_batch = _create_batch(hair, _material(), WALKER_COUNT)
-
-	var limb := CapsuleMesh.new()
-	limb.radius = 0.085
-	limb.height = 0.72
-	limb.radial_segments = 6
-	limb.rings = 3
-	_arm_batch = _create_batch(limb, _material(), WALKER_COUNT * 2)
-	_leg_batch = _create_batch(limb, _material(), WALKER_COUNT * 2)
-
-func _create_batch(mesh: Mesh, material: StandardMaterial3D, count: int) -> MultiMeshInstance3D:
-	var instances := MultiMesh.new()
-	instances.transform_format = MultiMesh.TRANSFORM_3D
-	instances.use_colors = true
-	instances.mesh = mesh
-	instances.instance_count = count
-	var batch := MultiMeshInstance3D.new()
-	batch.multimesh = instances
-	batch.material_override = material
-	batch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(batch)
-	return batch
-
-func _material() -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color.WHITE
-	material.vertex_color_use_as_albedo = true
-	material.roughness = 0.9
-	return material
+func _apply_pedestrian_materials(model: Node3D, shirt_color: Color, skin_color: Color) -> void:
+	for node in model.find_children("*", "MeshInstance3D", true, false):
+		var mesh_instance := node as MeshInstance3D
+		if mesh_instance.mesh == null:
+			continue
+		for surface_index in range(mesh_instance.mesh.get_surface_count()):
+			var source_material := mesh_instance.get_active_material(surface_index)
+			if not source_material is StandardMaterial3D:
+				continue
+			var material := (source_material as StandardMaterial3D).duplicate() as StandardMaterial3D
+			var material_name := source_material.resource_name.to_lower()
+			if material_name.contains("shirt") or surface_index <= 1:
+				material.albedo_color = shirt_color
+				mesh_instance.set_surface_override_material(surface_index, material)
+			elif material_name.contains("skin") or surface_index == 2:
+				material.albedo_color = skin_color
+				mesh_instance.set_surface_override_material(surface_index, material)
 
 func _create_collision_proxies() -> void:
 	for index in range(_walkers.size()):
@@ -199,7 +188,7 @@ func _create_collision_proxies() -> void:
 		add_child(body)
 		_collision_bodies.append(body)
 
-func _update_batches() -> void:
+func _update_rigged_visuals() -> void:
 	_last_directions.clear()
 	for index in range(_walkers.size()):
 		var walker: Dictionary = _walkers[index]
@@ -209,34 +198,13 @@ func _update_batches() -> void:
 		var direction: Vector2 = sample["direction"]
 		var direction_3d := Vector3(direction.x, 0.0, direction.y)
 		_last_directions.append(direction_3d)
-		var basis := Basis.looking_at(direction_3d, Vector3.UP)
-		var phase := float(walker["phase"])
-		var stride := sin(_elapsed * 6.0 + phase) * 0.24
 		var world_position := Vector3(position.x, 0.0, position.y)
-		var torso_transform := Transform3D(basis, world_position + Vector3.UP * 1.0)
-		var head_transform := Transform3D(basis, world_position + Vector3.UP * 1.72)
-		_torso_batch.multimesh.set_instance_transform(index, torso_transform)
-		_torso_batch.multimesh.set_instance_color(index, CLOTHING_COLORS[index % CLOTHING_COLORS.size()])
-		_head_batch.multimesh.set_instance_transform(index, head_transform)
-		_head_batch.multimesh.set_instance_color(index, SKIN_COLORS[index % SKIN_COLORS.size()])
-		var hair_basis := basis.scaled(Vector3(1.0, 0.72, 0.94))
-		_hair_batch.multimesh.set_instance_transform(index, Transform3D(hair_basis, world_position + Vector3.UP * 1.88))
-		_hair_batch.multimesh.set_instance_color(index, Color(0.035, 0.028, 0.022))
-		for side_index in range(2):
-			var side := -1.0 if side_index == 0 else 1.0
-			var limb_index := index * 2 + side_index
-			var arm_angle := stride * side
-			var leg_angle := -stride * side
-			var arm_basis := basis * Basis(Vector3.RIGHT, arm_angle)
-			var leg_basis := basis * Basis(Vector3.RIGHT, leg_angle)
-			var arm_origin := world_position + basis * Vector3(side * 0.37, 1.12, 0.0)
-			var leg_origin := world_position + basis * Vector3(side * 0.15, 0.43, 0.0)
-			_arm_batch.multimesh.set_instance_transform(limb_index, Transform3D(arm_basis, arm_origin))
-			_arm_batch.multimesh.set_instance_color(limb_index, CLOTHING_COLORS[index % CLOTHING_COLORS.size()])
-			_leg_batch.multimesh.set_instance_transform(limb_index, Transform3D(leg_basis, leg_origin))
-			_leg_batch.multimesh.set_instance_color(limb_index, Color(0.12, 0.12, 0.13))
+		var basis := Basis.looking_at(direction_3d, Vector3.UP)
+		var world_transform := global_transform * Transform3D(basis, world_position)
+		if index < _visuals.size():
+			_visuals[index].global_transform = world_transform
 		if index < _collision_bodies.size():
-			_collision_bodies[index].global_transform = global_transform * Transform3D(basis, world_position)
+			_collision_bodies[index].global_transform = world_transform
 
 func _sample_route(route: Dictionary, distance: float) -> Dictionary:
 	var points: Array[Vector2] = route["points"]
@@ -269,7 +237,7 @@ func get_pedestrian_distance(index: int) -> float:
 func get_pedestrian_position(index: int) -> Vector3:
 	if index < 0 or index >= _walkers.size():
 		return Vector3.ZERO
-	return _torso_batch.multimesh.get_instance_transform(index).origin
+	return _visuals[index].global_position if index < _visuals.size() else Vector3.ZERO
 
 func get_pedestrian_direction(index: int) -> Vector3:
 	if index < 0 or index >= _last_directions.size():
