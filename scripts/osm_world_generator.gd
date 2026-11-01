@@ -742,24 +742,32 @@ func _select_hero_facade() -> Dictionary:
 		model.free()
 		return {}
 	best["model"] = model
-	best["model_width"] = dimensions.x
-	best["model_depth"] = dimensions.z
+	best["width_axis"] = "x" if dimensions.x >= dimensions.z else "z"
+	best["model_width"] = maxf(dimensions.x, dimensions.z)
+	best["model_depth"] = minf(dimensions.x, dimensions.z)
 	return best
 
 func _add_hero_facade_asset(details: Dictionary) -> void:
 	var model: Node3D = details.get("model") as Node3D
 	if model == null:
 		return
-	model.scale.x *= minf(1.0, float(details["frontage_length"]) / float(details["model_width"]))
+	var width_ratio := minf(1.0, float(details["frontage_length"]) / float(details["model_width"]))
+	if str(details["width_axis"]) == "z":
+		# This asset's wide facade axis is local Z; rotate it onto local X
+		# so the facade spans the mapped frontage before orienting it to the road.
+		model.scale.z *= width_ratio
+		model.rotation.y = -PI * 0.5
+	else:
+		model.scale.x *= width_ratio
 	var anchor := Node3D.new()
 	anchor.name = "PolyHavenResidentialHeroFacade"
 	var midpoint: Vector2 = details["midpoint"]
 	var outward: Vector2 = details["outward"]
-	# GLB's front faces -Z. Put the model centre half a facade-depth inside
-	# the footprint so its front plane aligns with the mapped street frontage.
+	# The facade front is local -Z. Its front plane is aligned with the OSM
+	# footprint edge; the model body sits inward from that frontage.
 	var half_depth := float(details["model_depth"]) * 0.5
 	anchor.position = Vector3(midpoint.x - outward.x * half_depth, 0.0, midpoint.y - outward.y * half_depth)
-	anchor.rotation.y = float(details["angle"]) + PI
+	anchor.rotation.y = atan2(-outward.x, -outward.y)
 	add_child(anchor)
 	anchor.add_child(model)
 	for mesh_node in model.find_children("*", "MeshInstance3D", true, false):
