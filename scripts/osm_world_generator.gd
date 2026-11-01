@@ -1177,19 +1177,17 @@ func _add_road_labels() -> void:
 
 func _nearest_road_sample() -> Dictionary:
 	var best_score := INF
-	var best_distance := INF
-	var best_position := Vector2.ZERO
-	var best_direction := Vector2.RIGHT
-	var best_width := 6.0
-	var best_name := ""
-	var best_highway := ""
-	var best_frontage := 0
+	var best_sample: Dictionary = {}
 	var building_centroids: Array[Vector2] = []
 	for building in _buildings:
 		var outline: Array = building.get("outline", [])
 		if outline.size() >= 4:
 			building_centroids.append(_outline_centroid(outline))
 
+	# First collect inexpensive candidate samples, then evaluate building
+	# frontage only for the nearest 120. This keeps startup work bounded on S21-
+	# class devices even when the OSM extract contains thousands of buildings.
+	var road_samples: Array[Dictionary] = []
 	for road in _roads:
 		var highway := str(road.get("highway", ""))
 		if highway in ["footway", "path", "pedestrian", "cycleway", "steps"]:
@@ -1222,45 +1220,49 @@ func _nearest_road_sample() -> Dictionary:
 			if segment_length < 1.0:
 				continue
 			var direction := segment / segment_length
-			var sample_count := maxi(1, int(ceil(segment_length / 12.0)))
+			var sample_count := maxi(1, int(ceil(segment_length / 16.0)))
 			for sample_index in range(sample_count + 1):
 				var candidate := start.lerp(finish, float(sample_index) / float(sample_count))
 				var distance := candidate.length()
 				if distance > 300.0:
 					continue
-				var left_frontage := 0
-				var right_frontage := 0
-				for building_center in building_centroids:
-					var delta := building_center - candidate
-					if delta.length() > 18.0:
-						continue
-					if direction.cross(delta) > 0.0:
-						left_frontage += 1
-					else:
-						right_frontage += 1
-				var frontage_count := left_frontage + right_frontage
-				# A slightly longer segment with buildings on both sides makes a
-				# much better starting street than the nearest empty service yard.
-				var frontage_bonus := float(frontage_count) * 20.0 + float(mini(left_frontage, right_frontage)) * 10.0
-				var score := distance + road_priority + name_penalty + surface_penalty - frontage_bonus
-				if score < best_score:
-					best_score = score
-					best_distance = distance
-					best_position = candidate
-					best_direction = direction
-					best_width = float(road.get("width_m", 6.0))
-					best_name = road_name
-					best_highway = highway
-					best_frontage = frontage_count
-	return {
-		"position": best_position,
-		"direction": best_direction,
-		"width": best_width,
-		"name": best_name,
-		"highway": best_highway,
-		"distance": best_distance,
-		"frontage_count": best_frontage
-	}
+				road_samples.append({
+					"position": candidate,
+					"direction": direction,
+					"width": float(road.get("width_m", 6.0)),
+					"name": road_name,
+					"highway": highway,
+					"distance": distance,
+					"base_score": distance + road_priority + name_penalty + surface_penalty
+				})
+
+	road_samples.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a["distance"]) < float(b["distance"])
+	)
+	var frontage_candidate_limit := mini(120, road_samples.size())
+	for sample_index in range(frontage_candidate_limit):
+		var sample: Dictionary = road_samples[sample_index]
+		var candidate: Vector2 = sample["position"]
+		var direction: Vector2 = sample["direction"]
+		var left_frontage := 0
+		var right_frontage := 0
+		for building_center in building_centroids:
+			if building_center.distance_squared_to(candidate) > 324.0:
+				continue
+			if direction.cross(building_center - candidate) > 0.0:
+				left_frontage += 1
+			else:
+				right_frontage += 1
+		var frontage_count := left_frontage + right_frontage
+		# A slightly longer segment with buildings on both sides makes a
+		# much better starting street than the nearest empty service yard.
+		var frontage_bonus := float(frontage_count) * 20.0 + float(mini(left_frontage, right_frontage)) * 10.0
+		var score := float(sample["base_score"]) - frontage_bonus
+		if score < best_score:
+			best_score = score
+			best_sample = sample.duplicate()
+			best_sample["frontage_count"] = frontage_count
+	return best_sample
 
 func get_vehicle_spawn_position() -> Vector3:
 	var sample := _nearest_road_sample()
