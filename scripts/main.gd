@@ -10,6 +10,10 @@ const TrafficManagerScript = preload("res://scripts/traffic_manager.gd")
 const PedestrianManagerScript = preload("res://scripts/pedestrian_manager.gd")
 
 var _graphics_profile: Dictionary = {}
+var _sun_light: DirectionalLight3D
+var _world_environment: Environment
+var _player: CharacterBody3D
+var _quality_button: Button
 
 func _ready() -> void:
 	_build_environment()
@@ -36,6 +40,7 @@ func _build_environment() -> void:
 	environment.ambient_light_color = Color(0.62, 0.67, 0.72)
 	environment.ambient_light_energy = 0.65
 	world_environment.environment = environment
+	_world_environment = environment
 	add_child(world_environment)
 
 	var sun := DirectionalLight3D.new()
@@ -43,6 +48,7 @@ func _build_environment() -> void:
 	sun.light_energy = 1.15
 	_graphics_profile = GraphicsProfileScript.apply(sun, _load_graphics_quality())
 	environment.ambient_light_energy = 0.72 if _graphics_profile["name"] == "low" else 0.62
+	_sun_light = sun
 	add_child(sun)
 
 func _load_graphics_quality() -> String:
@@ -66,6 +72,7 @@ func _spawn_player(world: OSMWorldGenerator) -> void:
 	player.position = world.get_player_spawn_position()
 	player.rotation.y = world.get_spawn_rotation_y()
 	add_child(player)
+	_player = player
 	player.camera.far = float(_graphics_profile.get("far_clip", 220.0))
 
 	var controls_layer := CanvasLayer.new()
@@ -97,8 +104,39 @@ func _add_hud() -> void:
 	if OS.has_feature("mobile"):
 		label.text = "LAGOS GTA  |  YABA, LAGOS  |  TAP JUMP NEAR DANFO TO ENTER / EXIT"
 	else:
-		label.text = "LAGOS GTA  |  YABA DISTRICT\nWASD: Move   SHIFT: Sprint   SPACE: Jump   E: Enter / exit Danfo\nMouse: Look   ESC: Release / capture mouse"
+		label.text = "LAGOS GTA  |  YABA, LAGOS\nWASD: Move   SHIFT: Sprint   SPACE: Jump   E: Enter / exit Danfo\nMouse: Look   ESC: Release / capture mouse"
 	layer.add_child(label)
+
+	_quality_button = Button.new()
+	_quality_button.name = "GraphicsQualityButton"
+	_quality_button.text = "QUALITY: " + str(_graphics_profile.get("name", "balanced")).to_upper()
+	_quality_button.anchor_left = 1.0
+	_quality_button.anchor_right = 1.0
+	_quality_button.anchor_top = 0.0
+	_quality_button.anchor_bottom = 0.0
+	_quality_button.offset_left = -184.0
+	_quality_button.offset_right = -16.0
+	_quality_button.offset_top = 14.0
+	_quality_button.offset_bottom = 58.0
+	_quality_button.add_theme_font_size_override("font_size", 14)
+	_quality_button.pressed.connect(_cycle_graphics_quality)
+	layer.add_child(_quality_button)
+
+func _cycle_graphics_quality() -> void:
+	var options := ["low", "balanced", "high"]
+	var current := str(_graphics_profile.get("name", "balanced"))
+	var next_index := (options.find(current) + 1) % options.size()
+	var next_quality := options[next_index]
+	_graphics_profile = GraphicsProfileScript.apply(_sun_light, next_quality)
+	_world_environment.ambient_light_energy = 0.72 if next_quality == "low" else 0.62
+	if _player != null and is_instance_valid(_player):
+		_player.camera.far = float(_graphics_profile["far_clip"])
+	var config := ConfigFile.new()
+	config.set_value("graphics", "quality", next_quality)
+	var save_error := config.save("user://settings.cfg")
+	if save_error != OK:
+		push_warning("Unable to save graphics quality preference: %s" % error_string(save_error))
+	_quality_button.text = "QUALITY: " + next_quality.to_upper()
 
 func _spawn_traffic(roads: Array[Dictionary]) -> void:
 	var traffic = TrafficManagerScript.new()
