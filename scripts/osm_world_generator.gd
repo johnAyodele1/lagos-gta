@@ -162,13 +162,18 @@ func _add_ground() -> void:
 	mesh.size = Vector2(WORLD_RADIUS_METRES * 2.2, WORLD_RADIUS_METRES * 2.2)
 	ground.mesh = mesh
 	ground.position.y = -0.16
-	var ground_material := _material("ground", Color(0.32, 0.29, 0.24))
-	ground_material.albedo_texture = _make_noise_texture(61, 0.22)
-	ground_material.roughness_texture = _make_noise_texture(62, 0.16)
+	var ground_material := _material("ground", Color(0.27, 0.22, 0.16))
+	ground_material.albedo_texture = _make_noise_texture(61, 0.16)
+	ground_material.roughness_texture = _make_noise_texture(62, 0.12)
 	ground_material.normal_enabled = true
-	ground_material.normal_texture = _make_normal_texture(63, 1.5)
-	ground_material.normal_scale = 0.18
-	ground_material.roughness = 0.98
+	ground_material.normal_texture = _make_normal_texture(63, 0.9)
+	ground_material.normal_scale = 0.07
+	# PlaneMesh UVs span the entire 990m district by default. Tile the soil
+	# texture at a six-metre scale so the ground reads as compacted earth,
+	# not enormous repeating swirls visible from the third-person camera.
+	var ground_tile_count := WORLD_RADIUS_METRES * 2.2 / 6.0
+	ground_material.uv1_scale = Vector3(ground_tile_count, ground_tile_count, 1.0)
+	ground_material.roughness = 0.99
 	ground.material_override = ground_material
 	ground.name = "YabaDistrictGround"
 	add_child(ground)
