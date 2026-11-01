@@ -2,6 +2,7 @@ extends Node3D
 
 const PlayerScript = preload("res://scripts/player_controller.gd")
 const OSMWorldScript = preload("res://scripts/osm_world_generator.gd")
+const GraphicsProfileScript = preload("res://scripts/graphics_profile.gd")
 const MobileControlsScript = preload("res://scripts/mobile_controls.gd")
 const LegalConsentScript = preload("res://scripts/legal_consent.gd")
 const VehicleScript = preload("res://scripts/vehicle_controller.gd")
@@ -38,15 +39,17 @@ func _build_environment() -> void:
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-48.0, -28.0, 0.0)
 	sun.light_energy = 1.15
-	# Use a short, two-split shadow range on mobile rather than removing all depth cues.
-	sun.shadow_enabled = true
-	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
-	sun.directional_shadow_max_distance = 90.0
-	sun.shadow_bias = 0.06
-	sun.shadow_normal_bias = 1.0
-	if OS.has_feature("mobile"):
-		RenderingServer.directional_shadow_atlas_set_size(1024, true)
+	_graphics_profile = GraphicsProfileScript.apply(sun, _load_graphics_quality())
+	environment.ambient_light_energy = 0.72 if _graphics_profile["name"] == "low" else 0.62
 	add_child(sun)
+
+func _load_graphics_quality() -> String:
+	var config := ConfigFile.new()
+	if config.load("user://settings.cfg") == OK:
+		var configured := str(config.get_value("graphics", "quality", ""))
+		if configured in ["low", "balanced", "high"]:
+			return configured
+	return "balanced" if OS.has_feature("mobile") else "high"
 
 func _spawn_vehicle(world: OSMWorldGenerator) -> void:
 	var vehicle = VehicleScript.new()
@@ -60,6 +63,7 @@ func _spawn_player(world: OSMWorldGenerator) -> void:
 	player.name = "Player"
 	player.position = world.get_player_spawn_position()
 	player.rotation.y = world.get_spawn_rotation_y()
+	player.camera.far = float(_graphics_profile.get("far_clip", 220.0))
 	add_child(player)
 
 	var controls_layer := CanvasLayer.new()
