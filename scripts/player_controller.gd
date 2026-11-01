@@ -64,8 +64,8 @@ func _build_body() -> void:
 
 	_left_arm_pivot = _create_limb(Vector3(-0.34, 0.28, 0.0), 0.12, 0.76, Color(0.38, 0.22, 0.14))
 	_right_arm_pivot = _create_limb(Vector3(0.34, 0.28, 0.0), 0.12, 0.76, Color(0.38, 0.22, 0.14))
-	_left_leg_pivot = _create_limb(Vector3(-0.16, -0.42, 0.0), 0.15, 0.82, Color(0.10, 0.12, 0.14))
-	_right_leg_pivot = _create_limb(Vector3(0.16, -0.42, 0.0), 0.15, 0.82, Color(0.10, 0.12, 0.14))
+	_left_leg_pivot = _create_limb(Vector3(-0.16, -0.32, 0.0), 0.15, 0.82, Color(0.10, 0.12, 0.14))
+	_right_leg_pivot = _create_limb(Vector3(0.16, -0.32, 0.0), 0.15, 0.82, Color(0.10, 0.12, 0.14))
 
 func _character_material(color: Color) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
@@ -81,7 +81,7 @@ func _create_limb(limb_position: Vector3, radius: float, height: float, color: C
 	capsule.radius = radius
 	capsule.height = height
 	mesh_instance.mesh = capsule
-	mesh_instance.position.y = -height * 0.42
+	mesh_instance.position.y = -height * 0.38
 	mesh_instance.material_override = _character_material(color)
 	pivot.add_child(mesh_instance)
 	body_mesh.add_child(pivot)
