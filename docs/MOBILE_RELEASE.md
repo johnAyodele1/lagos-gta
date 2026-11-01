@@ -56,3 +56,10 @@ At minimum, test:
 - Pause/resume, incoming interruptions, audio focus and thermal throttling.
 
 Record device model, OS version, average frame time, memory use and any crashes for each test run.
+
+
+## Player terms and privacy
+
+The project includes an in-game first-run Terms & Conditions / Privacy Notice screen and a persistent LEGAL button. This is the player-facing agreement, not the developer's acceptance of the Google Play or Apple Developer distribution agreements. The publisher must accept those separately in Play Console and App Store Connect.
+
+The current legal documents are development drafts: [Terms & Conditions](TERMS_OF_SERVICE.md), [Privacy Policy](PRIVACY_POLICY.md), and [Store Submission Checklist](STORE_SUBMISSION_CHECKLIST.md). Before store submission, complete the real publisher identity and support/privacy contact, obtain legal review, and host the final privacy policy at a stable, public, non-geofenced HTTPS URL.
