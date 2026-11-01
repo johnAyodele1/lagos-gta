@@ -213,6 +213,14 @@ func _test_osm_world_generator() -> void:
 	var fence_collision = fence_player.move_and_collide(Vector3(-10.0, 0.0, 0.0))
 	_check(fence_collision != null, "player capsule collides with an OSM-mapped compound wall")
 	fence_player.queue_free()
+	await physics_frame
+	var test_vehicle = VehicleScript.new()
+	root.add_child(test_vehicle)
+	test_vehicle.global_position = Vector3(0.0, 0.2, 0.0)
+	await physics_frame
+	var vehicle_collision = test_vehicle.move_and_collide(Vector3(10.0, 0.0, 0.0))
+	_check(vehicle_collision != null, "drivable danfo collides with an OSM-derived building footprint")
+	test_vehicle.queue_free()
 	world.queue_free()
 	await physics_frame
 
