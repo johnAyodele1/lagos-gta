@@ -1,4 +1,6 @@
+import sqlite3
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -22,6 +24,21 @@ class OpenBuildingMapEnrichmentTests(unittest.TestCase):
     def test_unknown_or_invalid_height_is_not_guessed(self):
         self.assertEqual(enrichment.parse_height_taxonomy("UNK"), (None, None, None))
         self.assertEqual(enrichment.parse_height_taxonomy("H:0"), (None, None, None))
+
+
+    def test_lookup_joins_only_osm_source_rows(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            gpkg = Path(temp_dir) / "test.gpkg"
+            db = sqlite3.connect(gpkg)
+            db.execute("CREATE TABLE building (id INTEGER, height TEXT, occupancy TEXT, source_id INTEGER)")
+            db.executemany("INSERT INTO building VALUES (?, ?, ?, ?)", [
+                (123, "H:3", "RES2", 0),
+                (124, "H:4", "COM1", 1),
+            ])
+            db.commit()
+            db.close()
+            records = enrichment.lookup(gpkg, [123, 124])
+            self.assertEqual(records, {123: ("H:3", "RES2")})
 
     def test_explicit_osm_height_is_not_overwritten(self):
         data = {"buildings": [{
