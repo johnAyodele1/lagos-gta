@@ -619,7 +619,7 @@ func _add_market_stalls() -> void:
 			var outward := Vector2(edge_direction.y, -edge_direction.x) * winding
 			var midpoint := (p0 + p1) * 0.5
 			for side_sign in [-1.0, 1.0]:
-				var candidate := midpoint + outward * 2.8 * side_sign
+				var candidate: Vector2 = midpoint + outward * 2.8 * float(side_sign)
 				var candidate_clearance := _nearest_road_distance(candidate)
 				if candidate_clearance >= 3.0 and candidate_clearance <= 18.0 and candidate_clearance < best_clearance:
 					best_clearance = candidate_clearance
