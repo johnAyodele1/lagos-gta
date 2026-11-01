@@ -197,7 +197,9 @@ func _test_osm_world_generator() -> void:
 	_check(world.get_barrier_count() == 1, "OSM world generator retains mapped compound barriers")
 	_check(world.get_node_or_null("OSMRoadSurfaces") != null, "OSM roads are generated as continuous 3D road surfaces")
 	var road_visual := world.get_node_or_null("OSMRoadSurfaces") as MeshInstance3D
-	var road_material := road_visual.mesh.surface_get_material(0) as StandardMaterial3D if road_visual != null else null
+	var road_material: StandardMaterial3D
+	if road_visual != null:
+		road_material = road_visual.mesh.surface_get_material(0) as StandardMaterial3D
 	_check(road_material != null and road_material.albedo_texture != null, "road surfaces use procedural asphalt texture")
 	_check(world.get_node_or_null("OSMRoadMarkings") != null, "mapped secondary roads receive lane markings")
 	_check(world.get_node_or_null("OSMBuildingFootprintsAndFacades") != null, "OSM building footprints become extruded 3D building geometry")
