@@ -28,7 +28,7 @@ static func _build_bridge(parent:Node3D,raw:Array,width:float)->void:
   if i%2==0:
    var side:=Vector2(-delta.y,delta.x).normalized()
    for sign in [-1.0,1.0]:
-    var p:=mid+side*(width*0.5+0.7)*sign
+    var p:Vector2=mid+side*(width*0.5+0.7)*sign
     _box(parent,Vector3(0.85,4.45,0.85),Vector3(p.x,2.225,p.y),0.0,concrete,"BridgePier")
     _box(parent,Vector3(1.3,0.24,1.3),Vector3(p.x,4.45,p.y),0.0,concrete,"PierCapital")
 static func _build_mechanic_bay(parent:Node3D,points:Array,width:float)->void:
