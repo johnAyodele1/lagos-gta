@@ -38,7 +38,7 @@ jobs:
           if [ -f assets/models/architecture/modular_urban_apartments_facade.glb ]; then
             SOURCE=assets/models/architecture/modular_urban_apartments_facade.glb
           else
-            SOURCE=$(find assets/models/architecture/source -type f \\( -name "*.gltf" -o -name "*.glb" \\) -print -quit)
+            SOURCE=$(find assets/models/architecture/source -type f \( -name "*.gltf" -o -name "*.glb" \) -print -quit)
           fi
           test -n "$SOURCE"
           blender --background --python tools/optimize_polyhaven_glb.py -- "$SOURCE" assets/models/architecture/modular_urban_apartments_facade.optimized.glb
