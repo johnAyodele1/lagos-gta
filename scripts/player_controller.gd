@@ -58,9 +58,7 @@ func _build_body() -> void:
 	collision.position.y = 0.9
 	add_child(collision)
 	if DisplayServer.get_name() == "headless":
-		body_mesh = MeshInstance3D.new()
-		body_mesh.name = "PlayerCharacterVisual"
-		add_child(body_mesh)
+		body_mesh = null
 		_build_camera_rig()
 		return
 
