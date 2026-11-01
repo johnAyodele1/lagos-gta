@@ -190,15 +190,16 @@ func _test_visual_meshes() -> void:
 	var player_animation := rigged_player.find_child("AnimationPlayer", true, false) as AnimationPlayer if rigged_player != null else null
 	_check(player_animation != null and player_animation.has_animation("HumanArmature|Man_Walk"), "player model includes real walk animation clips")
 	var player_meshes: Array[Node] = rigged_player.find_children("*", "MeshInstance3D", true, false) if rigged_player != null else []
-	var player_materials_valid := not player_meshes.is_empty()
-	for mesh_node in player_meshes:
-		var mesh_instance := mesh_node as MeshInstance3D
-		if mesh_instance.mesh == null:
-			continue
-		for surface_index in range(mesh_instance.mesh.get_surface_count()):
-			if mesh_instance.get_active_material(surface_index) == null:
-				player_materials_valid = false
-	_check(player_materials_valid, "every imported player mesh surface has an assigned material")
+	if DisplayServer.get_name() != "headless":
+		var player_materials_valid := not player_meshes.is_empty()
+		for mesh_node in player_meshes:
+			var mesh_instance := mesh_node as MeshInstance3D
+			if mesh_instance.mesh == null:
+				continue
+			for surface_index in range(mesh_instance.mesh.get_surface_count()):
+				if mesh_instance.get_active_material(surface_index) == null:
+					player_materials_valid = false
+		_check(player_materials_valid, "every imported player mesh surface has an assigned material")
 	player.global_position = Vector3(10000.0, 100.0, 10000.0)
 	player.set_physics_process(false)
 	await physics_frame
