@@ -168,11 +168,18 @@ func _apply_pedestrian_materials(model: Node3D, shirt_color: Color, skin_color: 
 		var mesh_instance := node as MeshInstance3D
 		if mesh_instance.mesh == null:
 			continue
+		var first_surface_material: StandardMaterial3D
 		for surface_index in range(mesh_instance.mesh.get_surface_count()):
 			var material := StandardMaterial3D.new()
 			material.albedo_color = palette[mini(surface_index, palette.size() - 1)]
 			material.roughness = 0.88
 			mesh_instance.set_surface_override_material(surface_index, material)
+			if surface_index == 0:
+				first_surface_material = material
+		# Imported GLBs can contain empty source material slots. Keep a valid
+		# instance-level fallback as well as the per-surface palette.
+		if first_surface_material != null:
+			mesh_instance.material_override = first_surface_material
 
 
 func _create_collision_proxies() -> void:
