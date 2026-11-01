@@ -1,0 +1,31 @@
+{
+  "source": "Poly Haven",
+  "license": "CC0 1.0",
+  "runtime_network_dependency": false,
+  "assets": [
+    {
+      "id": "modular_factory_facade",
+      "purpose": "mechanic workshop frontage",
+      "source": "https://polyhaven.com/a/modular_factory_facade",
+      "license": "CC0 1.0"
+    },
+    {
+      "id": "concrete_road_barrier",
+      "purpose": "weathered roadside barrier",
+      "source": "https://polyhaven.com/a/concrete_road_barrier",
+      "license": "CC0 1.0"
+    },
+    {
+      "id": "portable_generator",
+      "purpose": "roadside generator",
+      "source": "https://polyhaven.com/a/portable_generator",
+      "license": "CC0 1.0"
+    },
+    {
+      "id": "modular_industrial_pipes_01",
+      "purpose": "workshop pipework",
+      "source": "https://polyhaven.com/a/modular_industrial_pipes_01",
+      "license": "CC0 1.0"
+    }
+  ]
+}
