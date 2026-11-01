@@ -483,8 +483,9 @@ func _add_building_network() -> void:
 			outline.pop_back()
 		if outline.size() < 3:
 			continue
-		var height := clampf(float(building.get("height_m", 4.2)), 2.8, 45.0)
 		var area := _polygon_signed_area(outline)
+		var footprint_area := absf(area)
+		var height := _resolve_building_height(building, footprint_area)
 		var winding := 1.0 if area >= 0.0 else -1.0
 		var base_color: Color = BUILDING_COLORS[building_index % BUILDING_COLORS.size()]
 		var longest_edge := -1
@@ -564,6 +565,13 @@ func _add_building_network() -> void:
 			var midpoint := (p0 + p1) * 0.5
 			var building_type := str(building.get("building", "yes"))
 			var commercial := not str(building.get("shop", "")).is_empty() or not str(building.get("amenity", "")).is_empty() or building_type in ["commercial", "retail", "office"]
+			# OSM's Yaba extract has very sparse shop tags. For untyped street-edge
+			# footprints, infer a limited number of ground-floor shops from their
+			# proximity to mapped roads; keep this explicitly art-directed, not
+			# falsely labelled as verified commercial land use.
+			if not commercial and building_type == "yes" and building_index % 5 == 0 and footprint_area >= 45.0:
+				var frontage_center := _outline_centroid_from_vectors(outline)
+				commercial = _nearest_road_distance(frontage_center) <= 14.0
 			doors.append(Transform3D(Basis(Vector3.UP, angle), Vector3(midpoint.x + outward.x * 0.08, 1.12, midpoint.y + outward.y * 0.08)))
 			if commercial:
 				signs.append(Transform3D(Basis(Vector3.UP, angle), Vector3(midpoint.x + outward.x * 0.12, 2.75, midpoint.y + outward.y * 0.12)))
@@ -822,6 +830,31 @@ func _add_umbrella_batch(batch_name: String, transforms: Array[Transform3D], col
 	instance.material_override = _material(batch_name, color, 0.92)
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(instance)
+
+func _resolve_building_height(building: Dictionary, footprint_area: float) -> float:
+	var source := str(building.get("height_source", ""))
+	var mapped_height := float(building.get("height_m", 6.2))
+	if source in ["osm:height", "estimated:building-levels"]:
+		return clampf(mapped_height, 2.8, 45.0)
+	var building_type := str(building.get("building", "yes"))
+	if building_type in ["industrial", "warehouse"]:
+		return 5.5
+	if building_type == "roof":
+		return 3.2
+	if building_type == "grandstand":
+		return 5.0
+	# Most Yaba footprints have no height or level tags. A documented footprint
+	# area fallback gives small kiosks, houses and larger apartment blocks
+	# different massing rather than stamping every unknown building at 6.2m.
+	if footprint_area < 45.0:
+		return 3.8
+	if footprint_area < 120.0:
+		return 6.2
+	if footprint_area < 280.0:
+		return 8.8
+	if footprint_area < 650.0:
+		return 11.5
+	return 14.0
 
 func _append_facade_windows(windows: Array[Transform3D], p0: Vector2, p1: Vector2, outward: Vector2, height: float) -> void:
 	var edge := p1 - p0
