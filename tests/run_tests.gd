@@ -4,6 +4,7 @@ const PlayerScript = preload("res://scripts/player_controller.gd")
 const MobileControlsScript = preload("res://scripts/mobile_controls.gd")
 const LegalConsentScript = preload("res://scripts/legal_consent.gd")
 const WorldGeneratorScript = preload("res://scripts/world_generator.gd")
+const OSMWorldGeneratorScript = preload("res://scripts/osm_world_generator.gd")
 const VehicleScript = preload("res://scripts/vehicle_controller.gd")
 const TrafficManagerScript = preload("res://scripts/traffic_manager.gd")
 const PedestrianManagerScript = preload("res://scripts/pedestrian_manager.gd")
@@ -23,6 +24,7 @@ func _run() -> void:
 	_test_mobile_touch_routing()
 	_test_legal_consent_versioning()
 	_test_world_generation_batching()
+	await _test_osm_world_generator()
 	_test_vehicle_speed_limits()
 	_test_ambient_traffic()
 	_test_pedestrians()
@@ -142,6 +144,40 @@ func _test_world_generation_batching() -> void:
 	_check(world._material_cache.size() < 40, "generated geometry reuses a bounded shared material set")
 	world.queue_free()
 
+func _test_osm_world_generator() -> void:
+	var sample := {
+		"schema_version": 1,
+		"roads": [
+			{"id": "100", "name": "Hughes Avenue", "highway": "residential", "width_m": 6.0, "coordinates": [[-20.0, 0.0], [20.0, 0.0]]}
+		],
+		"buildings": [
+			{"id": "200", "building": "residential", "height_m": 6.2, "outline": [[5.0, -5.0], [10.0, -5.0], [10.0, 5.0], [5.0, 5.0], [5.0, -5.0]]}
+		],
+		"barriers": [
+			{"id": "300", "barrier": "wall", "coordinates": [[-5.0, -5.0], [-5.0, 5.0]]}
+		]
+	}
+	var world = OSMWorldGeneratorScript.new()
+	root.add_child(world)
+	_check(world.generate_from_data(sample), "OSM world generator accepts the versioned Yaba data contract")
+	_check(world.get_road_count() == 1, "OSM world generator retains the mapped street centre-line")
+	_check(world.get_building_count() == 1, "OSM world generator retains the real building footprint")
+	_check(world.get_barrier_count() == 1, "OSM world generator retains mapped compound barriers")
+	_check(world.get_node_or_null("OSMRoadSurfaces") != null, "OSM roads are generated as continuous 3D road surfaces")
+	_check(world.get_node_or_null("OSMBuildingFootprintsAndFacades") != null, "OSM building footprints become extruded 3D building geometry")
+	_check(world.get_node_or_null("OSMBuildingCollision") != null, "OSM building geometry receives a static collision mesh")
+	_check(world.get_node_or_null("OSMBarrierCollision") != null, "mapped walls and fences receive static collision geometry")
+	var player = PlayerScript.new()
+	root.add_child(player)
+	player.global_position = Vector3(0.0, 0.5, 0.0)
+	await physics_frame
+	var collision = player.move_and_collide(Vector3(10.0, 0.0, 0.0))
+	_check(collision != null, "player capsule collides with an OSM-derived building footprint")
+	_check(player.global_position.x < 5.0, "player cannot walk through an OSM-derived building wall")
+	player.queue_free()
+	world.queue_free()
+	await physics_frame
+
 func _test_vehicle_speed_limits() -> void:
 	_check(is_equal_approx(VehicleScript.target_speed(1.0), VehicleScript.MAX_FORWARD_SPEED), "danfo forward throttle respects maximum speed")
 	_check(is_equal_approx(VehicleScript.target_speed(-1.0), -VehicleScript.MAX_REVERSE_SPEED), "danfo reverse throttle respects reverse speed limit")
@@ -250,7 +286,9 @@ func _test_traffic_collision() -> void:
 
 func _test_project_scripts_load() -> void:
 	var world_script = ResourceLoader.load("res://scripts/world_generator.gd")
-	_check(world_script is GDScript, "world generator script loads without parse errors")
+	_check(world_script is GDScript, "legacy blockout world generator script loads without parse errors")
+	var osm_world_script = ResourceLoader.load("res://scripts/osm_world_generator.gd")
+	_check(osm_world_script is GDScript, "OSM world generator script loads without parse errors")
 	var vehicle_script = ResourceLoader.load("res://scripts/vehicle_controller.gd")
 	_check(vehicle_script is GDScript, "vehicle controller script loads without parse errors")
 	var traffic_script = ResourceLoader.load("res://scripts/traffic_manager.gd")
