@@ -11,6 +11,12 @@ const PLAYER_COLLISION_LAYER: int = 4
 const VEHICLE_COLLISION_LAYER: int = 2
 const NPC_COLLISION_LAYER: int = 8
 const RIGGED_CHARACTER_SCENE = preload("res://assets/models/characters/lagos_player.glb")
+const ARA_CHARACTER_SCENE_PATHS: Array[String] = [
+	"res://assets/models/characters/ara/lagos_male_civilian.glb",
+	"res://assets/models/characters/ara/lagos_female_civilian.glb",
+	"res://assets/models/characters/ara/lagos_frsc_officer.glb",
+	"res://assets/models/characters/ara/lagos_police_officer.glb"
+]
 const ModelBoundsScript = preload("res://scripts/model_bounds.gd")
 
 const CLOTHING_COLORS: Array[Color] = [
@@ -143,13 +149,27 @@ func _create_rigged_visuals() -> void:
 		push_error("Rigged pedestrian model could not be loaded.")
 		return
 	for index in range(_walkers.size()):
+		var model_scene: PackedScene = RIGGED_CHARACTER_SCENE as PackedScene
+		var use_ara_character := false
+		var model_path := ARA_CHARACTER_SCENE_PATHS[index % ARA_CHARACTER_SCENE_PATHS.size()]
+		if ResourceLoader.exists(model_path):
+			var imported_scene := load(model_path) as PackedScene
+			if imported_scene != null:
+				model_scene = imported_scene
+				use_ara_character = true
+		if model_scene == null:
+			push_error("No rigged pedestrian model is available.")
+			continue
 		var visual := model_scene.instantiate() as Node3D
 		if visual == null:
 			push_error("Pedestrian model instance has no Node3D root.")
 			continue
 		visual.name = "PedestrianVisual_%02d" % index
-		visual.rotation.y = PI
-		_apply_pedestrian_materials(visual, CLOTHING_COLORS[index % CLOTHING_COLORS.size()], SKIN_COLORS[index % SKIN_COLORS.size()])
+		# Ara's GLB uses glTF's -Z forward axis. Keep the old Quaternius
+		# fallback's +Z correction separate from the imported character path.
+		visual.rotation.y = 0.0 if use_ara_character else PI
+		if not use_ara_character:
+			_apply_pedestrian_materials(visual, CLOTHING_COLORS[index % CLOTHING_COLORS.size()], SKIN_COLORS[index % SKIN_COLORS.size()])
 		add_child(visual)
 		if not ModelBoundsScript.fit_height(visual, 1.68):
 			push_warning("Pedestrian %02d could not be normalized to human height." % index)
@@ -157,9 +177,21 @@ func _create_rigged_visuals() -> void:
 		_visual_local_transforms.append(visual.transform)
 		var animation_player := visual.find_child("AnimationPlayer", true, false) as AnimationPlayer
 		_animation_players.append(animation_player)
-		if animation_player != null and animation_player.has_animation("HumanArmature|Man_Walk"):
-			animation_player.play("HumanArmature|Man_Walk")
+		var walk_animation := _resolve_walk_animation(animation_player)
+		if animation_player != null and walk_animation != &"":
+			animation_player.play(walk_animation)
 			animation_player.speed_scale = float(_walkers[index]["speed"])
+
+
+func _resolve_walk_animation(animation_player: AnimationPlayer) -> StringName:
+	if animation_player == null:
+		return &""
+	if animation_player.has_animation("HumanArmature|Man_Walk"):
+		return &"HumanArmature|Man_Walk"
+	for animation_name in animation_player.get_animation_list():
+		if str(animation_name).to_lower().contains("walk"):
+			return StringName(animation_name)
+	return &""
 
 func _apply_pedestrian_materials(model: Node3D, shirt_color: Color, skin_color: Color) -> void:
 	if DisplayServer.get_name() == "headless":
