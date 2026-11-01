@@ -161,6 +161,8 @@ func _test_visual_meshes() -> void:
 	root.add_child(player)
 	_check(player.body_mesh.mesh is ArrayMesh, "player avatar uses a custom tapered torso mesh rather than a capsule")
 	_check(player.camera_pivot is SpringArm3D, "player uses a collision-aware third-person spring arm")
+	_check(is_equal_approx(player.camera_pivot.rotation.x, deg_to_rad(14.0)), "third-person camera pitches down toward the street instead of looking at the sky")
+	_check(player.camera.rotation.is_equal_approx(Vector3.ZERO), "camera orientation is controlled by the spring arm without cancelling its aim")
 	_check(player.body_mesh.get_node_or_null("Head") != null or player.body_mesh.get_child_count() >= 8, "player avatar includes layered head, hair and articulated body details")
 	player.queue_free()
 
@@ -283,11 +285,14 @@ func _test_vehicle_speed_limits() -> void:
 	_check(not player.body_mesh.visible, "player body is hidden while seated")
 	_check(not player.is_physics_processing(), "on-foot movement is disabled while driving")
 	_check(player.camera_pivot.get_parent() == vehicle, "third-person camera follows the danfo")
+	_check(is_equal_approx(player.camera_pivot.rotation.x, deg_to_rad(12.0)), "danfo camera keeps a downward street-facing pitch")
 	vehicle.exit_vehicle()
 	_check(vehicle.driver == null, "danfo releases the driver on exit")
 	_check(player.body_mesh.visible, "player body is restored after exiting")
 	_check(player.is_physics_processing(), "on-foot movement is restored after exiting")
 	_check(player.camera_pivot.get_parent() == player, "camera returns to the player after exiting")
+	_check(is_equal_approx(player.camera_pivot.rotation.x, deg_to_rad(14.0)), "camera restores the street-facing pitch after exiting the danfo")
+	_check(is_zero_approx(player.camera_pivot.rotation.y), "camera yaw is consistent after exiting the danfo")
 	player.queue_free()
 	vehicle.queue_free()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
