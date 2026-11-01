@@ -247,6 +247,18 @@ func _test_osm_world_generator() -> void:
 	_check(world.get_node_or_null("OSMRoadSurfaces") != null, "OSM roads are generated as continuous 3D road surfaces")
 	_check(world.get_node_or_null("YabaMarketUmbrellasRed") != null and world.get_node_or_null("YabaMarketTables") != null, "mapped commercial frontages receive recognizable roadside market stalls")
 	_check(world.get_node_or_null("YabaMarketStallCollision") != null, "roadside market tables have collision so the player cannot walk through them")
+	var stall_collision_root := world.get_node_or_null("YabaMarketStallCollision") as Node3D
+	if stall_collision_root != null and not stall_collision_root.get_children().is_empty():
+		var stall_body := stall_collision_root.get_child(0) as StaticBody3D
+		var stall_direction := stall_body.global_basis.z.normalized()
+		var stall_player = PlayerScript.new()
+		root.add_child(stall_player)
+		stall_player.global_position = stall_body.global_position - stall_direction * 3.0
+		await physics_frame
+		var stall_hit = stall_player.move_and_collide(stall_direction * 6.0)
+		_check(stall_hit != null, "player capsule collides with a Yaba roadside market stall")
+		stall_player.queue_free()
+		await physics_frame
 	var road_visual := world.get_node_or_null("OSMRoadSurfaces") as MeshInstance3D
 	var road_material: StandardMaterial3D
 	if road_visual != null:
