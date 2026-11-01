@@ -122,9 +122,9 @@ def main() -> None:
     if not candidates:
         raise RuntimeError("Poly Haven API did not expose a GLTF/GLB package within the import size limit.")
 
-    # Prefer a 2K texture package, then 1K, and finally the smallest GLTF package.
+    # Prefer 1K for the mobile target, then 2K, and finally the smallest GLTF package.
     candidates.sort(key=lambda item: (
-        0 if "2k" in str(item["path"]) else 1 if "1k" in str(item["path"]) else 2,
+        0 if "1k" in str(item["path"]) else 1 if "2k" in str(item["path"]) else 2,
         int(item["size"]),
     ))
     selected = candidates[0]
