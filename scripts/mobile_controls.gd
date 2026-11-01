@@ -61,6 +61,7 @@ func _begin_touch(index: int, position: Vector2) -> void:
 		sprint_touch_index = index
 	elif _is_jump_button(position, size) and jump_touch_index == -1:
 		jump_touch_index = index
+		jump_requested = true
 	elif position.x >= size.x * 0.45 and look_touch_index == -1:
 		look_touch_index = index
 
