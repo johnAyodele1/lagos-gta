@@ -8,6 +8,9 @@ const BRAKE_ACCELERATION: float = 20.0
 const COAST_DECELERATION: float = 5.0
 const STEERING_RATE: float = 1.25
 const GRAVITY: float = 18.0
+const WORLD_COLLISION_LAYER: int = 1
+const VEHICLE_COLLISION_LAYER: int = 2
+const PLAYER_COLLISION_LAYER: int = 4
 
 var driver: Node
 var current_speed: float = 0.0
@@ -28,6 +31,11 @@ static func acceleration_for(current: float, target: float) -> float:
 	return COAST_DECELERATION
 
 func _ready() -> void:
+	collision_layer = VEHICLE_COLLISION_LAYER
+	collision_mask = WORLD_COLLISION_LAYER | PLAYER_COLLISION_LAYER
+	floor_snap_length = 0.35
+	safe_margin = 0.04
+	max_slides = 8
 	add_to_group("drivable_vehicle")
 	_build_vehicle()
 
@@ -110,17 +118,44 @@ func enter_vehicle(player: Node) -> void:
 	player.camera.position = Vector3.ZERO
 	player.camera.rotation = Vector3.ZERO
 
+func _find_safe_exit_position(player: Node) -> Vector3:
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = 0.38
+	capsule.height = 1.8
+	var space := get_world_3d().direct_space_state
+	var candidate_offsets: Array[Vector3] = [
+		global_basis.x * 3.2,
+		-global_basis.x * 3.2,
+		-global_basis.z * 4.0,
+		global_basis.z * 4.0
+	]
+	for offset in candidate_offsets:
+		var candidate := global_position + offset + Vector3.UP * 0.5
+		var query := PhysicsShapeQueryParameters3D.new()
+		query.shape = capsule
+		query.transform = Transform3D(Basis(), candidate + Vector3.UP * 0.9)
+		query.collision_mask = _driver_collision_mask
+		query.exclude = [get_rid()]
+		query.margin = 0.04
+		if space.intersect_shape(query, 1).is_empty():
+			return candidate
+	return Vector3.INF
+
 func exit_vehicle() -> void:
 	if driver == null:
 		return
 	var player = driver
+	var safe_position := _find_safe_exit_position(player)
+	if not safe_position.is_finite():
+		push_warning("Cannot exit the danfo: all nearby exit positions are blocked.")
+		return
 	driver = null
 	player.camera_pivot.reparent(player, false)
 	player.camera_pivot.position = Vector3(0.0, 1.72, 0.0)
 	player.camera_pivot.rotation = Vector3.ZERO
 	player.camera.position = Vector3(0.0, 2.15, 7.2)
 	player.camera.rotation.x = deg_to_rad(-14.0)
-	player.global_position = global_position + global_basis.x * 3.0 + Vector3.UP * 0.5
+	player.global_position = safe_position
 	player.velocity = Vector3.ZERO
 	player.collision_layer = _driver_collision_layer
 	player.collision_mask = _driver_collision_mask
