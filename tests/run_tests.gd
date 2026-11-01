@@ -212,7 +212,7 @@ func _test_visual_meshes() -> void:
 	_check(danfo_model.mesh.get_surface_count() >= 5, "danfo model retains separate body, window, wheel and light materials")
 	var danfo_materials_valid := true
 	for surface_index in range(danfo_model.mesh.get_surface_count()):
-		if danfo_model.get_active_material(surface_index) == null:
+		if danfo_model.mesh.surface_get_material(surface_index) == null or danfo_model.get_active_material(surface_index) == null:
 			danfo_materials_valid = false
 	_check(danfo_materials_valid, "every danfo mesh surface has a material assigned")
 	var danfo_collision := vehicle.get_child(0) as CollisionShape3D
