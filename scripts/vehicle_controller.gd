@@ -44,7 +44,8 @@ func _build_vehicle() -> void:
 	# The collider is deliberately simpler than the rendered mesh.
 	var body_collision := CollisionShape3D.new()
 	var body_shape := BoxShape3D.new()
-	body_shape.size = Vector3(4.9, 2.8, 2.35)
+	# Vehicle model length runs along local Z; width runs along local X.
+	body_shape.size = Vector3(2.35, 2.8, 4.9)
 	body_collision.shape = body_shape
 	body_collision.position.y = 1.35
 	add_child(body_collision)
