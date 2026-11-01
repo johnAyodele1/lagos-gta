@@ -605,25 +605,30 @@ func _add_market_stalls() -> void:
 			outline.pop_back()
 		if outline.size() < 3:
 			continue
-		var longest_edge := -1
-		var longest_length := 0.0
-		for edge_index in range(outline.size()):
-			var edge_length := outline[edge_index].distance_to(outline[(edge_index + 1) % outline.size()])
-			if edge_length > longest_length:
-				longest_length = edge_length
-				longest_edge = edge_index
-		if longest_edge < 0 or longest_length < 5.0:
-			continue
-		var p0 := outline[longest_edge]
-		var p1 := outline[(longest_edge + 1) % outline.size()]
-		var direction := (p1 - p0).normalized()
+		var best_direction := Vector2.ZERO
+		var best_position := Vector2.ZERO
+		var best_clearance := INF
 		var winding := 1.0 if _polygon_signed_area(outline) >= 0.0 else -1.0
-		var outward := Vector2(direction.y, -direction.x) * winding
-		var midpoint := (p0 + p1) * 0.5
-		var stall_position := midpoint + outward * 2.8
-		var road_clearance := _nearest_road_distance(stall_position)
-		if road_clearance < 3.0 or road_clearance > 18.0:
+		for edge_index in range(outline.size()):
+			var p0 := outline[edge_index]
+			var p1 := outline[(edge_index + 1) % outline.size()]
+			var edge_length := p0.distance_to(p1)
+			if edge_length < 4.0:
+				continue
+			var edge_direction := (p1 - p0).normalized()
+			var outward := Vector2(edge_direction.y, -edge_direction.x) * winding
+			var midpoint := (p0 + p1) * 0.5
+			for side_sign in [-1.0, 1.0]:
+				var candidate := midpoint + outward * 2.8 * side_sign
+				var candidate_clearance := _nearest_road_distance(candidate)
+				if candidate_clearance >= 3.0 and candidate_clearance <= 18.0 and candidate_clearance < best_clearance:
+					best_clearance = candidate_clearance
+					best_position = candidate
+					best_direction = edge_direction
+		if best_clearance == INF:
 			continue
+		var stall_position := best_position
+		var direction := best_direction
 		var angle := atan2(-direction.y, direction.x)
 		var rotation := Basis(Vector3.UP, angle)
 		var umbrella_transform := Transform3D(rotation.scaled(Vector3(1.15, 1.0, 1.15)), Vector3(stall_position.x, 2.35, stall_position.y))
