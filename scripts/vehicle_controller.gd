@@ -243,7 +243,7 @@ func enter_vehicle(player: Node) -> void:
 	player.camera.rotation = Vector3(deg_to_rad(-12.0), 0.0, 0.0)
 	player.camera_pivot.collision_mask = WORLD_COLLISION_LAYER
 	player.camera.position = Vector3.ZERO
-	player.camera.rotation = Vector3.ZERO
+	player.camera.rotation = Vector3(deg_to_rad(-12.0), 0.0, 0.0)
 
 func _find_safe_exit_position(player: Node) -> Vector3:
 	var capsule := CapsuleShape3D.new()
@@ -286,7 +286,7 @@ func exit_vehicle() -> void:
 	player.camera.rotation = Vector3(deg_to_rad(-14.0), 0.0, 0.0)
 	player.camera_pivot.collision_mask = WORLD_COLLISION_LAYER
 	player.camera.position = Vector3.ZERO
-	player.camera.rotation = Vector3.ZERO
+	player.camera.rotation = Vector3(deg_to_rad(-14.0), 0.0, 0.0)
 	player.global_position = safe_position
 	player.velocity = Vector3.ZERO
 	player.collision_layer = _driver_collision_layer
