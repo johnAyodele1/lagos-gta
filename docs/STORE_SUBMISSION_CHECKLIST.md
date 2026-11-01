@@ -19,6 +19,7 @@ Store approval cannot be guaranteed by code. Store rules change and reviewers as
 - [x] Increment the in-game legal version when material terms or consent scope changes.
 - [ ] Replace draft publisher/contact information with the real legal publisher identity and monitored address.
 - [ ] Obtain qualified legal review for target territories.
+- [ ] Review the working title “Lagos GTA” and all GTA-related wording/visuals for trademark and consumer-confusion risk; use a distinct original release title if advised.
 - [ ] Enable GitHub Pages and verify the prepared legal site is publicly accessible over HTTPS.
 - [ ] Replace the development draft with the legally reviewed privacy policy and publish it at a public, stable, non-geofenced HTTPS URL.
 - [ ] Publish final Terms & Conditions at a public, stable HTTPS URL.
