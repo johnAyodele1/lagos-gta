@@ -34,11 +34,11 @@ static func create_torso_mesh(segments: int = 12) -> ArrayMesh:
 			var c := rings[ring_index][next_index]
 			var d := rings[ring_index + 1][next_index]
 			surface.add_vertex(a)
-			surface.add_vertex(c)
 			surface.add_vertex(b)
 			surface.add_vertex(c)
+			surface.add_vertex(c)
+			surface.add_vertex(b)
 			surface.add_vertex(d)
-			surface.add_vertex(b)
 	for cap_index in [0, rings.size() - 1]:
 		var ring: PackedVector3Array = rings[cap_index]
 		var center := Vector3.ZERO
@@ -48,7 +48,11 @@ static func create_torso_mesh(segments: int = 12) -> ArrayMesh:
 		for index in range(segments):
 			var next_index := (index + 1) % segments
 			surface.add_vertex(center)
-			surface.add_vertex(ring[index])
-			surface.add_vertex(ring[next_index])
+			if cap_index == 0:
+				surface.add_vertex(ring[index])
+				surface.add_vertex(ring[next_index])
+			else:
+				surface.add_vertex(ring[next_index])
+				surface.add_vertex(ring[index])
 	surface.generate_normals()
 	return surface.commit()
