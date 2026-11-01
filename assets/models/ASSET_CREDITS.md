@@ -30,3 +30,11 @@ Original creators and source locations are retained for attribution and auditabi
 - Source mirror: https://github.com/jackbauertv24-droid/3d-bus-viewer/tree/main/models/vehicle-assets
 
 The minibus is a generic CC0 base mesh, not a scanned or exact Lagos Danfo vehicle. The game applies Lagos yellow paint, destination signage and route-specific details.
+
+## 3D signage font
+
+- Asset: `fonts/Roboto.ttf`
+- Creator: Google Fonts / Roboto contributors
+- Licence: SIL Open Font Licence 1.1
+- Licence text: `fonts/OFL.txt`
+- Source: https://github.com/google/fonts/tree/main/ofl/roboto
