@@ -41,28 +41,49 @@ func _ensure_scene_materials() -> void:
 		var mesh_instance := node as MeshInstance3D
 		if mesh_instance.mesh == null:
 			continue
-		for surface_index in range(mesh_instance.mesh.get_surface_count()):
-			if mesh_instance.get_active_material(surface_index) == null:
-				mesh_instance.set_surface_override_material(surface_index, fallback)
-				missing_surfaces += 1
-				if affected_nodes.size() < 12:
-					affected_nodes.append("%s[%d]" % [str(mesh_instance.get_path()), surface_index])
+		# Instance overrides are not a substitute for a valid source surface
+		# material on every renderer/backend. Repair a duplicate mesh resource
+		# so imported shared resources are never mutated globally.
+		var mesh_copy := mesh_instance.mesh.duplicate() as Mesh
+		if mesh_copy == null:
+			mesh_instance.material_override = fallback
+			continue
+		var changed := false
+		for surface_index in range(mesh_copy.get_surface_count()):
+			if mesh_copy.surface_get_material(surface_index) != null:
+				continue
+			mesh_copy.surface_set_material(surface_index, fallback)
+			missing_surfaces += 1
+			changed = true
+			if affected_nodes.size() < 12:
+				affected_nodes.append("%s[%d]" % [str(mesh_instance.get_path()), surface_index])
+		if changed:
+			mesh_instance.mesh = mesh_copy
+		if mesh_instance.material_override == null and mesh_instance.mesh.get_surface_count() == 0:
+			mesh_instance.material_override = fallback
 	for node in find_children("*", "MultiMeshInstance3D", true, false):
 		var batch := node as MultiMeshInstance3D
-		if batch.multimesh == null or batch.material_override != null or batch.multimesh.mesh == null:
+		if batch.multimesh == null or batch.multimesh.mesh == null:
 			continue
-		var has_surface_material := false
-		for surface_index in range(batch.multimesh.mesh.get_surface_count()):
-			if batch.multimesh.mesh.surface_get_material(surface_index) != null:
-				has_surface_material = true
-				break
-		if not has_surface_material:
+		var batch_mesh_copy := batch.multimesh.mesh.duplicate() as Mesh
+		if batch_mesh_copy == null:
 			batch.material_override = fallback
+			continue
+		var batch_changed := false
+		for surface_index in range(batch_mesh_copy.get_surface_count()):
+			if batch_mesh_copy.surface_get_material(surface_index) != null:
+				continue
+			batch_mesh_copy.surface_set_material(surface_index, fallback)
 			missing_surfaces += 1
+			batch_changed = true
 			if affected_nodes.size() < 12:
 				affected_nodes.append(str(batch.get_path()))
+		if batch_changed:
+			batch.multimesh.mesh = batch_mesh_copy
+		if batch.material_override == null and batch_mesh_copy.get_surface_count() == 0:
+			batch.material_override = fallback
 	if missing_surfaces > 0:
-		push_warning("Assigned fallback materials to %d unmaterialed render surfaces: %s" % [missing_surfaces, ", ".join(affected_nodes)])
+		push_warning("Assigned fallback base materials to %d render surfaces: %s" % [missing_surfaces, ", ".join(affected_nodes)])
 
 func _build_environment() -> void:
 	var world_environment := WorldEnvironment.new()
