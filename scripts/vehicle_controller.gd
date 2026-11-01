@@ -214,8 +214,7 @@ func enter_vehicle(player: Node) -> void:
 	player.set_physics_process(false)
 	player.collision_layer = 0
 	player.collision_mask = 0
-	if player.body_mesh != null:
-		player.body_mesh.visible = false
+	player.set_character_visual_visible(false)
 	player.camera_yaw_pivot.reparent(self, false)
 	player.camera_yaw_pivot.position = Vector3(0.0, 2.4, 0.0)
 	player.camera_yaw_pivot.rotation = Vector3.ZERO
@@ -273,8 +272,7 @@ func exit_vehicle() -> void:
 	player.velocity = Vector3.ZERO
 	player.collision_layer = _driver_collision_layer
 	player.collision_mask = _driver_collision_mask
-	if player.body_mesh != null:
-		player.body_mesh.visible = true
+	player.set_character_visual_visible(true)
 	player.set_physics_process(true)
 
 func _physics_process(delta: float) -> void:
