@@ -134,9 +134,18 @@ func _capture_world() -> void:
 		player.camera_pivot.set_process(false)
 		player.camera_pivot.set_physics_process(false)
 		player.global_position = underpass.global_transform * Vector3(0, 0, -8.0)
-		player.camera.global_position = underpass.global_transform * Vector3(0, 6.0, -16.0)
-		player.camera.look_at(underpass.global_position + Vector3.UP * 1.8, Vector3.UP)
-		player.camera.make_current()
+		var preview_camera := Camera3D.new()
+		preview_camera.name = "UnderpassPreviewCamera"
+		preview_camera.fov = 72.0
+		root.add_child(preview_camera)
+		preview_camera.global_position = underpass.global_transform * Vector3(0, 6.0, -16.0)
+		var underpass_target: Vector3 = underpass.global_position + Vector3.UP * 1.8
+		preview_camera.look_at(underpass_target, Vector3.UP)
+		preview_camera.make_current()
+		print("PREVIEW_UNDERPASS_POSITION=", underpass.global_position)
+		print("PREVIEW_UNDERPASS_CAMERA_POSITION=", preview_camera.global_position)
+		print("PREVIEW_UNDERPASS_CAMERA_TARGET=", underpass_target)
+		await process_frame
 		await process_frame
 		var underpass_image := root.get_texture().get_image()
 		if underpass_image == null or underpass_image.is_empty():
