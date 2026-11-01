@@ -274,6 +274,11 @@ func _add_road_network() -> void:
 	var drain_normals := PackedVector3Array()
 	var drain_indices := PackedInt32Array()
 	var drain_uvs := PackedVector2Array()
+	var curb_vertices := PackedVector3Array()
+	var curb_normals := PackedVector3Array()
+	var curb_indices := PackedInt32Array()
+	var curb_uvs := PackedVector2Array()
+	var drain_grate_transforms: Array[Transform3D] = []
 	var marking_vertices := PackedVector3Array()
 	var marking_normals := PackedVector3Array()
 	var marking_indices := PackedInt32Array()
@@ -287,10 +292,22 @@ func _add_road_network() -> void:
 		_append_ribbon(road_vertices, road_normals, road_indices, points, width, 0.0, 0.015, road_uvs)
 		if highway in ["footway", "path", "pedestrian"]:
 			continue
-		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, width * 0.5 + 0.85, 0.035, sidewalk_uvs)
-		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, -(width * 0.5 + 0.85), 0.035, sidewalk_uvs)
-		_append_ribbon(drain_vertices, drain_normals, drain_indices, points, 0.22, width * 0.5 + 0.12, 0.025, drain_uvs)
-		_append_ribbon(drain_vertices, drain_normals, drain_indices, points, 0.22, -(width * 0.5 + 0.12), 0.025, drain_uvs)
+		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, width * 0.5 + 1.25, 0.045, sidewalk_uvs)
+		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, -(width * 0.5 + 1.25), 0.045, sidewalk_uvs)
+		_append_ribbon(drain_vertices, drain_normals, drain_indices, points, 0.30, width * 0.5 + 0.20, 0.025, drain_uvs)
+		_append_ribbon(drain_vertices, drain_normals, drain_indices, points, 0.30, -(width * 0.5 + 0.20), 0.025, drain_uvs)
+		_append_ribbon(curb_vertices, curb_normals, curb_indices, points, 0.18, width * 0.5 + 0.45, 0.11, curb_uvs)
+		_append_ribbon(curb_vertices, curb_normals, curb_indices, points, 0.18, -(width * 0.5 + 0.45), 0.11, curb_uvs)
+		var side_direction := Vector2(-points[1].direction_to(points[0]).y, points[1].direction_to(points[0]).x)
+		var grate_basis := Basis(Vector3.UP, atan2(points[1].x - points[0].x, points[1].y - points[0].y))
+		var segment_cursor := 5.0
+		while segment_cursor < _polyline_length(points) and drain_grate_transforms.size() < 160:
+			var grate_point := points[0] + (points[1] - points[0]).normalized() * segment_cursor
+			var grate_side := Vector2(-((points[1] - points[0]).normalized()).y, ((points[1] - points[0]).normalized()).x)
+			for side_sign in [-1.0, 1.0]:
+				var grate_position := grate_point + grate_side * (width * 0.5 + 0.20) * float(side_sign)
+				drain_grate_transforms.append(Transform3D(grate_basis.scaled(Vector3(0.30, 0.035, 0.55)), Vector3(grate_position.x, 0.065, grate_position.y)))
+			segment_cursor += 9.0
 		if width >= 7.0 and str(road.get("highway", "")) in ["primary", "secondary", "tertiary"]:
 			_append_road_markings(points, marking_vertices, marking_normals, marking_indices, marking_uvs)
 	var asphalt_material := _material("asphalt", ROAD_COLOR)
@@ -310,6 +327,8 @@ func _add_road_network() -> void:
 	_create_surface_mesh(road_vertices, road_normals, road_indices, road_uvs, asphalt_material, "OSMRoadSurfaces")
 	_create_surface_mesh(sidewalk_vertices, sidewalk_normals, sidewalk_indices, sidewalk_uvs, concrete_material, "OSMSidewalks")
 	_create_surface_mesh(drain_vertices, drain_normals, drain_indices, drain_uvs, _material("drainage", DRAIN_COLOR), "OSMRoadsideDrainage")
+	_create_surface_mesh(curb_vertices, curb_normals, curb_indices, curb_uvs, concrete_material, "OSMRoadsideCurbs")
+	_add_box_batch("OSMDrainageGrates", Vector3.ONE, drain_grate_transforms, Color(0.18, 0.19, 0.18))
 	_create_surface_mesh(marking_vertices, marking_normals, marking_indices, marking_uvs, _material("road_markings", Color(0.88, 0.84, 0.67)), "OSMRoadMarkings")
 
 func _make_noise_texture(seed_value: int, variation: float) -> Texture2D:
