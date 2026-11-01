@@ -242,18 +242,36 @@ func _add_market_stalls() -> void:
 		Vector3(15.0, 0.0, -16.0),
 		Vector3(23.0, 0.0, -16.0)
 	]
+	var counters: Array[Transform3D] = []
+	var supports: Array[Transform3D] = []
+	var red_canopies: Array[Transform3D] = []
+	var yellow_canopies: Array[Transform3D] = []
+	var green_canopies: Array[Transform3D] = []
+	var green_crates: Array[Transform3D] = []
+	var orange_crates: Array[Transform3D] = []
+	var red_crates: Array[Transform3D] = []
 	for index in range(stall_positions.size()):
 		var origin: Vector3 = stall_positions[index]
-		var canopy_color: Color = MARKET_CANOPY_COLORS[index % MARKET_CANOPY_COLORS.size()]
-		# Stall counter and a lightweight coloured canopy are separate visual pieces.
-		_add_box(self, Vector3(3.2, 1.0, 1.4), origin + Vector3(0.0, 0.5, 0.0), Color(0.42, 0.25, 0.14))
-		_add_box(self, Vector3(3.8, 0.12, 2.2), origin + Vector3(0.0, 2.25, 0.0), canopy_color)
+		counters.append(Transform3D(Basis(), origin + Vector3(0.0, 0.5, 0.0)))
 		for side in [-1.0, 1.0]:
-			_add_box(self, Vector3(0.10, 2.2, 0.10), origin + Vector3(side * 1.65, 1.1, -0.9), Color(0.22, 0.22, 0.20))
-		# Produce crates make the stalls read as market spaces, not generic cubes.
-		_add_box(self, Vector3(0.75, 0.55, 0.65), origin + Vector3(-0.85, 1.28, 0.0), Color(0.32, 0.38, 0.16))
-		_add_box(self, Vector3(0.75, 0.55, 0.65), origin + Vector3(0.0, 1.28, 0.0), Color(0.68, 0.38, 0.12))
-		_add_box(self, Vector3(0.75, 0.55, 0.65), origin + Vector3(0.85, 1.28, 0.0), Color(0.48, 0.18, 0.14))
+			supports.append(Transform3D(Basis(), origin + Vector3(side * 1.65, 1.1, -0.9)))
+		var canopy_transform := Transform3D(Basis(), origin + Vector3(0.0, 2.25, 0.0))
+		match index % 3:
+			0: red_canopies.append(canopy_transform)
+			1: yellow_canopies.append(canopy_transform)
+			2: green_canopies.append(canopy_transform)
+		green_crates.append(Transform3D(Basis(), origin + Vector3(-0.85, 1.28, 0.0)))
+		orange_crates.append(Transform3D(Basis(), origin + Vector3(0.0, 1.28, 0.0)))
+		red_crates.append(Transform3D(Basis(), origin + Vector3(0.85, 1.28, 0.0)))
+	# Batch repeated stall parts to keep draw calls down on entry-level phones.
+	_add_box_batch(self, Vector3(3.2, 1.0, 1.4), counters, Color(0.42, 0.25, 0.14))
+	_add_box_batch(self, Vector3(0.10, 2.2, 0.10), supports, Color(0.22, 0.22, 0.20))
+	_add_box_batch(self, Vector3(3.8, 0.12, 2.2), red_canopies, MARKET_CANOPY_COLORS[0])
+	_add_box_batch(self, Vector3(3.8, 0.12, 2.2), yellow_canopies, MARKET_CANOPY_COLORS[1])
+	_add_box_batch(self, Vector3(3.8, 0.12, 2.2), green_canopies, MARKET_CANOPY_COLORS[2])
+	_add_box_batch(self, Vector3(0.75, 0.55, 0.65), green_crates, Color(0.32, 0.38, 0.16))
+	_add_box_batch(self, Vector3(0.75, 0.55, 0.65), orange_crates, Color(0.68, 0.38, 0.12))
+	_add_box_batch(self, Vector3(0.75, 0.55, 0.65), red_crates, Color(0.48, 0.18, 0.14))
 
 func _add_compound_details() -> void:
 	# Low compound walls, rooftop water tanks and utility poles are common visual cues
