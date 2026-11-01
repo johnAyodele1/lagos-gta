@@ -168,6 +168,39 @@ func _add_street_lights() -> void:
 	_add_box_batch(self, Vector3(0.16, 5.5, 0.16), poles, Color(0.18, 0.19, 0.18))
 	_add_box_batch(self, Vector3(1.0, 0.16, 0.16), arms, Color(0.18, 0.19, 0.18))
 
+func _add_cylinder(parent: Node3D, radius: float, height: float, position: Vector3, color: Color) -> void:
+	var instance := MeshInstance3D.new()
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = radius
+	mesh.bottom_radius = radius
+	mesh.height = height
+	instance.mesh = mesh
+	instance.position = position
+	instance.rotation.z = PI * 0.5
+	instance.material_override = _material(color)
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(instance)
+
+func _add_keke_tricycle() -> void:
+	var keke := Node3D.new()
+	keke.name = "ParkedKekeTricycle"
+	keke.position = Vector3(-4.0, 0.0, -17.0)
+	add_child(keke)
+	_add_box(keke, Vector3(2.2, 0.85, 1.25), Vector3(0.0, 1.0, 0.0), Color(0.12, 0.38, 0.24))
+	_add_box(keke, Vector3(1.5, 0.12, 1.3), Vector3(-0.12, 2.08, 0.0), Color(0.90, 0.70, 0.08))
+	_add_box(keke, Vector3(0.06, 0.58, 0.92), Vector3(1.05, 1.65, 0.0), Color(0.10, 0.20, 0.24))
+	for side in [-1.0, 1.0]:
+		_add_box(keke, Vector3(1.1, 0.52, 0.045), Vector3(-0.18, 1.68, side * 0.63), Color(0.10, 0.20, 0.24))
+		_add_cylinder(keke, 0.30, 0.18, Vector3(-0.72, 0.32, side * 0.65), Color(0.07, 0.07, 0.07))
+	_add_cylinder(keke, 0.30, 0.18, Vector3(0.78, 0.32, 0.0), Color(0.07, 0.07, 0.07))
+	var route_label := Label3D.new()
+	route_label.text = "KEKE"
+	route_label.font_size = 20
+	route_label.outline_size = 4
+	route_label.position = Vector3(0.0, 1.55, -0.66)
+	route_label.rotation.y = PI
+	keke.add_child(route_label)
+
 func _add_landmarks() -> void:
 	# A compact neighbourhood sign gives this first blockout a recognisable district identity.
 	var district_sign := Label3D.new()
@@ -191,6 +224,7 @@ func _add_landmarks() -> void:
 	stop_label.position = Vector3(16.0, 2.1, 14.8)
 	stop_label.rotation.y = PI
 	add_child(stop_label)
+	_add_keke_tricycle()
 
 func _add_market_stalls() -> void:
 	var stall_positions: Array[Vector3] = [
