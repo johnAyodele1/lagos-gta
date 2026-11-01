@@ -129,6 +129,10 @@ func _test_vehicle_speed_limits() -> void:
 	_check(is_equal_approx(VehicleScript.target_speed(0.5), VehicleScript.MAX_FORWARD_SPEED * 0.5), "partial throttle scales target speed")
 	_check(is_equal_approx(VehicleScript.target_speed(1.0, true), VehicleScript.MAX_FORWARD_SPEED * 1.15), "sprint control applies a capped danfo boost")
 	_check(is_equal_approx(VehicleScript.target_speed(2.0), VehicleScript.MAX_FORWARD_SPEED), "vehicle throttle clamps invalid input")
+	_check(is_equal_approx(VehicleScript.acceleration_for(0.0, 10.0), VehicleScript.ACCELERATION), "danfo accelerates from rest")
+	_check(is_equal_approx(VehicleScript.acceleration_for(10.0, 0.0), VehicleScript.COAST_DECELERATION), "danfo coasts down when throttle is released")
+	_check(is_equal_approx(VehicleScript.acceleration_for(10.0, -5.0), VehicleScript.BRAKE_ACCELERATION), "danfo brakes before changing direction")
+	_check(is_equal_approx(VehicleScript.acceleration_for(-5.0, 10.0), VehicleScript.BRAKE_ACCELERATION), "danfo brakes before switching from reverse to forward")
 
 	var vehicle = VehicleScript.new()
 	root.add_child(vehicle)
