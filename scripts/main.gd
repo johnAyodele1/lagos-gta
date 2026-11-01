@@ -6,6 +6,7 @@ const MobileControlsScript = preload("res://scripts/mobile_controls.gd")
 const LegalConsentScript = preload("res://scripts/legal_consent.gd")
 const VehicleScript = preload("res://scripts/vehicle_controller.gd")
 const TrafficManagerScript = preload("res://scripts/traffic_manager.gd")
+const PedestrianManagerScript = preload("res://scripts/pedestrian_manager.gd")
 
 func _ready() -> void:
 	_build_environment()
@@ -14,6 +15,7 @@ func _ready() -> void:
 	add_child(world)
 	world.generate()
 	_spawn_traffic()
+	_spawn_pedestrians()
 	_spawn_vehicle()
 	_spawn_player()
 	_add_hud()
@@ -86,3 +88,8 @@ func _spawn_traffic() -> void:
 	var traffic = TrafficManagerScript.new()
 	traffic.name = "AmbientLagosTraffic"
 	add_child(traffic)
+
+func _spawn_pedestrians() -> void:
+	var pedestrians = PedestrianManagerScript.new()
+	pedestrians.name = "YabaSidewalkPedestrians"
+	add_child(pedestrians)
