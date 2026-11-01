@@ -178,10 +178,12 @@ func _test_osm_world_generator() -> void:
 	var sample := {
 		"schema_version": 1,
 		"roads": [
-			{"id": "100", "name": "Hughes Avenue", "highway": "residential", "width_m": 6.0, "coordinates": [[-20.0, 0.0], [20.0, 0.0]]}
+			{"id": "100", "name": "Hughes Avenue", "highway": "residential", "width_m": 6.0, "coordinates": [[-20.0, 0.0], [20.0, 0.0]]},
+			{"id": "101", "name": "Herbert Macaulay Way", "highway": "secondary", "width_m": 8.0, "coordinates": [[0.0, -20.0], [0.0, 20.0]]}
 		],
 		"buildings": [
-			{"id": "200", "building": "residential", "height_m": 6.2, "outline": [[5.0, -5.0], [10.0, -5.0], [10.0, 5.0], [5.0, 5.0], [5.0, -5.0]]}
+			{"id": "200", "building": "residential", "height_m": 6.2, "outline": [[5.0, -5.0], [10.0, -5.0], [10.0, 5.0], [5.0, 5.0], [5.0, -5.0]]},
+			{"id": "201", "building": "commercial", "shop": "convenience", "name": "Yaba Kiosk", "height_m": 4.0, "outline": [[15.0, -5.0], [20.0, -5.0], [20.0, 5.0], [15.0, 5.0], [15.0, -5.0]]}
 		],
 		"barriers": [
 			{"id": "300", "barrier": "wall", "coordinates": [[-5.0, -5.0], [-5.0, 5.0]]}
@@ -190,11 +192,17 @@ func _test_osm_world_generator() -> void:
 	var world = OSMWorldGeneratorScript.new()
 	root.add_child(world)
 	_check(world.generate_from_data(sample), "OSM world generator accepts the versioned Yaba data contract")
-	_check(world.get_road_count() == 1, "OSM world generator retains the mapped street centre-line")
-	_check(world.get_building_count() == 1, "OSM world generator retains the real building footprint")
+	_check(world.get_road_count() == 2, "OSM world generator retains mapped street centre-lines")
+	_check(world.get_building_count() == 2, "OSM world generator retains real building footprints")
 	_check(world.get_barrier_count() == 1, "OSM world generator retains mapped compound barriers")
 	_check(world.get_node_or_null("OSMRoadSurfaces") != null, "OSM roads are generated as continuous 3D road surfaces")
+	var road_visual := world.get_node_or_null("OSMRoadSurfaces") as MeshInstance3D
+	_check(road_visual != null and road_visual.mesh.surface_get_material(0).albedo_texture != null, "road surfaces use procedural asphalt texture")
+	_check(world.get_node_or_null("OSMRoadMarkings") != null, "mapped secondary roads receive lane markings")
 	_check(world.get_node_or_null("OSMBuildingFootprintsAndFacades") != null, "OSM building footprints become extruded 3D building geometry")
+	var building_visual := world.get_node_or_null("OSMBuildingFootprintsAndFacades") as MeshInstance3D
+	_check(building_visual != null and building_visual.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON, "mapped buildings cast shadows for street depth")
+	_check(world.get_node_or_null("YabaShopSign_00") != null, "commercial OSM buildings display their mapped shop name")
 	_check(world.get_node_or_null("OSMBuildingCollision") != null, "OSM building geometry receives a static collision mesh")
 	_check(world.get_node_or_null("OSMBarrierCollision") != null, "mapped walls and fences receive static collision geometry")
 	_check(world.get_node_or_null("ProceduralCompoundWallCollision") != null, "residential building footprints receive art-directed Lagos compound walls")
