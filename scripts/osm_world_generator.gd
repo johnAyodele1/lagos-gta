@@ -773,7 +773,7 @@ func _add_utility_network() -> void:
 			))
 			var cross_direction := Vector2(cos(crossarm_angle), -sin(crossarm_angle))
 			for cross_side in [-0.55, 0.55]:
-				var insulator_point := midpoint + cross_direction * cross_side
+				var insulator_point: Vector2 = midpoint + cross_direction * float(cross_side)
 				insulator_transforms.append(Transform3D(Basis(), Vector3(insulator_point.x, 5.70, insulator_point.y)))
 
 			var toward_road := -outward
