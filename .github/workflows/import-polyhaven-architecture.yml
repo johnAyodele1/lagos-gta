@@ -37,6 +37,9 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Test architecture importer without network access
+        run: python -m unittest tools/test_import_polyhaven_architecture.py -v
+
       - name: Download and verify CC0 Poly Haven source
         run: python tools/import_polyhaven_architecture.py --output-dir assets/models/architecture
 
@@ -61,6 +64,9 @@ jobs:
               raise SystemExit("Imported architecture GLB exceeds the 90 MiB repository budget.")
           print(f"Validated runtime GLB: {len(data):,} bytes")
           PY
+          # The packed GLB contains its textures. Keep the source tree out of
+          # the mobile runtime repository to avoid shipping duplicate textures.
+          rm -rf assets/models/architecture/source
 
       - name: Commit imported model to this feature branch
         shell: bash
