@@ -13,6 +13,7 @@ func _run() -> void:
 	_test_normalize_move_input()
 	_test_camera_pitch_clamp()
 	_test_mobile_joystick()
+	_test_mobile_button_state()
 	_test_project_scripts_load()
 	if failures > 0:
 		push_error("%d of %d gameplay input tests failed." % [failures, assertions])
@@ -39,6 +40,20 @@ func _test_camera_pitch_clamp() -> void:
 	_check(is_equal_approx(PlayerScript.clamp_camera_pitch(-10.0), deg_to_rad(-55.0)), "camera pitch clamps at the lower limit")
 	_check(is_equal_approx(PlayerScript.clamp_camera_pitch(10.0), deg_to_rad(35.0)), "camera pitch clamps at the upper limit")
 	_check(is_equal_approx(PlayerScript.clamp_camera_pitch(0.2), 0.2), "camera pitch remains unchanged inside limits")
+
+func _test_mobile_button_state() -> void:
+	var controls = MobileControlsScript.new()
+	controls.jump_requested = true
+	_check(controls.consume_jump_request(), "jump tap is consumed once")
+	_check(not controls.consume_jump_request(), "held jump state does not repeat after consumption")
+	controls.sprint_touch_index = 7
+	_check(controls.is_sprint_pressed(), "sprint remains active while its touch is held")
+	controls.sprint_touch_index = -1
+	_check(not controls.is_sprint_pressed(), "sprint stops when its touch is released")
+	controls.look_delta = Vector2(12.0, -4.0)
+	_check(controls.consume_look_delta().is_equal_approx(Vector2(12.0, -4.0)), "camera consumes accumulated touch look delta")
+	_check(controls.consume_look_delta() == Vector2.ZERO, "touch look delta is cleared after consumption")
+	controls.free()
 
 func _test_project_scripts_load() -> void:
 	var world_script = ResourceLoader.load("res://scripts/world_generator.gd")
