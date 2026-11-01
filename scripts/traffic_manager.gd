@@ -17,6 +17,7 @@ const WORLD_COLLISION_LAYER: int = 1
 const VEHICLE_COLLISION_LAYER: int = 2
 const PLAYER_COLLISION_LAYER: int = 4
 const NPC_COLLISION_LAYER: int = 8
+const ModelBoundsScript = preload("res://scripts/model_bounds.gd")
 
 const TRAFFIC_SPEEDS: Array[float] = [8.0, 9.5, 7.0, 10.0, 8.5, 7.5, 9.0, 8.0]
 
@@ -161,6 +162,9 @@ func _create_vehicle_visuals() -> void:
 				visual.set_surface_override_material(surface_index, fallback)
 		visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		add_child(visual)
+		if not ModelBoundsScript.fit_dimensions(visual, Vector3(1.92, 1.55, 4.2)):
+			push_error("Traffic vehicle %02d has invalid mesh bounds." % index)
+			return
 		_traffic_visuals.append(visual)
 
 
@@ -173,9 +177,9 @@ func _create_collision_proxies() -> void:
 		body.sync_to_physics = true
 		var collision := CollisionShape3D.new()
 		var shape := BoxShape3D.new()
-		shape.size = Vector3(2.2, 1.8, 4.5)
+		shape.size = Vector3(2.02, 1.62, 4.28)
 		collision.shape = shape
-		collision.position.y = 0.8
+		collision.position.y = 0.81
 		body.add_child(collision)
 		add_child(body)
 		_collision_bodies.append(body)
