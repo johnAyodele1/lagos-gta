@@ -37,10 +37,13 @@ func _spawn_player() -> void:
 	player.position = Vector3(0.0, 0.5, 5.0)
 	add_child(player)
 
+	var controls_layer := CanvasLayer.new()
+	controls_layer.name = "MobileControlsLayer"
+	controls_layer.layer = 10
+	add_child(controls_layer)
 	var controls = MobileControlsScript.new()
 	controls.name = "MobileControls"
-	controls.z_index = 100
-	add_child(controls)
+	controls_layer.add_child(controls)
 	player.mobile_controls = controls
 
 func _add_hud() -> void:
