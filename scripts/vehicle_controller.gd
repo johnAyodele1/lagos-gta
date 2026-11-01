@@ -40,34 +40,155 @@ func _ready() -> void:
 	_build_vehicle()
 
 func _build_vehicle() -> void:
+	# The collider is deliberately simpler than the rendered mesh.
 	var body_collision := CollisionShape3D.new()
 	var body_shape := BoxShape3D.new()
-	body_shape.size = Vector3(5.2, 2.8, 2.4)
+	body_shape.size = Vector3(4.9, 2.8, 2.35)
 	body_collision.shape = body_shape
-	body_collision.position.y = 1.4
+	body_collision.position.y = 1.35
 	add_child(body_collision)
 
-	_add_box(Vector3(5.0, 1.35, 2.15), Vector3(0.0, 1.25, 0.0), Color(0.92, 0.68, 0.08))
-	_add_box(Vector3(3.45, 1.15, 2.05), Vector3(-0.15, 2.35, 0.0), Color(0.90, 0.65, 0.06))
-	_add_box(Vector3(3.65, 0.10, 2.18), Vector3(-0.15, 2.98, 0.0), Color(0.16, 0.17, 0.16))
+	var body := MeshInstance3D.new()
+	body.name = "DanfoBodyShell"
+	body.mesh = _create_loft_mesh([
+		{"z": -2.30, "width": 0.78, "bottom": -0.55, "top": 0.22},
+		{"z": -1.88, "width": 1.00, "bottom": -0.62, "top": 0.48},
+		{"z": 1.72, "width": 1.00, "bottom": -0.62, "top": 0.48},
+		{"z": 2.25, "width": 0.80, "bottom": -0.55, "top": 0.22}
+	])
+	body.position.y = 1.15
+	body.material_override = _vehicle_material(Color(0.94, 0.66, 0.07), 0.74)
+	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	add_child(body)
+
+	var cabin := MeshInstance3D.new()
+	cabin.name = "DanfoCabinShell"
+	cabin.mesh = _create_loft_mesh([
+		{"z": -1.58, "width": 0.77, "bottom": 0.0, "top": 0.20},
+		{"z": -1.18, "width": 0.83, "bottom": 0.0, "top": 1.05},
+		{"z": 1.02, "width": 0.83, "bottom": 0.0, "top": 1.05},
+		{"z": 1.45, "width": 0.77, "bottom": 0.0, "top": 0.20}
+	])
+	cabin.position.y = 1.62
+	cabin.material_override = _vehicle_material(Color(0.91, 0.63, 0.055), 0.72)
+	cabin.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	add_child(cabin)
+
+	var glass := _vehicle_material(Color(0.055, 0.14, 0.18), 0.22)
+	glass.metallic = 0.18
 	for side in [-1.0, 1.0]:
-		_add_box(Vector3(2.8, 0.72, 0.045), Vector3(-0.18, 2.42, side * 1.045), Color(0.10, 0.20, 0.25))
-		_add_box(Vector3(0.10, 0.72, 0.045), Vector3(-1.75, 2.42, side * 1.045), Color(0.10, 0.20, 0.25))
-		_add_box(Vector3(0.10, 0.72, 0.045), Vector3(1.35, 2.42, side * 1.045), Color(0.10, 0.20, 0.25))
-	_add_box(Vector3(0.06, 0.78, 1.75), Vector3(2.52, 2.38, 0.0), Color(0.10, 0.20, 0.25))
-	_add_box(Vector3(0.18, 0.20, 2.25), Vector3(2.55, 0.72, 0.0), Color(0.12, 0.12, 0.12))
-	_add_box(Vector3(0.18, 0.20, 2.25), Vector3(-2.55, 0.72, 0.0), Color(0.12, 0.12, 0.12))
-	for x in [-1.65, 1.65]:
-		for side in [-1.0, 1.0]:
-			_add_wheel(Vector3(x, 0.48, side * 1.05), 0.48, 0.24, Color(0.07, 0.07, 0.07))
-			_add_wheel(Vector3(x, 0.48, side * 1.05), 0.22, 0.25, Color(0.55, 0.56, 0.54))
+		for window_index in range(3):
+			var window_z := -0.58 + float(window_index) * 0.62
+			_add_plane(
+				Vector2(0.56, 0.70),
+				Vector3(side * 0.846, 2.25, window_z),
+				Vector3(0.0, -side * PI * 0.5, 0.0),
+				glass,
+				"DanfoSideGlass_%s_%s" % [str(side), str(window_index)]
+			)
+		_add_box(Vector3(0.045, 0.82, 0.055), Vector3(side * 0.86, 2.22, -0.90), Color(0.88, 0.61, 0.055))
+		_add_box(Vector3(0.045, 0.82, 0.055), Vector3(side * 0.86, 2.22, 0.95), Color(0.88, 0.61, 0.055))
+		_add_box(Vector3(0.045, 0.82, 0.055), Vector3(side * 0.86, 2.22, 0.34), Color(0.88, 0.61, 0.055))
+
+	_add_plane(Vector2(1.42, 0.72), Vector3(0.0, 2.22, -1.62), Vector3(deg_to_rad(-9.0), PI, 0.0), glass, "DanfoFrontWindshield")
+	_add_plane(Vector2(1.38, 0.70), Vector3(0.0, 2.22, 1.48), Vector3(deg_to_rad(8.0), 0.0, 0.0), glass, "DanfoRearWindow")
+
+	# Sliding passenger door, black waist stripe and front/rear bumpers.
+	for side in [-1.0, 1.0]:
+		_add_box(Vector3(0.055, 1.45, 0.92), Vector3(side * 1.01, 1.28, 0.88), Color(0.84, 0.59, 0.055))
+		_add_box(Vector3(0.055, 0.12, 3.7), Vector3(side * 1.015, 1.03, 0.0), Color(0.035, 0.04, 0.035))
+	_add_box(Vector3(0.16, 0.18, 2.05), Vector3(0.0, 0.72, -2.30), Color(0.12, 0.13, 0.13))
+	_add_box(Vector3(0.16, 0.18, 2.05), Vector3(0.0, 0.72, 2.28), Color(0.12, 0.13, 0.13))
+	_add_box(Vector3(0.10, 0.28, 1.85), Vector3(0.0, 1.02, 0.90), Color(0.76, 0.48, 0.035))
+
+	var headlight := _vehicle_material(Color(1.0, 0.91, 0.68), 0.24)
+	headlight.emission_enabled = true
+	headlight.emission = Color(0.8, 0.64, 0.32)
+	var taillight := _vehicle_material(Color(0.68, 0.045, 0.025), 0.28)
+	for side in [-1.0, 1.0]:
+		_add_box(Vector3(0.30, 0.18, 0.06), Vector3(side * 0.58, 0.91, -2.34), Color(0.97, 0.88, 0.63))
+		_add_box(Vector3(0.22, 0.28, 0.06), Vector3(side * 0.68, 0.92, 2.29), Color(0.72, 0.045, 0.025))
+		_add_box(Vector3(0.08, 0.12, 0.24), Vector3(side * 1.05, 2.05, -1.35), Color(0.12, 0.13, 0.12))
+		_add_wheel(Vector3(side * 1.02, 0.50, -1.55), 0.48, 0.25, Color(0.045, 0.045, 0.045))
+		_add_wheel(Vector3(side * 1.02, 0.50, 1.48), 0.48, 0.25, Color(0.045, 0.045, 0.045))
+		_add_wheel(Vector3(side * 1.16, 0.50, -1.55), 0.24, 0.08, Color(0.56, 0.57, 0.54))
+		_add_wheel(Vector3(side * 1.16, 0.50, 1.48), 0.24, 0.08, Color(0.56, 0.57, 0.54))
+
 	var route_label := Label3D.new()
-	route_label.text = "LAGOS  |  DANFO"
-	route_label.font_size = 24
+	route_label.name = "DanfoDestinationBoard"
+	route_label.text = "YABA  /  TEJUOSHO"
+	route_label.font_size = 26
 	route_label.outline_size = 5
-	route_label.position = Vector3(0.0, 1.8, -1.11)
-	route_label.rotation.y = PI
+	route_label.position = Vector3(0.0, 2.54, -2.31)
+	route_label.modulate = Color(1.0, 0.91, 0.62)
 	add_child(route_label)
+
+func _create_loft_mesh(sections: Array[Dictionary]) -> ArrayMesh:
+	var rings: Array[PackedVector3Array] = []
+	for section in sections:
+		var width := float(section["width"])
+		var bottom := float(section["bottom"])
+		var top := float(section["top"])
+		var z := float(section["z"])
+		var bevel := minf(0.16, (top - bottom) * 0.22)
+		rings.append(PackedVector3Array([
+			Vector3(-width + bevel, bottom, z),
+			Vector3(width - bevel, bottom, z),
+			Vector3(width, bottom + bevel, z),
+			Vector3(width, top - bevel, z),
+			Vector3(width - bevel, top, z),
+			Vector3(-width + bevel, top, z),
+			Vector3(-width, top - bevel, z),
+			Vector3(-width, bottom + bevel, z)
+		]))
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for ring_index in range(rings.size() - 1):
+		for corner in range(8):
+			var next_corner := (corner + 1) % 8
+			var a := rings[ring_index][corner]
+			var b := rings[ring_index + 1][corner]
+			var c := rings[ring_index][next_corner]
+			var d := rings[ring_index + 1][next_corner]
+			surface.add_vertex(a)
+			surface.add_vertex(b)
+			surface.add_vertex(c)
+			surface.add_vertex(c)
+			surface.add_vertex(b)
+			surface.add_vertex(d)
+	for cap_index in [0, rings.size() - 1]:
+		var ring: PackedVector3Array = rings[cap_index]
+		var center := Vector3.ZERO
+		for point in ring:
+			center += point
+		center /= float(ring.size())
+		for corner in range(8):
+			var next_corner := (corner + 1) % 8
+			surface.add_vertex(center)
+			surface.add_vertex(ring[corner])
+			surface.add_vertex(ring[next_corner])
+	surface.generate_normals()
+	return surface.commit()
+
+func _add_plane(size: Vector2, plane_position: Vector3, plane_rotation: Vector3, material: Material, node_name: String) -> void:
+	var instance := MeshInstance3D.new()
+	var mesh := PlaneMesh.new()
+	mesh.size = size
+	instance.mesh = mesh
+	instance.position = plane_position
+	instance.rotation = plane_rotation
+	instance.material_override = material
+	instance.name = node_name
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(instance)
+
+func _vehicle_material(color: Color, roughness: float) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.roughness = roughness
+	material.metallic = 0.08
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return material
 
 func _add_box(box_size: Vector3, box_position: Vector3, color: Color) -> void:
 	var instance := MeshInstance3D.new()
@@ -75,10 +196,7 @@ func _add_box(box_size: Vector3, box_position: Vector3, color: Color) -> void:
 	mesh.size = box_size
 	instance.mesh = mesh
 	instance.position = box_position
-	var material := StandardMaterial3D.new()
-	material.albedo_color = color
-	material.roughness = 0.82
-	instance.material_override = material
+	instance.material_override = _vehicle_material(color, 0.82)
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(instance)
 
@@ -88,13 +206,11 @@ func _add_wheel(wheel_position: Vector3, radius: float, width: float, color: Col
 	mesh.top_radius = radius
 	mesh.bottom_radius = radius
 	mesh.height = width
+	mesh.radial_segments = 16
 	wheel.mesh = mesh
 	wheel.position = wheel_position
 	wheel.rotation.z = PI * 0.5
-	var material := StandardMaterial3D.new()
-	material.albedo_color = color
-	material.roughness = 0.95
-	wheel.material_override = material
+	wheel.material_override = _vehicle_material(color, 0.94)
 	wheel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(wheel)
 	_wheels.append(wheel)
