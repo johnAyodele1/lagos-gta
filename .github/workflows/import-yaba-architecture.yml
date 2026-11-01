@@ -1,0 +1,50 @@
+name: Import mobile Yaba architecture asset
+on:
+  workflow_dispatch:
+  push:
+    branches: ["feat/yaba-asset-replacement-pass"]
+    paths:
+      - tools/import_polyhaven_architecture.py
+      - tools/optimize_polyhaven_glb.py
+      - .github/workflows/import-yaba-architecture.yml
+permissions:
+  contents: write
+concurrency:
+  group: yaba-architecture-import
+  cancel-in-progress: true
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+      - name: Import and optimize CC0 architecture model
+        run: python tools/import_polyhaven_architecture.py
+      - name: Validate optimized model budget
+        run: |
+          test -s assets/models/architecture/modular_urban_apartments_facade.glb
+          test "$(stat -c%s assets/models/architecture/modular_urban_apartments_facade.glb)" -le 47185920
+      - name: Commit model to this feature branch only
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/models/architecture/modular_urban_apartments_facade.glb
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "assets: import mobile-optimized Yaba apartment facade"
+          for attempt in 1 2 3; do
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}"
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then exit 0; fi
+          done
+          exit 1
