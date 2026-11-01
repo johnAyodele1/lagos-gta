@@ -1,5 +1,7 @@
 extends SceneTree
 
+const ModelBoundsScript = preload("res://scripts/model_bounds.gd")
+
 ## CI-only visual smoke capture. The first-run legal overlay is hidden for this
 ## screenshot; the shipped game still presents it normally on first launch.
 
@@ -73,7 +75,7 @@ func _capture_world() -> void:
 		push_error("Rendered danfo model is missing from the scene.")
 		quit(1)
 		return
-	var danfo_dimensions := ModelBoundsScript.get_scaled_dimensions(danfo_model)
+	var danfo_dimensions: Vector3 = ModelBoundsScript.get_scaled_dimensions(danfo_model)
 	print("PREVIEW_DANFO_DIMENSIONS_METRES=", danfo_dimensions)
 	if not danfo_dimensions.is_equal_approx(Vector3(2.0, 2.25, 4.65)):
 		push_error("Danfo visual dimensions do not match the 2.25m by 4.65m target.")
