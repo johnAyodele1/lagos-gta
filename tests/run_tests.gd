@@ -253,6 +253,8 @@ func _test_osm_world_generator() -> void:
 	_check(world.get_node_or_null("OSMRoadsideDrainage") != null, "mapped streets include roadside drainage channels")
 	_check(world.get_node_or_null("OSMRoadsideCurbs") != null and world.get_node_or_null("OSMDrainageGrates") != null, "mapped streets include raised concrete kerbs and periodic drain grates")
 	_check(world.get_node_or_null("YabaMarketUmbrellasRed") != null and world.get_node_or_null("YabaMarketTables") != null, "mapped commercial frontages receive recognizable roadside market stalls")
+	var parked_keke := world.get_node_or_null("YabaParkedKeke") as Node3D
+	_check(parked_keke != null and parked_keke.get_node_or_null("KekeCollision") != null, "Yaba street scene includes a correctly scaled parked keke with collision")
 	_check(world.get_node_or_null("YabaMarketStallCollision") != null, "roadside market tables have collision so the player cannot walk through them")
 	var stall_collision_root := world.get_node_or_null("YabaMarketStallCollision") as Node3D
 	if stall_collision_root != null and not stall_collision_root.get_children().is_empty():
