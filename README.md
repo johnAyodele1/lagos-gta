@@ -52,12 +52,12 @@ No third-party asset packs are required to launch the initial scene.
 5. Build mission, interaction and save systems.
 6. Expand the world using researched district layouts and properly licensed geographic data.
 
-See [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for scope and engineering constraints, [docs/MOBILE_RELEASE.md](docs/MOBILE_RELEASE.md) for Android/iOS export and device QA, [docs/TERMS_OF_SERVICE.md](docs/TERMS_OF_SERVICE.md) for the player terms draft, [docs/PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md) for the privacy-policy draft, and [docs/STORE_SUBMISSION_CHECKLIST.md](docs/STORE_SUBMISSION_CHECKLIST.md) for store submission gates.
+See [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for scope and engineering constraints, [docs/MOBILE_RELEASE.md](docs/MOBILE_RELEASE.md) for Android/iOS export and device QA, [docs/TERMS_OF_SERVICE.md](docs/TERMS_OF_SERVICE.md) for the player terms draft, [docs/PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md) for the privacy-policy draft, and [docs/STORE_SUBMISSION_CHECKLIST.md](docs/STORE_SUBMISSION_CHECKLIST.md) for store submission gates. A static legal-information site is prepared in [site/](site/) with a GitHub Pages deployment workflow.
 
 ## Project principles
 
 - Build and test playable systems, not just screenshots.
-- Profile on actual target devices; editor/headless success is not mobile performance proof.
+- Profile on actual target devices; editor/headless success is not mobile performance proof. See [docs/LOW_END_DEVICE_PROFILE.md](docs/LOW_END_DEVICE_PROFILE.md) for measured performance gates.
 - Keep draw calls, physics bodies, memory and texture sizes under control for phones.
 - Do not use copyrighted GTA assets, maps, branding or audio.
 - Credit and comply with the licences of any external geographic data and assets.
