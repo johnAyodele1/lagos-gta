@@ -16,7 +16,7 @@ Build an original open-world 3D game rooted in Lagos, Nigeria. The project shoul
 - Ambient traffic is capped at eight custom tapered 3D cars and follows real OSM road polylines rather than hard-coded north/south/east/west lanes. Each car has a low-cost collision proxy.
 - Four pedestrians follow sidewalk offsets derived from OSM road geometry. They use a custom torso mesh, head/hair/limbs and simple walk animation, with capsule collision proxies. They are still low-poly placeholder characters, not final rigged human assets.
 - Player avatar now has a custom tapered torso, layered clothing, face/hair details, articulated limbs and a procedural walk cycle.
-- Balanced mobile lighting uses two directional-shadow splits, a 1,024px atlas and a 90m shadow distance. Low and High graphics profiles are available through `user://settings.cfg`.
+- Balanced mobile lighting uses two directional-shadow splits, a 1,024px atlas and a 90m shadow distance. An in-game Low / Balanced / High selector persists the graphics preference to `user://settings.cfg`.
 - Desktop keyboard/mouse and touchscreen joystick/look/sprint/jump controls remain supported.
 - First-run Terms & Conditions and Privacy Notice include explicit consent, versioning, local storage and a persistent legal-access button.
 
