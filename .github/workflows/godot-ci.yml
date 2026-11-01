@@ -36,8 +36,11 @@ jobs:
       - name: Import project and parse scripts
         run: '"$GODOT_BIN" --headless --editor --path . --quit'
 
-      - name: Run gameplay input tests
-        run: '"$GODOT_BIN" --headless --path . --script res://tests/run_tests.gd'
+      - name: Run gameplay and generated-world tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a "$GODOT_BIN" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/run_tests.gd
 
       - name: Run prototype with the Compatibility renderer
         shell: bash
