@@ -24,6 +24,7 @@ const TRAFFIC_SPEEDS: Array[float] = [8.0, 9.5, 7.0, 10.0, 8.5, 7.5, 9.0, 8.0]
 var _routes: Array[Dictionary] = []
 var _traffic: Array[Dictionary] = []
 var _traffic_visuals: Array[MeshInstance3D] = []
+var _traffic_visual_local_transforms: Array[Transform3D] = []
 var _collision_bodies: Array[AnimatableBody3D] = []
 var _last_directions: Array[Vector3] = []
 
@@ -166,6 +167,7 @@ func _create_vehicle_visuals() -> void:
 			push_error("Traffic vehicle %02d has invalid mesh bounds." % index)
 			return
 		_traffic_visuals.append(visual)
+		_traffic_visual_local_transforms.append(visual.transform)
 
 
 func _create_collision_proxies() -> void:
@@ -198,7 +200,7 @@ func _update_vehicle_transforms() -> void:
 		var vehicle_basis := Basis.looking_at(-direction_3d, Vector3.UP)
 		var vehicle_transform := global_transform * Transform3D(vehicle_basis, Vector3(position.x, 0.0, position.y))
 		if index < _traffic_visuals.size():
-			_traffic_visuals[index].global_transform = vehicle_transform
+			_traffic_visuals[index].global_transform = vehicle_transform * _traffic_visual_local_transforms[index]
 		if index < _collision_bodies.size():
 			_collision_bodies[index].global_transform = vehicle_transform
 
