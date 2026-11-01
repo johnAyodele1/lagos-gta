@@ -77,3 +77,6 @@ See [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md), [docs/LOW_END_DEVICE_PROFILE.m
 - Keep draw calls, physics bodies, memory and texture sizes under control.
 - Do not use copyrighted GTA assets, maps, branding or audio.
 - Preserve source-data attribution and licences.
+
+
+A second build-time pipeline generates rigged low-detail Lagos civilian and Nigerian traffic/police characters from the pinned Ara 3D Gen / MakeHuman CC0 source. The models are being validated before replacing the current player and pedestrian visuals; see [the character asset pipeline](docs/CHARACTER_ASSET_PIPELINE.md). Building heights and occupancy are also being enriched from the ODbL OpenBuildingMap dataset, while the OSM footprint IDs remain authoritative; see [asset and data credits](assets/models/ASSET_CREDITS.md).
