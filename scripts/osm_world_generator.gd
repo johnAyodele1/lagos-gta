@@ -1,6 +1,7 @@
 extends Node3D
 class_name OSMWorldGenerator
 const LABEL_FONT = preload("res://assets/fonts/Roboto.ttf")
+const ModelBoundsScript = preload("res://scripts/model_bounds.gd")
 
 ## Builds a mobile-conscious Yaba district from a normalized OpenStreetMap extract.
 ## Roads, building footprints and mapped barriers remain data-driven; facade details
@@ -477,6 +478,7 @@ func _add_building_network() -> void:
 	var ac_units: Array[Transform3D] = []
 	var water_tanks: Array[Transform3D] = []
 	var shop_label_count := 0
+	var hero_facade: Dictionary = _select_hero_facade()
 
 	for building_index in range(_buildings.size()):
 		var building: Dictionary = _buildings[building_index]
@@ -527,6 +529,10 @@ func _add_building_network() -> void:
 				vertices[base], vertices[base + 2], vertices[base + 1],
 				vertices[base], vertices[base + 3], vertices[base + 2]
 			]))
+			# The selected residential frontage is supplied by a licensed GLB.
+			# Preserve its collision plane, but do not draw a procedural wall over it.
+			if building_index == int(hero_facade.get("building_index", -1)) and edge_index == int(hero_facade.get("edge_index", -1)):
+				continue
 			if windows.size() < MAX_FACADE_WINDOWS:
 				_append_facade_windows(windows, window_frame_horizontal, window_frame_vertical, window_security_grilles, p0, p1, outward, height)
 			var angle := atan2(-direction.y, direction.x)
@@ -611,6 +617,9 @@ func _add_building_network() -> void:
 			var centroid := _outline_centroid_from_vectors(outline)
 			water_tanks.append(Transform3D(Basis().scaled(Vector3(1.0, 1.0, 1.0)), Vector3(centroid.x, height + 0.85, centroid.y)))
 
+	if not hero_facade.is_empty():
+		_add_hero_facade_asset(hero_facade)
+
 	var building_arrays: Array = []
 	building_arrays.resize(Mesh.ARRAY_MAX)
 	building_arrays[Mesh.ARRAY_VERTEX] = vertices
@@ -659,6 +668,100 @@ func _add_building_network() -> void:
 	_add_box_batch("OSMRoofParapets", Vector3.ONE, parapets, Color(0.50, 0.47, 0.42))
 	_add_box_batch("OSMAirConditioningUnits", Vector3.ONE, ac_units, Color(0.68, 0.68, 0.62))
 	_add_cylinder_batch("OSMRooftopWaterTanks", 0.68, 1.5, water_tanks, Color(0.10, 0.24, 0.38))
+
+
+func _select_hero_facade() -> Dictionary:
+	const asset_path := "res://assets/models/architecture/modular_urban_apartments_facade.glb"
+	if DisplayServer.get_name() == "headless" or not ResourceLoader.exists(asset_path):
+		return {}
+	var best: Dictionary = {}
+	var best_score: float = -INF
+	for building_index in range(_buildings.size()):
+		var building: Dictionary = _buildings[building_index]
+		var building_type := str(building.get("building", "yes"))
+		var occupancy := str(building.get("occupancy", "")).to_upper()
+		var residential := building_type in ["apartments", "residential"] or occupancy.begins_with("RES")
+		if not residential:
+			continue
+		var outline: Array[Vector2] = []
+		for coordinate in building.get("outline", []):
+			outline.append(Vector2(float(coordinate[0]), float(coordinate[1])))
+		if outline.size() > 1 and outline[0].is_equal_approx(outline[outline.size() - 1]):
+			outline.pop_back()
+		if outline.size() < 3:
+			continue
+		var footprint_area := absf(_polygon_signed_area(outline))
+		var height := _resolve_building_height(building, footprint_area)
+		if height < 6.0 or height > 18.0:
+			continue
+		var edge_index := _closest_frontage_edge(outline)
+		var p0 := outline[edge_index]
+		var p1 := outline[(edge_index + 1) % outline.size()]
+		var edge := p1 - p0
+		var frontage_length := edge.length()
+		if frontage_length < 15.0:
+			continue
+		var midpoint := (p0 + p1) * 0.5
+		var road_distance := _nearest_road_distance(midpoint)
+		if road_distance > 18.0:
+			continue
+		var direction := edge / frontage_length
+		var winding := 1.0 if _polygon_signed_area(outline) >= 0.0 else -1.0
+		var outward := Vector2(direction.y, -direction.x) * winding
+		var angle := atan2(-direction.y, direction.x)
+		var local_forward := Vector2(sin(angle), cos(angle))
+		if local_forward.dot(outward) < 0.0:
+			angle += PI
+		var score := minf(frontage_length, 34.0) * height - road_distance * 2.0
+		if score <= best_score:
+			continue
+		best_score = score
+		best = {
+			"building_index": building_index,
+			"edge_index": edge_index,
+			"height": height,
+			"frontage_length": frontage_length,
+			"midpoint": midpoint,
+			"outward": outward,
+			"angle": angle
+		}
+	if best.is_empty():
+		return {}
+	# Validate the imported scene before suppressing any procedural wall geometry.
+	var packed_scene: PackedScene = load(asset_path) as PackedScene
+	if packed_scene == null:
+		return {}
+	var model: Node3D = packed_scene.instantiate() as Node3D
+	if model == null:
+		return {}
+	if not ModelBoundsScript.fit_height(model, float(best["height"])):
+		model.free()
+		return {}
+	var dimensions: Vector3 = ModelBoundsScript.get_scaled_dimensions(model)
+	if dimensions.x <= 0.001:
+		model.free()
+		return {}
+	best["model"] = model
+	best["model_width"] = dimensions.x
+	return best
+
+func _add_hero_facade_asset(details: Dictionary) -> void:
+	var model: Node3D = details.get("model") as Node3D
+	if model == null:
+		return
+	model.scale.x *= minf(1.0, float(details["frontage_length"]) / float(details["model_width"]))
+	var anchor := Node3D.new()
+	anchor.name = "PolyHavenResidentialHeroFacade"
+	var midpoint: Vector2 = details["midpoint"]
+	var outward: Vector2 = details["outward"]
+	anchor.position = Vector3(midpoint.x + outward.x * 0.10, 0.0, midpoint.y + outward.y * 0.10)
+	anchor.rotation.y = float(details["angle"])
+	add_child(anchor)
+	anchor.add_child(model)
+	for mesh_node in model.find_children("*", "MeshInstance3D", true, false):
+		var mesh_instance := mesh_node as MeshInstance3D
+		mesh_instance.visibility_range_end = 110.0
+
 
 func _add_market_stalls() -> void:
 	# Street trading is part of the Yaba streetscape. Place a bounded set of
