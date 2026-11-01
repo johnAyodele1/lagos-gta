@@ -124,10 +124,10 @@ func _build_environment() -> void:
 	environment.sky = sky
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	environment.ambient_light_energy = 0.65
-	environment.ambient_light_sky_contribution = 0.78
+	environment.ambient_light_sky_contribution = 0.86
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	environment.adjustment_enabled = true
-	environment.adjustment_contrast = 1.04
+	environment.adjustment_contrast = 1.0
 	environment.adjustment_saturation = 1.03
 	world_environment.environment = environment
 	_world_environment = environment
@@ -138,7 +138,7 @@ func _build_environment() -> void:
 	sun.light_energy = 1.15
 	sun.light_color = Color(1.0, 0.93, 0.82)
 	_graphics_profile = GraphicsProfileScript.apply(sun, _load_graphics_quality())
-	environment.ambient_light_energy = 0.72 if _graphics_profile["name"] == "low" else 0.62
+	environment.ambient_light_energy = 0.86 if _graphics_profile["name"] == "low" else 0.78
 	_sun_light = sun
 	add_child(sun)
 
