@@ -5,7 +5,7 @@ from pathlib import Path
 
 args = sys.argv[sys.argv.index("--") + 1:]
 if len(args) != 2:
-    raise SystemExit("Expected source.glb output.glb")
+    raise SystemExit("Expected source.gltf|source.glb output.glb")
 source, output = map(str, args)
 
 bpy.ops.object.select_all(action="SELECT")
