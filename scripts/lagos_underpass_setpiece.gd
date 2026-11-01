@@ -6,6 +6,8 @@ static func build(parent:Node3D,roads:Array[Dictionary])->int:
  var count:=0
  for road in roads:
   var tags:Dictionary=road.get("tags",{})
+  var highway:=str(road.get("highway",""))
+  if highway not in ["primary","secondary","tertiary","motorway","trunk"]: continue
   var bridge:=str(tags.get("bridge","no")).to_lower()
   if bridge in ["","no","false","0"]: continue
   var points:Array=road.get("coordinates",[])
@@ -36,7 +38,8 @@ static func _build_mechanic_bay(parent:Node3D,points:Array,width:float)->void:
  var a:=Vector2(float(points[segment_index][0]),float(points[segment_index][1]))
  var b:=Vector2(float(points[segment_index+1][0]),float(points[segment_index+1][1]))
  var direction:Vector2=(b-a).normalized(); var side:=Vector2(-direction.y,direction.x)
- var centre:Vector2=(a+b)*0.5+side*(width*0.5+1.5)
+ var span_midpoint:Vector2=(a+b)*0.5+direction*minf(a.distance_to(b)*0.25,8.0)
+ var centre:Vector2=span_midpoint+side*(width*0.5+1.5)
  var bay:=Node3D.new(); bay.name="YabaUnderpassMechanicBay"
  bay.position=Vector3(centre.x,0,centre.y); bay.rotation.y=atan2(direction.x,direction.y); parent.add_child(bay)
  var wall:=_mat(Color(0.42,0.37,0.29)); var dark:=_mat(Color(0.12,0.13,0.12)); var yellow:=_mat(Color(0.94,0.68,0.08))
