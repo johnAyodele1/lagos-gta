@@ -190,8 +190,8 @@ func _test_visual_meshes() -> void:
 	if DisplayServer.get_name() != "headless":
 		_check(rigged_player != null, "player uses the imported rigged Lagos character model")
 		if rigged_player != null:
-			var player_forward := -player.global_basis.z.normalized()
-			var model_forward := rigged_player.global_basis.z.normalized()
+			var player_forward: Vector3 = -player.global_basis.z.normalized()
+			var model_forward: Vector3 = rigged_player.global_basis.z.normalized()
 			_check(model_forward.dot(player_forward) > 0.95, "imported player mesh faces the same direction as movement instead of looking back at the camera")
 			var player_local_bounds: AABB = ModelBoundsScript._combined_local_bounds(rigged_player)
 			_check(is_equal_approx(player_local_bounds.size.y * rigged_player.scale.y, 1.76), "player visual is normalized to 1.76m rather than scaling larger than the danfo")
