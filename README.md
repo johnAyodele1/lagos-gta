@@ -6,7 +6,7 @@ An original open-world 3D game project rooted in Lagos, Nigeria.
 
 **Playable prototype in development.** The current branch contains a Godot 4 third-person blockout with a procedurally generated Lagos-inspired starter district. It is a greybox foundation, not a finished GTA-scale game.
 
-Mobile touch controls are implemented. The player avatar now uses a lightweight articulated 3D primitive rig with a simple walk cycle; the Yaba market includes a static keke tricycle and a drivable danfo. The starter district is being expanded with Yaba street identity, roadside market stalls, a danfo stop, rooftop water tanks, compound walls and utility lines. Repeated building windows use MultiMesh batching and shared materials. The game now presents an explicit first-run Terms & Conditions / Privacy Notice screen with versioned consent and a persistent LEGAL button. This remains an early greybox; it is not a signed mobile release.
+Mobile touch controls are implemented. The player avatar now uses a lightweight articulated 3D primitive rig with a simple walk cycle; the Yaba market includes a static keke tricycle and a drivable danfo. The starter district includes Yaba street identity, roadside market stalls, a danfo stop, rooftop water tanks, compound walls and utility lines. Background traffic now runs in four opposing road lanes; eight cars are animated through three shared MultiMesh batches without per-car physics bodies. The game now presents an explicit first-run Terms & Conditions / Privacy Notice screen with versioned consent and a persistent LEGAL button. This remains an early greybox; it is not a signed mobile release.
 
 ## Run locally
 
@@ -46,7 +46,7 @@ No third-party asset packs are required to launch the initial scene.
 ## Roadmap
 
 1. Stabilise the third-person vertical slice on desktop and touch devices (movement, Yaba blockout and legal gate are in place).
-2. Add a drivable danfo with enter/exit interaction (first arcade driving pass implemented); next add traffic AI, vehicle damage and more vehicle types.
+2. Driving: drivable danfo and enter/exit interaction are implemented; ambient eight-car traffic now moves through the district. Next add traffic lights, collision-aware driving and more vehicle types.
 3. Add Lagos street life: danfos, traffic, pedestrians, markets and audio.
 4. Add Android/iOS export presets, signing setup, device profiling and store-ready release builds.
 5. Build mission, interaction and save systems.
