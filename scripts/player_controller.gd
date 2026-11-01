@@ -315,7 +315,7 @@ func _create_leg(limb_position: Vector3) -> Node3D:
 func _update_character_animation(delta: float) -> void:
 	_animation_clock += delta
 	var horizontal_speed := Vector2(velocity.x, velocity.z).length()
-	if _rigged_animation_player != null:
+	if is_instance_valid(_rigged_animation_player):
 		var animation_name := "HumanArmature|Man_Idle"
 		if not is_on_floor() and absf(velocity.y) > 0.1:
 			animation_name = "HumanArmature|Man_Jump"
