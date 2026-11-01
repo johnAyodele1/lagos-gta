@@ -170,6 +170,9 @@ func _test_visual_meshes() -> void:
 	var danfo_cabin := vehicle.get_node_or_null("DanfoCabinShell") as MeshInstance3D
 	_check(danfo_body != null and danfo_body.mesh is ArrayMesh, "danfo body is a custom tapered 3D mesh, not a box primitive")
 	_check(danfo_cabin != null and danfo_cabin.mesh is ArrayMesh, "danfo cabin has shaped 3D geometry")
+	var danfo_collision := vehicle.get_child(0) as CollisionShape3D
+	var danfo_box := danfo_collision.shape as BoxShape3D if danfo_collision != null else null
+	_check(danfo_box != null and danfo_box.size.is_equal_approx(Vector3(2.35, 2.8, 4.9)), "danfo physics collider matches the model's length-along-Z orientation")
 	_check(vehicle.get_node_or_null("DanfoDestinationBoard") != null, "danfo includes its Yaba/Tejuosho route board")
 	vehicle.queue_free()
 	await physics_frame
@@ -209,6 +212,9 @@ func _test_osm_world_generator() -> void:
 	_check(world.get_node_or_null("OSMBuildingCollision") != null, "OSM building geometry receives a static collision mesh")
 	_check(world.get_node_or_null("OSMBarrierCollision") != null, "mapped walls and fences receive static collision geometry")
 	_check(world.get_node_or_null("ProceduralCompoundWallCollision") != null, "residential building footprints receive art-directed Lagos compound walls")
+	var spawn_position: Vector3 = world.get_player_spawn_position()
+	_check(spawn_position.is_finite(), "Yaba player spawn refuses invalid or blocked coordinates")
+	_check(world.is_spawn_position_clear(spawn_position), "Yaba player spawns outside building footprints and mapped barriers")
 	var player = PlayerScript.new()
 	root.add_child(player)
 	player.global_position = Vector3(0.0, 0.5, 0.0)
