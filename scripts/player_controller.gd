@@ -11,6 +11,7 @@ const VEHICLE_COLLISION_LAYER: int = 2
 const PLAYER_COLLISION_LAYER: int = 4
 const NPC_COLLISION_LAYER: int = 8
 const CharacterMeshFactoryScript = preload("res://scripts/character_mesh_factory.gd")
+const ModelBoundsScript = preload("res://scripts/model_bounds.gd")
 const RIGGED_PLAYER_SCENE = preload("res://assets/models/characters/lagos_player.glb")
 const MIN_CAMERA_PITCH: float = deg_to_rad(-55.0)
 const MAX_CAMERA_PITCH: float = deg_to_rad(35.0)
@@ -51,8 +52,8 @@ func _ready() -> void:
 func _build_body() -> void:
 	var collision := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.38
-	capsule.height = 1.8
+	capsule.radius = 0.32
+	capsule.height = 1.78
 	collision.shape = capsule
 	collision.position.y = 0.9
 	add_child(collision)
@@ -176,9 +177,15 @@ func _try_attach_rigged_character() -> bool:
 	body_mesh.add_child(_rigged_character)
 	_rigged_animation_player = _rigged_character.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	_apply_rigged_character_materials(_rigged_character, Color(0.10, 0.34, 0.38), Color(0.40, 0.25, 0.17), Color(0.085, 0.10, 0.13))
+	call_deferred("_fit_rigged_character_dimensions")
 	if _rigged_animation_player != null and _rigged_animation_player.has_animation("HumanArmature|Man_Idle"):
 		_rigged_animation_player.play("HumanArmature|Man_Idle")
 	return true
+
+func _fit_rigged_character_dimensions() -> void:
+	if _rigged_character != null and is_instance_valid(_rigged_character):
+		if not ModelBoundsScript.fit_height(_rigged_character, 1.76):
+			push_warning("Player model could not be fitted to the 1.76m character scale.")
 
 func _apply_rigged_character_materials(model: Node3D, shirt_color: Color, skin_color: Color, pants_color: Color) -> void:
 	var palette: Array[Color] = [
