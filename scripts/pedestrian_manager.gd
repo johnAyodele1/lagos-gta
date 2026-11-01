@@ -1,12 +1,14 @@
 extends Node3D
 class_name PedestrianManager
 
-## Small visual-only pedestrian population for the starter district.
-## Four shared MultiMeshes animate a capped crowd without per-person physics.
+## Bounded sidewalk crowd whose paths are derived from OSM road centre-lines.
+## Render geometry is shared; capsule proxies keep the player from walking through NPCs.
 
-const HALF_ROUTE_LENGTH := 55.0
-const ROUTE_LENGTH := HALF_ROUTE_LENGTH * 2.0
 const WALKER_COUNT := 4
+const MAX_SIDEWALK_ROUTES := 4
+const WORLD_COLLISION_LAYER: int = 1
+const PLAYER_COLLISION_LAYER: int = 4
+const NPC_COLLISION_LAYER: int = 8
 
 const CLOTHING_COLORS: Array[Color] = [
 	Color(0.16, 0.30, 0.62),
@@ -21,52 +23,135 @@ const SKIN_COLORS: Array[Color] = [
 	Color(0.76, 0.54, 0.39)
 ]
 
+var _routes: Array[Dictionary] = []
 var _walkers: Array[Dictionary] = []
 var _torso_batch: MultiMeshInstance3D
 var _head_batch: MultiMeshInstance3D
 var _arm_batch: MultiMeshInstance3D
 var _leg_batch: MultiMeshInstance3D
+var _collision_bodies: Array[AnimatableBody3D] = []
 var _elapsed := 0.0
 
-static func advance_distance(distance: float, speed: float, delta: float, route_length: float = ROUTE_LENGTH) -> float:
+static func advance_distance(distance: float, speed: float, delta: float, route_length: float = 110.0) -> float:
 	if route_length <= 0.0:
 		return 0.0
 	return fposmod(distance + maxf(speed, 0.0) * maxf(delta, 0.0), route_length)
 
+func configure_from_roads(roads: Array[Dictionary]) -> void:
+	_routes = _build_sidewalk_routes(roads)
+
 func _ready() -> void:
 	_create_batches()
-	_walkers = [
-		{"direction": Vector3.BACK, "lane_offset": -10.5, "distance": 8.0, "speed": 1.15, "phase": 0.0},
-		{"direction": Vector3.FORWARD, "lane_offset": 10.5, "distance": 35.0, "speed": 0.95, "phase": 1.4},
-		{"direction": Vector3.RIGHT, "lane_offset": -10.5, "distance": 62.0, "speed": 1.05, "phase": 2.8},
-		{"direction": Vector3.LEFT, "lane_offset": 10.5, "distance": 88.0, "speed": 1.2, "phase": 4.2}
-	]
+	if _routes.is_empty():
+		push_warning("Pedestrians are disabled because no usable OSM sidewalk routes were supplied.")
+		return
+	_spawn_walkers()
+	_create_collision_proxies()
 	_update_batches()
 
 func _process(delta: float) -> void:
 	_elapsed += maxf(delta, 0.0)
 	for walker in _walkers:
+		var route: Dictionary = _routes[int(walker["route_index"])]
 		walker["distance"] = advance_distance(
 			float(walker["distance"]),
 			float(walker["speed"]),
-			delta
+			delta,
+			float(route["length"])
 		)
 	_update_batches()
 
+func _build_sidewalk_routes(roads: Array[Dictionary]) -> Array[Dictionary]:
+	var candidates: Array[Dictionary] = []
+	for road in roads:
+		if str(road.get("highway", "")) in ["footway", "path", "pedestrian"]:
+			continue
+		var points: Array[Vector2] = []
+		for coordinate in road.get("coordinates", []):
+			var point := Vector2(float(coordinate[0]), float(coordinate[1]))
+			if points.is_empty() or points[points.size() - 1].distance_to(point) > 0.1:
+				points.append(point)
+		if points.size() < 2:
+			continue
+		var length := _polyline_length(points)
+		if length < 45.0:
+			continue
+		var nearest := INF
+		for point in points:
+			nearest = minf(nearest, point.length())
+		var offset := clampf(float(road.get("width_m", 6.0)) * 0.5 + 1.7, 3.0, 10.0)
+		candidates.append({"points": points, "length": length, "nearest": nearest, "offset": offset})
+	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a["nearest"]) < float(b["nearest"])
+	)
+	var routes: Array[Dictionary] = []
+	for candidate in candidates:
+		var points: Array[Vector2] = candidate["points"]
+		for side in [-1.0, 1.0]:
+			var sidewalk := _offset_polyline(points, float(candidate["offset"]) * side)
+			var route_length := _polyline_length(sidewalk)
+			if route_length >= 40.0:
+				routes.append({"points": sidewalk, "length": route_length})
+			if routes.size() >= MAX_SIDEWALK_ROUTES:
+				return routes
+	return routes
+
+func _offset_polyline(points: Array[Vector2], offset: float) -> Array[Vector2]:
+	var result: Array[Vector2] = []
+	for index in range(points.size()):
+		var previous := Vector2.ZERO
+		var next := Vector2.ZERO
+		if index > 0:
+			previous = (points[index] - points[index - 1]).normalized()
+		if index < points.size() - 1:
+			next = (points[index + 1] - points[index]).normalized()
+		var direction := next if index == 0 else previous if index == points.size() - 1 else (previous + next).normalized()
+		var side := Vector2(-direction.y, direction.x)
+		if index > 0 and index < points.size() - 1:
+			var next_side := Vector2(-next.y, next.x)
+			var miter := (side + next_side).normalized()
+			var denominator := maxf(absf(miter.dot(next_side)), 0.35)
+			side = miter / denominator
+		result.append(points[index] + side * offset)
+	return result
+
+func _polyline_length(points: Array[Vector2]) -> float:
+	var result := 0.0
+	for index in range(points.size() - 1):
+		result += points[index].distance_to(points[index + 1])
+	return result
+
+func _spawn_walkers() -> void:
+	for index in range(mini(WALKER_COUNT, _routes.size() * 2)):
+		var route_index := index % _routes.size()
+		var route: Dictionary = _routes[route_index]
+		_walkers.append({
+			"route_index": route_index,
+			"distance": float(index / _routes.size()) * float(route["length"]) * 0.48 + float(index) * 2.0,
+			"speed": 0.85 + float(index % 4) * 0.12,
+			"phase": float(index) * 1.4
+		})
+
 func _create_batches() -> void:
-	var torso := BoxMesh.new()
-	torso.size = Vector3(0.52, 0.9, 0.32)
+	var torso := CapsuleMesh.new()
+	torso.radius = 0.25
+	torso.height = 0.95
+	torso.radial_segments = 8
+	torso.rings = 4
 	_torso_batch = _create_batch(torso, _material(), WALKER_COUNT)
 
 	var head := SphereMesh.new()
 	head.radius = 0.22
 	head.height = 0.44
-	head.radial_segments = 8
-	head.rings = 4
+	head.radial_segments = 10
+	head.rings = 6
 	_head_batch = _create_batch(head, _material(), WALKER_COUNT)
 
-	var limb := BoxMesh.new()
-	limb.size = Vector3(0.15, 0.62, 0.16)
+	var limb := CapsuleMesh.new()
+	limb.radius = 0.085
+	limb.height = 0.72
+	limb.radial_segments = 6
+	limb.rings = 3
 	_arm_batch = _create_batch(limb, _material(), WALKER_COUNT * 2)
 	_leg_batch = _create_batch(limb, _material(), WALKER_COUNT * 2)
 
@@ -90,28 +175,41 @@ func _material() -> StandardMaterial3D:
 	material.roughness = 0.9
 	return material
 
+func _create_collision_proxies() -> void:
+	for index in range(_walkers.size()):
+		var body := AnimatableBody3D.new()
+		body.name = "PedestrianCollision_%02d" % index
+		body.collision_layer = NPC_COLLISION_LAYER
+		body.collision_mask = WORLD_COLLISION_LAYER | PLAYER_COLLISION_LAYER
+		body.sync_to_physics = true
+		var collision := CollisionShape3D.new()
+		var capsule := CapsuleShape3D.new()
+		capsule.radius = 0.28
+		capsule.height = 1.7
+		collision.shape = capsule
+		collision.position.y = 0.88
+		body.add_child(collision)
+		add_child(body)
+		_collision_bodies.append(body)
+
 func _update_batches() -> void:
 	for index in range(_walkers.size()):
 		var walker: Dictionary = _walkers[index]
-		var direction: Vector3 = walker["direction"]
-		var lane_offset := float(walker["lane_offset"])
-		var distance := float(walker["distance"])
-		var position := Vector3.ZERO
-		if direction.x != 0.0:
-			position = Vector3(-HALF_ROUTE_LENGTH + distance if direction.x > 0.0 else HALF_ROUTE_LENGTH - distance, 0.0, lane_offset)
-		else:
-			position = Vector3(lane_offset, 0.0, -HALF_ROUTE_LENGTH + distance if direction.z > 0.0 else HALF_ROUTE_LENGTH - distance)
-
-		var basis := Basis.looking_at(direction, Vector3.UP)
+		var route: Dictionary = _routes[int(walker["route_index"])]
+		var sample := _sample_route(route, float(walker["distance"]))
+		var position: Vector2 = sample["position"]
+		var direction: Vector2 = sample["direction"]
+		var direction_3d := Vector3(direction.x, 0.0, direction.y)
+		var basis := Basis.looking_at(direction_3d, Vector3.UP)
 		var phase := float(walker["phase"])
 		var stride := sin(_elapsed * 6.0 + phase) * 0.24
-		var torso_transform := Transform3D(basis, position + Vector3.UP * 1.0)
-		var head_transform := Transform3D(basis, position + Vector3.UP * 1.72)
+		var world_position := Vector3(position.x, 0.0, position.y)
+		var torso_transform := Transform3D(basis, world_position + Vector3.UP * 1.0)
+		var head_transform := Transform3D(basis, world_position + Vector3.UP * 1.72)
 		_torso_batch.multimesh.set_instance_transform(index, torso_transform)
 		_torso_batch.multimesh.set_instance_color(index, CLOTHING_COLORS[index % CLOTHING_COLORS.size()])
 		_head_batch.multimesh.set_instance_transform(index, head_transform)
 		_head_batch.multimesh.set_instance_color(index, SKIN_COLORS[index % SKIN_COLORS.size()])
-
 		for side_index in range(2):
 			var side := -1.0 if side_index == 0 else 1.0
 			var limb_index := index * 2 + side_index
@@ -119,15 +217,37 @@ func _update_batches() -> void:
 			var leg_angle := -stride * side
 			var arm_basis := basis * Basis(Vector3.RIGHT, arm_angle)
 			var leg_basis := basis * Basis(Vector3.RIGHT, leg_angle)
-			var arm_origin := position + basis * Vector3(side * 0.37, 1.12, 0.0)
-			var leg_origin := position + basis * Vector3(side * 0.15, 0.43, 0.0)
+			var arm_origin := world_position + basis * Vector3(side * 0.37, 1.12, 0.0)
+			var leg_origin := world_position + basis * Vector3(side * 0.15, 0.43, 0.0)
 			_arm_batch.multimesh.set_instance_transform(limb_index, Transform3D(arm_basis, arm_origin))
 			_arm_batch.multimesh.set_instance_color(limb_index, CLOTHING_COLORS[index % CLOTHING_COLORS.size()])
 			_leg_batch.multimesh.set_instance_transform(limb_index, Transform3D(leg_basis, leg_origin))
 			_leg_batch.multimesh.set_instance_color(limb_index, Color(0.12, 0.12, 0.13))
+		if index < _collision_bodies.size():
+			_collision_bodies[index].global_transform = global_transform * Transform3D(basis, world_position)
+
+func _sample_route(route: Dictionary, distance: float) -> Dictionary:
+	var points: Array[Vector2] = route["points"]
+	var remaining := fposmod(distance, float(route["length"]))
+	for index in range(points.size() - 1):
+		var start := points[index]
+		var finish := points[index + 1]
+		var segment_length := start.distance_to(finish)
+		if segment_length <= 0.001:
+			continue
+		if remaining <= segment_length:
+			return {"position": start.lerp(finish, remaining / segment_length), "direction": (finish - start).normalized()}
+		remaining -= segment_length
+	return {"position": points[points.size() - 1], "direction": (points[points.size() - 1] - points[points.size() - 2]).normalized()}
 
 func get_pedestrian_count() -> int:
 	return _walkers.size()
+
+func get_pedestrian_collision_count() -> int:
+	return _collision_bodies.size()
+
+func get_route_count() -> int:
+	return _routes.size()
 
 func get_pedestrian_distance(index: int) -> float:
 	if index < 0 or index >= _walkers.size():
