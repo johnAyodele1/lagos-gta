@@ -136,6 +136,8 @@ func _spawn_walkers() -> void:
 		})
 
 func _create_rigged_visuals() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
 	var model_scene := RIGGED_CHARACTER_SCENE as PackedScene
 	if model_scene == null:
 		push_error("Rigged pedestrian model could not be loaded.")
