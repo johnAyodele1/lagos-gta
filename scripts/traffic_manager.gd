@@ -10,6 +10,7 @@ const VEHICLES_PER_ROUTE := 2
 const WORLD_COLLISION_LAYER: int = 1
 const VEHICLE_COLLISION_LAYER: int = 2
 const PLAYER_COLLISION_LAYER: int = 4
+const NPC_COLLISION_LAYER: int = 8
 
 const BODY_COLORS: Array[Color] = [
 	Color(0.88, 0.72, 0.10),
@@ -245,7 +246,7 @@ func _create_collision_proxies() -> void:
 		var body := AnimatableBody3D.new()
 		body.name = "TrafficCollision_%02d" % index
 		body.collision_layer = VEHICLE_COLLISION_LAYER
-		body.collision_mask = WORLD_COLLISION_LAYER | PLAYER_COLLISION_LAYER
+		body.collision_mask = WORLD_COLLISION_LAYER | PLAYER_COLLISION_LAYER | NPC_COLLISION_LAYER
 		body.sync_to_physics = true
 		var collision := CollisionShape3D.new()
 		var shape := BoxShape3D.new()
