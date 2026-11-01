@@ -19,7 +19,8 @@ Store approval cannot be guaranteed by code. Store rules change and reviewers as
 - [x] Increment the in-game legal version when material terms or consent scope changes.
 - [ ] Replace draft publisher/contact information with the real legal publisher identity and monitored address.
 - [ ] Obtain qualified legal review for target territories.
-- [ ] Publish the final privacy policy at a public, stable, non-geofenced HTTPS URL.
+- [ ] Enable GitHub Pages and verify the prepared legal site is publicly accessible over HTTPS.
+- [ ] Replace the development draft with the legally reviewed privacy policy and publish it at a public, stable, non-geofenced HTTPS URL.
 - [ ] Publish final Terms & Conditions at a public, stable HTTPS URL.
 - [ ] Ensure policy text, app behaviour, SDK inventory and store disclosures remain consistent.
 
