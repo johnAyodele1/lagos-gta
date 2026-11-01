@@ -205,6 +205,14 @@ func _test_osm_world_generator() -> void:
 	_check(collision != null, "player capsule collides with an OSM-derived building footprint")
 	_check(player.global_position.x < 5.0, "player cannot walk through an OSM-derived building wall")
 	player.queue_free()
+	await physics_frame
+	var fence_player = PlayerScript.new()
+	root.add_child(fence_player)
+	fence_player.global_position = Vector3(0.0, 0.5, 0.0)
+	await physics_frame
+	var fence_collision = fence_player.move_and_collide(Vector3(-10.0, 0.0, 0.0))
+	_check(fence_collision != null, "player capsule collides with an OSM-mapped compound wall")
+	fence_player.queue_free()
 	world.queue_free()
 	await physics_frame
 
@@ -309,13 +317,6 @@ func _test_player_building_collision() -> void:
 	_check(player.global_position.x < 20.5, "player cannot move through a generated building footprint")
 	player.queue_free()
 	await physics_frame
-	var fence_player = PlayerScript.new()
-	root.add_child(fence_player)
-	fence_player.global_position = Vector3(0.0, 0.5, 0.0)
-	await physics_frame
-	var fence_collision = fence_player.move_and_collide(Vector3(-10.0, 0.0, 0.0))
-	_check(fence_collision != null, "player capsule collides with an OSM-mapped compound wall")
-	fence_player.queue_free()
 	world.queue_free()
 	await physics_frame
 
