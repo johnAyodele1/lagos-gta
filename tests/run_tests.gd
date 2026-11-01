@@ -27,6 +27,7 @@ func _run() -> void:
 	_test_world_generation_batching()
 	_test_graphics_profiles()
 	_test_visual_meshes()
+	await _test_imported_vehicle_model_pack()
 	await _test_osm_world_generator()
 	await _test_vehicle_speed_limits()
 	_test_ambient_traffic()
@@ -186,6 +187,24 @@ func _test_visual_meshes() -> void:
 	_check(danfo_box != null and danfo_box.size.is_equal_approx(Vector3(2.35, 2.8, 4.9)), "danfo physics collider matches the model's length-along-Z orientation")
 	_check(vehicle.get_node_or_null("DanfoDestinationBoard") != null, "danfo includes its Yaba/Tejuosho route board")
 	vehicle.queue_free()
+	await physics_frame
+
+func _test_imported_vehicle_model_pack() -> void:
+	var packed_model := load("res://assets/models/yaba-vehicle-model-pack.glb") as PackedScene
+	_check(packed_model != null, "generated vehicle GLB imports as a Godot PackedScene")
+	if packed_model == null:
+		return
+	var pack_instance := packed_model.instantiate()
+	root.add_child(pack_instance)
+	var danfo_root := pack_instance.find_child("LAGOS_DANFO", true, false) as Node3D
+	var sedan_root := pack_instance.find_child("LAGOS_SEDAN", true, false) as Node3D
+	_check(danfo_root != null, "vehicle GLB contains the dedicated Lagos danfo root")
+	_check(sedan_root != null, "vehicle GLB contains the dedicated sedan root")
+	if danfo_root != null:
+		_check(danfo_root.find_child("LAGOS_DANFO_MESH", true, false) is MeshInstance3D, "danfo asset includes its detailed 3D mesh")
+	if sedan_root != null:
+		_check(sedan_root.find_child("LAGOS_SEDAN_MESH", true, false) is MeshInstance3D, "sedan asset includes its detailed 3D mesh")
+	pack_instance.queue_free()
 	await physics_frame
 
 func _test_osm_world_generator() -> void:
