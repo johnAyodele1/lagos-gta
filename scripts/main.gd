@@ -5,6 +5,7 @@ const WorldScript = preload("res://scripts/world_generator.gd")
 const MobileControlsScript = preload("res://scripts/mobile_controls.gd")
 const LegalConsentScript = preload("res://scripts/legal_consent.gd")
 const VehicleScript = preload("res://scripts/vehicle_controller.gd")
+const TrafficManagerScript = preload("res://scripts/traffic_manager.gd")
 
 func _ready() -> void:
 	_build_environment()
@@ -12,6 +13,7 @@ func _ready() -> void:
 	world.name = "StarterDistrict"
 	add_child(world)
 	world.generate()
+	_spawn_traffic()
 	_spawn_vehicle()
 	_spawn_player()
 	_add_hud()
@@ -79,3 +81,8 @@ func _add_hud() -> void:
 	else:
 		label.text = "LAGOS GTA  |  YABA DISTRICT\nWASD: Move   SHIFT: Sprint   SPACE: Jump   E: Enter / exit Danfo\nMouse: Look   ESC: Release / capture mouse"
 	layer.add_child(label)
+
+func _spawn_traffic() -> void:
+	var traffic = TrafficManagerScript.new()
+	traffic.name = "AmbientLagosTraffic"
+	add_child(traffic)
