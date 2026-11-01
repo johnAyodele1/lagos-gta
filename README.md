@@ -6,7 +6,7 @@ An original open-world 3D game project rooted in Lagos, Nigeria.
 
 **Playable prototype in development.** The current branch contains a Godot 4 third-person blockout with a procedurally generated Lagos-inspired starter district. It is a greybox foundation, not a finished GTA-scale game.
 
-Mobile touch controls are now implemented in the prototype: left virtual joystick, right-side drag camera, sprint and jump buttons. Android/iOS export packaging and real-device performance QA are separate release tasks; this branch is not yet a signed mobile release.
+Mobile touch controls are implemented. The starter district is being expanded with Yaba street identity, roadside market stalls, a danfo stop, rooftop water tanks, compound walls and utility lines. Repeated building windows use MultiMesh batching and shared materials. The game now presents an explicit first-run Terms & Conditions / Privacy Notice screen with versioned consent and a persistent LEGAL button. This remains an early greybox; it is not a signed mobile release.
 
 ## Run locally
 
@@ -52,7 +52,7 @@ No third-party asset packs are required to launch the initial scene.
 5. Build mission, interaction and save systems.
 6. Expand the world using researched district layouts and properly licensed geographic data.
 
-See [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for scope and engineering constraints, and [docs/MOBILE_RELEASE.md](docs/MOBILE_RELEASE.md) for the Android/iOS export and device-QA checklist.
+See [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for scope and engineering constraints, [docs/MOBILE_RELEASE.md](docs/MOBILE_RELEASE.md) for Android/iOS export and device QA, [docs/TERMS_OF_SERVICE.md](docs/TERMS_OF_SERVICE.md) for the player terms draft, [docs/PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md) for the privacy-policy draft, and [docs/STORE_SUBMISSION_CHECKLIST.md](docs/STORE_SUBMISSION_CHECKLIST.md) for store submission gates.
 
 ## Project principles
 
