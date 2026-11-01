@@ -20,6 +20,19 @@ func _capture_world() -> void:
 	if legal_layer != null:
 		legal_layer.visible = false
 
+	var player := main_scene.get_node_or_null("Player") as PlayerController
+	var world := main_scene.get_node_or_null("YabaWorld") as OSMWorldGenerator
+	if player != null:
+		print("PREVIEW_PLAYER_POSITION=", player.global_position)
+		print("PREVIEW_CAMERA_POSITION=", player.camera.global_position)
+		print("PREVIEW_CAMERA_FORWARD=", -player.camera.global_basis.z)
+		print("PREVIEW_BODY_VISIBLE=", player.body_mesh.visible)
+		print("PREVIEW_CAMERA_CURRENT=", player.camera.current)
+		print("PREVIEW_SPRING_LENGTH=", player.camera_pivot.spring_length)
+	if world != null:
+		print("PREVIEW_ROAD_COUNT=", world.get_road_count())
+		print("PREVIEW_BUILDING_COUNT=", world.get_building_count())
+
 	# Let the first rendered frames settle after the OSM geometry and camera spawn.
 	await create_timer(3.0).timeout
 	var image := root.get_texture().get_image()
