@@ -13,6 +13,7 @@ const WORLD_COLLISION_LAYER: int = 1
 const VEHICLE_COLLISION_LAYER: int = 2
 const PLAYER_COLLISION_LAYER: int = 4
 const NPC_COLLISION_LAYER: int = 8
+const ModelBoundsScript = preload("res://scripts/model_bounds.gd")
 
 var driver: Node
 var current_speed: float = 0.0
@@ -45,9 +46,9 @@ func _build_vehicle() -> void:
 	# Physics footprint matches the imported minibus model (about 4.75m long).
 	var body_collision := CollisionShape3D.new()
 	var body_shape := BoxShape3D.new()
-	body_shape.size = Vector3(2.35, 2.8, 4.9)
+	body_shape.size = Vector3(2.05, 2.35, 4.7)
 	body_collision.shape = body_shape
-	body_collision.position.y = 1.35
+	body_collision.position.y = 1.175
 	add_child(body_collision)
 
 	var danfo_mesh := load("res://assets/models/vehicles/danfo/car-minibus-citrus.obj") as Mesh
@@ -69,8 +70,9 @@ func _build_vehicle() -> void:
 			model.set_surface_override_material(surface_index, fallback)
 	# Source mesh faces +Z; this controller drives forward along local -Z.
 	model.rotation.y = PI
-	model.scale = Vector3.ONE * 2.2
-	model.position = Vector3(0.0, 0.0, -0.18)
+	if not ModelBoundsScript.fit_dimensions(model, Vector3(2.0, 2.25, 4.65)):
+		push_error("Danfo mesh has invalid bounds and cannot be fitted to real vehicle dimensions.")
+		return
 	model.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	add_child(model)
 
@@ -81,7 +83,7 @@ func _build_vehicle() -> void:
 		var stripe_mesh := BoxMesh.new()
 		stripe_mesh.size = Vector3(0.035, 0.11, 3.35)
 		stripe.mesh = stripe_mesh
-		stripe.position = Vector3(side * 1.055, 1.02, 0.0)
+		stripe.position = Vector3(side * 0.995, 1.02, 0.0)
 		stripe.material_override = _vehicle_material(Color(0.045, 0.045, 0.04), 0.78)
 		add_child(stripe)
 
@@ -92,7 +94,7 @@ func _build_vehicle() -> void:
 	route_label.text = "YABA  /  TEJUOSHO"
 	route_label.font_size = 26
 	route_label.outline_size = 5
-	route_label.position = Vector3(0.0, 2.30, -2.28)
+	route_label.position = Vector3(0.0, 2.16, -2.34)
 	route_label.modulate = Color(1.0, 0.94, 0.68)
 	add_child(route_label)
 
@@ -218,8 +220,8 @@ func enter_vehicle(player: Node) -> void:
 
 func _find_safe_exit_position(player: Node) -> Vector3:
 	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.38
-	capsule.height = 1.8
+	capsule.radius = 0.32
+	capsule.height = 1.78
 	var space := get_world_3d().direct_space_state
 	var candidate_offsets: Array[Vector3] = [
 		global_basis.x * 3.2,
