@@ -167,6 +167,11 @@ func _create_rigged_visuals() -> void:
 		if not use_ara_character:
 			_apply_pedestrian_materials(visual, CLOTHING_COLORS[index % CLOTHING_COLORS.size()], SKIN_COLORS[index % SKIN_COLORS.size()])
 		add_child(visual)
+		# Pedestrian meshes are culled beyond the sidewalk simulation radius to
+		# keep the animated crowd inside the Android rendering budget.
+		for mesh_node in visual.find_children("*", "MeshInstance3D", true, false):
+			var mesh_instance := mesh_node as MeshInstance3D
+			mesh_instance.visibility_range_end = 85.0
 		if not ModelBoundsScript.fit_height(visual, 1.68):
 			push_warning("Pedestrian %02d could not be normalized to human height." % index)
 		_visuals.append(visual)
