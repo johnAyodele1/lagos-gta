@@ -110,7 +110,7 @@ func exit_vehicle() -> void:
 	player.camera.position = Vector3(0.0, 0.35, 4.8)
 	player.camera.rotation.x = deg_to_rad(-9.0)
 	player.global_position = global_position + global_basis.x * 3.0 + Vector3.UP * 0.5
-	player.velocity = velocity
+	player.velocity = Vector3.ZERO
 	player.collision_layer = _driver_collision_layer
 	player.collision_mask = _driver_collision_mask
 	player.body_mesh.visible = true
@@ -129,6 +129,7 @@ func _physics_process(delta: float) -> void:
 	if mobile_controls != null:
 		input_vector += mobile_controls.get_move_vector()
 		exit_requested = exit_requested or mobile_controls.consume_jump_request()
+		driver._apply_look_delta(mobile_controls.consume_look_delta())
 	input_vector = input_vector.limit_length(1.0)
 
 	if exit_requested:
