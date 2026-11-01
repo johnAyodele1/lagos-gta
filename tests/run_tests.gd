@@ -234,6 +234,10 @@ func _test_visual_meshes() -> void:
 
 
 func _test_osm_world_generator() -> void:
+	_check(is_equal_approx(OSMWorldGeneratorScript._resolve_building_height({"height_source": "osm:height", "height_m": 9.5}, 40.0), 9.5), "explicit OSM building heights take precedence over visual fallback estimates")
+	_check(is_equal_approx(OSMWorldGeneratorScript._resolve_building_height({"height_source": "estimated:yes-default", "building": "yes"}, 25.0), 3.8), "small unmapped Yaba footprints receive a low-rise kiosk or bungalow height estimate")
+	_check(is_equal_approx(OSMWorldGeneratorScript._resolve_building_height({"height_source": "estimated:yes-default", "building": "yes"}, 400.0), 11.5), "larger unmapped Yaba footprints receive varied multi-storey massing")
+	_check(is_equal_approx(OSMWorldGeneratorScript._resolve_building_height({"building": "industrial"}, 500.0), 5.5), "industrial building height estimates do not use residential footprint tiers")
 	var sample := {
 		"schema_version": 1,
 		"roads": [
