@@ -1169,25 +1169,61 @@ func _add_road_labels() -> void:
 		count += 1
 
 func _nearest_road_sample() -> Dictionary:
+	var best_score := INF
 	var best_distance := INF
 	var best_position := Vector2.ZERO
 	var best_direction := Vector2.RIGHT
 	var best_width := 6.0
+	var best_name := ""
+	var best_highway := ""
 	for road in _roads:
-		if str(road.get("highway", "")) in ["footway", "path", "pedestrian"]:
+		var highway := str(road.get("highway", ""))
+		if highway in ["footway", "path", "pedestrian", "cycleway", "steps"]:
 			continue
+		var road_name := str(road.get("name", "")).strip_edges()
+		var road_priority := 0.0
+		match highway:
+			"residential", "living_street":
+				road_priority = 0.0
+			"tertiary":
+				road_priority = 5.0
+			"secondary":
+				road_priority = 10.0
+			"primary":
+				road_priority = 15.0
+			"unclassified":
+				road_priority = 20.0
+			"service":
+				road_priority = 80.0
+			_:
+				road_priority = 30.0
+		var name_penalty := 0.0 if not road_name.is_empty() else 25.0
+		var surface_penalty := 0.0 if str(road.get("surface", "")) in ["paved", "asphalt", "concrete"] else 4.0
 		var points := _points_from_coordinates(road.get("coordinates", []))
 		for index in range(points.size() - 1):
 			var start := points[index]
 			var finish := points[index + 1]
 			var candidate: Vector2 = Geometry2D.get_closest_point_to_segment(Vector2.ZERO, start, finish)
 			var distance := candidate.length()
-			if distance < best_distance:
+			var score := distance + road_priority + name_penalty + surface_penalty
+			# Prefer a named public street over an unnamed service lane or market
+			# access road, even when the latter is a few metres closer to origin.
+			if score < best_score:
+				best_score = score
 				best_distance = distance
 				best_position = candidate
 				best_direction = (finish - start).normalized()
 				best_width = float(road.get("width_m", 6.0))
-	return {"position": best_position, "direction": best_direction, "width": best_width}
+				best_name = road_name
+				best_highway = highway
+	return {
+		"position": best_position,
+		"direction": best_direction,
+		"width": best_width,
+		"name": best_name,
+		"highway": best_highway,
+		"distance": best_distance
+	}
 
 func get_vehicle_spawn_position() -> Vector3:
 	var sample := _nearest_road_sample()
