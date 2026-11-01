@@ -14,6 +14,7 @@ func _run() -> void:
 	_test_camera_pitch_clamp()
 	_test_mobile_joystick()
 	_test_mobile_button_state()
+	_test_mobile_touch_routing()
 	_test_project_scripts_load()
 	if failures > 0:
 		push_error("%d of %d gameplay input tests failed." % [failures, assertions])
@@ -53,6 +54,32 @@ func _test_mobile_button_state() -> void:
 	controls.look_delta = Vector2(12.0, -4.0)
 	_check(controls.consume_look_delta().is_equal_approx(Vector2(12.0, -4.0)), "camera consumes accumulated touch look delta")
 	_check(controls.consume_look_delta() == Vector2.ZERO, "touch look delta is cleared after consumption")
+	controls.free()
+
+func _test_mobile_touch_routing() -> void:
+	var controls = MobileControlsScript.new()
+	root.add_child(controls)
+	controls._mobile_enabled = true
+	var size := controls.get_viewport_rect().size
+
+	var joystick_center: Vector2 = controls._joystick_center()
+	controls._begin_touch(11, joystick_center + Vector2.UP * controls._joystick_radius())
+	_check(controls.get_move_vector().is_equal_approx(Vector2.UP), "left-side touch routes to the virtual joystick")
+	controls._end_touch(11)
+	_check(controls.get_move_vector() == Vector2.ZERO, "releasing joystick touch stops movement")
+
+	controls._begin_touch(12, controls._sprint_center(size))
+	_check(controls.is_sprint_pressed(), "touch at RUN button activates sprint")
+	controls._end_touch(12)
+	_check(not controls.is_sprint_pressed(), "releasing RUN touch stops sprint")
+
+	controls._begin_touch(13, controls._jump_center(size))
+	_check(controls.consume_jump_request(), "touch at JUMP button requests one jump")
+	controls._end_touch(13)
+
+	controls._begin_touch(14, Vector2(size.x * 0.7, size.y * 0.5))
+	_check(controls.look_touch_index == 14, "right-side touch is reserved for camera look")
+	controls._end_touch(14)
 	controls.free()
 
 func _test_project_scripts_load() -> void:
