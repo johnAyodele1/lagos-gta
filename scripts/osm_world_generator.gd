@@ -855,21 +855,52 @@ func get_vehicle_spawn_position() -> Vector3:
 
 func get_player_spawn_position() -> Vector3:
 	var sample := _nearest_road_sample()
-	var road_position: Vector2 = sample["position"] + sample["direction"] * 8.0
+	var road_position: Vector2 = sample["position"]
 	var direction: Vector2 = sample["direction"]
 	var side := Vector2(-direction.y, direction.x)
-	var offset := float(sample["width"]) * 0.5 + 2.0
-	var left_candidate := road_position + side * offset
-	var right_candidate := road_position - side * offset
-	var left_clearance := _nearest_building_centroid_distance(left_candidate)
-	var right_clearance := _nearest_building_centroid_distance(right_candidate)
-	var chosen := left_candidate if left_clearance >= right_clearance else right_candidate
-	return Vector3(chosen.x, 0.5, chosen.y)
+	# The sidewalk ribbon is 1.4m wide and centred 0.85m beyond the road edge.
+	var sidewalk_offset := float(sample["width"]) * 0.5 + 0.85
+	var longitudinal_offsets: Array[float] = [8.0, -8.0, 16.0, -16.0, 24.0, -24.0, 32.0, -32.0]
+	var best_position := Vector2(INF, INF)
+	var best_clearance := -INF
+	for longitudinal_offset in longitudinal_offsets:
+		var road_candidate := road_position + direction * longitudinal_offset
+		for side_sign in [1.0, -1.0]:
+			var candidate := road_candidate + side * sidewalk_offset * side_sign
+			var clearance := _spawn_clearance(candidate)
+			if clearance > best_clearance:
+				best_clearance = clearance
+				best_position = candidate
+			if clearance >= 0.85:
+				return Vector3(candidate.x, 0.5, candidate.y)
+	if best_position.is_finite() and best_clearance >= 0.85:
+		return Vector3(best_position.x, 0.5, best_position.y)
+	push_error("No collision-free Yaba sidewalk spawn was found; refusing unsafe player spawn.")
+	return Vector3.INF
 
-func _nearest_building_centroid_distance(point: Vector2) -> float:
+func is_spawn_position_clear(position: Vector3, minimum_clearance: float = 0.85) -> bool:
+	return position.is_finite() and _spawn_clearance(Vector2(position.x, position.z)) >= minimum_clearance
+
+func _spawn_clearance(point: Vector2) -> float:
 	var nearest := INF
 	for building in _buildings:
-		nearest = minf(nearest, _outline_centroid(building.get("outline", [])).distance_to(point))
+		var outline: Array[Vector2] = []
+		for coordinate in building.get("outline", []):
+			outline.append(Vector2(float(coordinate[0]), float(coordinate[1])))
+		if outline.size() > 1 and outline[0].is_equal_approx(outline[outline.size() - 1]):
+			outline.pop_back()
+		if outline.size() < 3:
+			continue
+		if Geometry2D.is_point_in_polygon(point, PackedVector2Array(outline)):
+			return 0.0
+		for index in range(outline.size()):
+			var closest := Geometry2D.get_closest_point_to_segment(point, outline[index], outline[(index + 1) % outline.size()])
+			nearest = minf(nearest, point.distance_to(closest))
+	for barrier in _barriers:
+		var points := _points_from_coordinates(barrier.get("coordinates", []))
+		for index in range(points.size() - 1):
+			var closest := Geometry2D.get_closest_point_to_segment(point, points[index], points[index + 1])
+			nearest = minf(nearest, maxf(0.0, point.distance_to(closest) - 0.12))
 	return nearest
 
 func get_spawn_rotation_y() -> float:
