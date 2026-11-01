@@ -55,6 +55,7 @@ static func _build_mechanic_bay(parent:Node3D,points:Array,width:float)->void:
  _model(bay,"concrete_road_barrier",Vector3(-4.7,0,2),0.8)
  _model(bay,"modular_industrial_pipes_01",Vector3(4.5,0,0.8),1.2)
 static func _model(parent:Node3D,id:String,pos:Vector3,height:float)->void:
+ if DisplayServer.get_name()=="headless": return
  var path:=ROOT+id+".glb"
  if not ResourceLoader.exists(path): return
  var packed:=load(path) as PackedScene
