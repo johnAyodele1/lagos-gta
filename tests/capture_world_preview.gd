@@ -28,7 +28,7 @@ func _validate_render_materials(scene: Node) -> bool:
 			empty_meshes += 1
 			continue
 		for surface_index in range(batch.multimesh.mesh.get_surface_count()):
-			if batch.get_active_material(surface_index) == null:
+			if batch.material_override == null and batch.multimesh.mesh.surface_get_material(surface_index) == null:
 				missing_materials += 1
 				print("PREVIEW_NULL_MULTIMESH_MATERIAL_PATH=", batch.get_path(), " surface=", surface_index)
 	for node in scene.find_children("*", "Label3D", true, false):
