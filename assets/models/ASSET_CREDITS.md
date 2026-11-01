@@ -38,3 +38,12 @@ The minibus is a generic CC0 base mesh, not a scanned or exact Lagos Danfo vehic
 - Licence: SIL Open Font Licence 1.1
 - Licence text: `fonts/OFL.txt`
 - Source: https://github.com/google/fonts/tree/main/ofl/roboto
+
+## Architecture hero facade
+
+- Asset: `architecture/modular_urban_apartments_facade.glb`
+- Creator: James Ray Cock
+- Source: https://polyhaven.com/a/modular_urban_apartments_facade
+- Licence: CC0 1.0 Universal
+- Asset distribution: official Poly Haven files API; imported at build time and bundled locally. The game does not make runtime API requests.
+- Integration: one selected mapped Yaba building frontage, scaled against the OSM footprint and resolved building height. The source asset is not repeated across the district.
