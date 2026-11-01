@@ -310,6 +310,8 @@ func _test_osm_world_generator() -> void:
 	_check(laterite_visual != null, "OSM unpaved streets use a separate laterite material batch")
 	_check(world.get_node_or_null("OSMRoadMarkings") != null, "mapped secondary roads receive lane markings")
 	_check(world.get_node_or_null("OSMBuildingFootprintsAndFacades") != null, "OSM building footprints become extruded 3D building geometry")
+	_check(world.get_node_or_null("OSMWindowFrameHorizontal") != null and world.get_node_or_null("OSMWindowFrameVertical") != null, "Yaba building windows receive batched facade frames")
+	_check(world.get_node_or_null("OSMWindowSecurityGrilles") != null, "ground-floor windows receive batched Lagos-style security grilles")
 	var building_visual := world.get_node_or_null("OSMBuildingFootprintsAndFacades") as MeshInstance3D
 	_check(building_visual != null and building_visual.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON, "mapped buildings cast shadows for street depth")
 	if DisplayServer.get_name() != "headless":
