@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Download the CC0 Poly Haven modular apartment facade source package.
 
+The 90 MiB ceiling stays below GitHub's 100 MiB single-file hard limit.
+
 The API is used only during asset import. The game ships the resulting local GLB
 and never makes a runtime request to Poly Haven.
 """
@@ -18,7 +20,7 @@ from urllib.parse import urlparse
 ASSET_ID = "modular_urban_apartments_facade"
 API_URL = f"https://api.polyhaven.com/files/{ASSET_ID}"
 USER_AGENT = "LagosGTA-AssetImporter/1.0 (https://github.com/johnAyodele1/lagos-gta)"
-MAX_DOWNLOAD_BYTES = 200 * 1024 * 1024
+MAX_DOWNLOAD_BYTES = 90 * 1024 * 1024
 
 
 def request_bytes(url: str, limit: int = MAX_DOWNLOAD_BYTES) -> bytes:
