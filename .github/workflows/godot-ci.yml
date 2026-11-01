@@ -20,18 +20,21 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download Godot
+        shell: bash
         run: |
-          GODOT_VERSION=4.3-stable
+          set -euo pipefail
+          GODOT_VERSION="4.3-stable"
+          GODOT_ARCHIVE="Godot_v${GODOT_VERSION}_linux.x86_64"
           curl --fail --location --retry 3 \
-            "https://github.com/godotengine/godot/releases/download/$GODOT_VERSION/Godot_v$GODOT_VERSION_linux.x86_64.zip" \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/${GODOT_ARCHIVE}.zip" \
             --output godot.zip
           unzip godot.zip -d godot-bin
-          chmod +x godot-bin/Godot_v$GODOT_VERSION_linux.x86_64
+          chmod +x "godot-bin/${GODOT_ARCHIVE}"
           echo "$PWD/godot-bin" >> "$GITHUB_PATH"
-          echo "GODOT_BIN=$PWD/godot-bin/Godot_v$GODOT_VERSION_linux.x86_64" >> "$GITHUB_ENV"
+          echo "GODOT_BIN=$PWD/godot-bin/${GODOT_ARCHIVE}" >> "$GITHUB_ENV"
 
       - name: Import project and parse scripts
-        run: "$GODOT_BIN" --headless --editor --path . --quit
+        run: '"$GODOT_BIN" --headless --editor --path . --quit'
 
       - name: Run prototype headlessly
-        run: "$GODOT_BIN" --headless --path . --quit-after 5
+        run: '"$GODOT_BIN" --headless --path . --quit-after 5'
