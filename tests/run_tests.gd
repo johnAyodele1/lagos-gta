@@ -250,6 +250,8 @@ func _test_osm_world_generator() -> void:
 	_check(world.get_building_count() == 2, "OSM world generator retains real building footprints")
 	_check(world.get_barrier_count() == 1, "OSM world generator retains mapped compound barriers")
 	_check(world.get_node_or_null("OSMRoadSurfaces") != null, "OSM roads are generated as continuous 3D road surfaces")
+	_check(world.get_node_or_null("OSMRoadsideDrainage") != null, "mapped streets include roadside drainage channels")
+	_check(world.get_node_or_null("OSMRoadsideCurbs") != null and world.get_node_or_null("OSMDrainageGrates") != null, "mapped streets include raised concrete kerbs and periodic drain grates")
 	_check(world.get_node_or_null("YabaMarketUmbrellasRed") != null and world.get_node_or_null("YabaMarketTables") != null, "mapped commercial frontages receive recognizable roadside market stalls")
 	_check(world.get_node_or_null("YabaMarketStallCollision") != null, "roadside market tables have collision so the player cannot walk through them")
 	var stall_collision_root := world.get_node_or_null("YabaMarketStallCollision") as Node3D
