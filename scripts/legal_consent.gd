@@ -57,6 +57,9 @@ var _panel: PanelContainer
 var _agreement: CheckBox
 var _accept_button: Button
 
+static func is_current_consent(stored_version: int) -> bool:
+	return stored_version == LEGAL_VERSION
+
 func _ready() -> void:
 	_build_interface()
 	_panel.visible = not _has_current_consent()
@@ -65,7 +68,7 @@ func _has_current_consent() -> bool:
 	var config := ConfigFile.new()
 	if config.load(CONSENT_PATH) != OK:
 		return false
-	return int(config.get_value("legal", "accepted_version", 0)) == LEGAL_VERSION
+	return is_current_consent(int(config.get_value("legal", "accepted_version", 0)))
 
 func _build_interface() -> void:
 	var root := Control.new()
