@@ -458,6 +458,7 @@ func _add_building_network() -> void:
 						shop_name = str(building.get("shop", building.get("amenity", "SHOP"))).replace("_", " ").to_upper()
 					shop_name = shop_name.substr(0, 18).to_upper()
 					var shop_label := Label3D.new()
+	shop_label.font = ThemeDB.fallback_font
 					shop_label.name = "YabaShopSign_%02d" % shop_label_count
 					shop_label.text = shop_name
 					shop_label.position = Vector3(midpoint.x + outward.x * 0.18, 2.77, midpoint.y + outward.y * 0.18)
@@ -817,6 +818,7 @@ func _add_road_labels() -> void:
 			continue
 		var midpoint := points[points.size() / 2]
 		var label := Label3D.new()
+	label.font = ThemeDB.fallback_font
 		label.name = "StreetName_%02d" % count
 		label.text = name.to_upper()
 		label.font_size = 30
