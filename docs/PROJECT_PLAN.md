@@ -9,7 +9,7 @@ Build an original open-world 3D game rooted in Lagos, Nigeria. The project shoul
 - Godot 4 project using the Compatibility renderer.
 - Third-person character movement, sprinting and edge-triggered jumping.
 - Desktop mouse-look and keyboard movement.
-- Touchscreen virtual joystick, drag-to-look, sprint and jump controls.
+- Touchscreen virtual joystick, drag-to-look, sprint and jump controls, with display safe-area inset handling for notches and home indicators.
 - Procedurally generated Yaba-inspired road junction, sidewalks, multi-storey buildings, batched windows, rooftop tanks, compound walls, utility poles, market stalls, produce crates, a danfo stop and district signage.
 - A controllable yellow danfo minibus with arcade steering, forward/reverse limits, mobile joystick driving, sprint boost, camera follow and enter/exit interaction.
 - Eight ambient traffic vehicles moving in four opposing road lanes, with vehicle transforms updated in three shared MultiMesh batches and no per-car physics bodies.
@@ -27,7 +27,7 @@ This remains a greybox. It is not a complete GTA-scale game, and mobile touch co
 - Traffic lights, collision-aware traffic, pedestrian crossing behaviour, vehicle damage, vehicle variety or passenger systems.
 - Missions, save system or audio.
 - Production-quality art, animation or mobile store release packages.
-- Device-specific profiling, safe-area validation and accessibility testing.
+- Device-specific profiling, physical safe-area validation and accessibility testing.
 
 ## Milestones
 
