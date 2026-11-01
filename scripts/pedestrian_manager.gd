@@ -252,7 +252,13 @@ func get_pedestrian_distance(index: int) -> float:
 func get_pedestrian_position(index: int) -> Vector3:
 	if index < 0 or index >= _walkers.size():
 		return Vector3.ZERO
-	return _visuals[index].global_position if index < _visuals.size() else Vector3.ZERO
+	if index < _visuals.size():
+		return _visuals[index].global_position
+	var walker: Dictionary = _walkers[index]
+	var route: Dictionary = _routes[int(walker["route_index"])]
+	var sample := _sample_route(route, float(walker["distance"]))
+	var position: Vector2 = sample["position"]
+	return global_transform * Vector3(position.x, 0.0, position.y)
 
 func get_pedestrian_direction(index: int) -> Vector3:
 	if index < 0 or index >= _last_directions.size():
