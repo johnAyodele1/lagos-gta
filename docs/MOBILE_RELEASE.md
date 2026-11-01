@@ -34,7 +34,7 @@ Official setup guide: https://docs.godotengine.org/en/4.3/tutorials/export/expor
 6. Verify touch input, safe areas, orientation, suspend/resume, audio, memory and sustained frame time.
 7. Archive and distribute through TestFlight before App Store submission.
 
-Official setup guide: https://docs.godotengine.org/en/4.4/tutorials/export/exporting_for_ios.html
+Official setup guide: https://docs.godotengine.org/en/4.3/tutorials/export/exporting_for_ios.html
 
 ## CI and secrets
 
