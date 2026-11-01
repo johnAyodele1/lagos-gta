@@ -34,11 +34,23 @@ func _build_environment() -> void:
 	var world_environment := WorldEnvironment.new()
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_SKY
-	environment.sky = Sky.new()
-	environment.sky.sky_material = ProceduralSkyMaterial.new()
-	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color(0.62, 0.67, 0.72)
+	var sky := Sky.new()
+	var sky_material := ProceduralSkyMaterial.new()
+	sky_material.sky_top_color = Color(0.13, 0.29, 0.49)
+	sky_material.sky_horizon_color = Color(0.68, 0.77, 0.82)
+	sky_material.ground_bottom_color = Color(0.24, 0.22, 0.19)
+	sky_material.ground_horizon_color = Color(0.57, 0.60, 0.56)
+	sky_material.sun_angle_max = 8.0
+	sky_material.sun_curve = 0.15
+	sky.sky_material = sky_material
+	environment.sky = sky
+	environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	environment.ambient_light_energy = 0.65
+	environment.ambient_light_sky_contribution = 0.78
+	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	environment.adjustment_enabled = true
+	environment.adjustment_contrast = 1.04
+	environment.adjustment_saturation = 1.03
 	world_environment.environment = environment
 	_world_environment = environment
 	add_child(world_environment)
@@ -46,6 +58,7 @@ func _build_environment() -> void:
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-48.0, -28.0, 0.0)
 	sun.light_energy = 1.15
+	sun.light_color = Color(1.0, 0.93, 0.82)
 	_graphics_profile = GraphicsProfileScript.apply(sun, _load_graphics_quality())
 	environment.ambient_light_energy = 0.72 if _graphics_profile["name"] == "low" else 0.62
 	_sun_light = sun
