@@ -19,6 +19,7 @@ func _validate_render_materials(scene: Node) -> bool:
 		for surface_index in range(mesh_instance.mesh.get_surface_count()):
 			if mesh_instance.mesh.surface_get_material(surface_index) == null:
 				missing_materials += 1
+				print("PREVIEW_NULL_MATERIAL_PATH=", mesh_instance.get_path(), " surface=", surface_index)
 	for node in scene.find_children("*", "MultiMeshInstance3D", true, false):
 		var batch := node as MultiMeshInstance3D
 		if batch.multimesh == null or batch.multimesh.mesh == null:
@@ -27,6 +28,7 @@ func _validate_render_materials(scene: Node) -> bool:
 		for surface_index in range(batch.multimesh.mesh.get_surface_count()):
 			if batch.multimesh.mesh.surface_get_material(surface_index) == null:
 				missing_materials += 1
+				print("PREVIEW_NULL_MULTIMESH_MATERIAL_PATH=", batch.get_path(), " surface=", surface_index)
 	for node in scene.find_children("*", "Label3D", true, false):
 		var label := node as Label3D
 		if label.material_override == null:
