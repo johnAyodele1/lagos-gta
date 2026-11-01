@@ -28,6 +28,8 @@ var _traffic: Array[Dictionary] = []
 var _body_batch: MultiMeshInstance3D
 var _cabin_batch: MultiMeshInstance3D
 var _wheel_batch: MultiMeshInstance3D
+var _window_batch: MultiMeshInstance3D
+var _light_batch: MultiMeshInstance3D
 var _collision_bodies: Array[AnimatableBody3D] = []
 var _last_directions: Array[Vector3] = []
 
@@ -166,6 +168,14 @@ func _create_render_batches() -> void:
 	wheel_mesh.radial_segments = 12
 	_wheel_batch = _create_batch(wheel_mesh, _wheel_material(), BODY_COLORS.size() * 4)
 
+	var window_mesh := PlaneMesh.new()
+	window_mesh.size = Vector2(0.58, 0.42)
+	_window_batch = _create_batch(window_mesh, _window_material(), MAX_TRAFFIC_VEHICLES * 6)
+
+	var light_mesh := BoxMesh.new()
+	light_mesh.size = Vector3(0.18, 0.12, 0.055)
+	_light_batch = _create_batch(light_mesh, _light_material(), MAX_TRAFFIC_VEHICLES * 4)
+
 func _create_loft_mesh(sections: Array[Dictionary]) -> ArrayMesh:
 	var rings: Array[PackedVector3Array] = []
 	for section in sections:
@@ -273,6 +283,32 @@ func _update_render_batches() -> void:
 			_wheel_batch.multimesh.set_instance_transform(instance_index, vehicle_transform * wheel_local)
 			_wheel_batch.multimesh.set_instance_color(instance_index, Color(0.035, 0.035, 0.035))
 
+		var window_base := index * 6
+		var window_instance := 0
+		for side in [-1.0, 1.0]:
+			for window_z in [-0.48, 0.42]:
+				var window_basis := Basis(Vector3.UP, PI * 0.5 * side)
+				var window_local := Transform3D(window_basis, Vector3(side * 0.79, 1.48, window_z))
+				_window_batch.multimesh.set_instance_transform(window_base + window_instance, vehicle_transform * window_local)
+				_window_batch.multimesh.set_instance_color(window_base + window_instance, Color(0.045, 0.12, 0.15))
+				window_instance += 1
+		var front_glass := Transform3D(Basis(Vector3.UP, PI), Vector3(0.0, 1.48, -1.30))
+		var rear_glass := Transform3D(Basis(), Vector3(0.0, 1.48, 1.30))
+		_window_batch.multimesh.set_instance_transform(window_base + 4, vehicle_transform * front_glass)
+		_window_batch.multimesh.set_instance_transform(window_base + 5, vehicle_transform * rear_glass)
+		_window_batch.multimesh.set_instance_color(window_base + 4, Color(0.045, 0.12, 0.15))
+		_window_batch.multimesh.set_instance_color(window_base + 5, Color(0.045, 0.12, 0.15))
+
+		var light_base := index * 4
+		var light_positions: Array[Vector3] = [
+			Vector3(-0.57, 0.82, -1.91), Vector3(0.57, 0.82, -1.91),
+			Vector3(-0.57, 0.82, 1.91), Vector3(0.57, 0.82, 1.91)
+		]
+		for light_index in range(4):
+			_light_batch.multimesh.set_instance_transform(light_base + light_index, vehicle_transform * Transform3D(Basis(), light_positions[light_index]))
+			var light_color := Color(1.0, 0.9, 0.66) if light_index < 2 else Color(0.72, 0.035, 0.025)
+			_light_batch.multimesh.set_instance_color(light_base + light_index, light_color)
+
 func _sample_route(route: Dictionary, distance: float) -> Dictionary:
 	var points: Array[Vector2] = route["points"]
 	var remaining := fposmod(distance, float(route["length"]))
@@ -295,6 +331,24 @@ func _material(use_vertex_color: bool) -> StandardMaterial3D:
 	material.vertex_color_use_as_albedo = use_vertex_color
 	material.roughness = 0.82
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return material
+
+func _window_material() -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color.WHITE
+	material.vertex_color_use_as_albedo = true
+	material.roughness = 0.18
+	material.metallic = 0.12
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return material
+
+func _light_material() -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color.WHITE
+	material.vertex_color_use_as_albedo = true
+	material.roughness = 0.35
+	material.emission_enabled = true
+	material.emission = Color.WHITE
 	return material
 
 func _wheel_material() -> StandardMaterial3D:
