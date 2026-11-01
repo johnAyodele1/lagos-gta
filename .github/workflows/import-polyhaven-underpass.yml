@@ -1,0 +1,54 @@
+name: Import Poly Haven Lagos underpass assets
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/polyhaven-lagos-underpass]
+    paths: [tools/import_polyhaven_underpass.py, .github/workflows/import-polyhaven-underpass.yml]
+permissions:
+  contents: write
+concurrency:
+  group: polyhaven-lagos-underpass
+  cancel-in-progress: true
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --global @gltf-transform/cli
+      - run: python -m unittest tools/test_import_polyhaven_underpass.py -v
+      - run: python tools/import_polyhaven_underpass.py
+      - name: Validate imported GLBs
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path("assets/models/lagos_underpass")
+          manifest=json.loads((root/"manifest.json").read_text())
+          for asset in manifest["assets"]:
+              data=(root/(asset["id"]+".glb")).read_bytes()
+              assert data[:4]==b"glTF" and 20<len(data)<90*1024*1024
+          PY
+      - name: Commit to feature branch only
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/models/lagos_underpass
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "assets: import Poly Haven Lagos underpass models"
+          for attempt in 1 2 3; do
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}"
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then exit 0; fi
+          done
+          exit 1

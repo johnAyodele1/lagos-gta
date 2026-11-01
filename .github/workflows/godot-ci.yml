@@ -80,10 +80,12 @@ jobs:
           test -n "$PREVIEW_PATH"
           mkdir -p artifacts
           cp "$PREVIEW_PATH" artifacts/yaba-world-preview.png
+          UNDERPASS_PATH="$(find "$HOME/.local/share/godot/app_userdata" -type f -name 'yaba-underpass-preview.png' -print -quit)"
+          if [ -n "$UNDERPASS_PATH" ]; then cp "$UNDERPASS_PATH" artifacts/yaba-underpass-preview.png; fi
 
       - name: Upload Yaba world screenshot
         uses: actions/upload-artifact@v4
         with:
           name: yaba-world-preview
-          path: artifacts/yaba-world-preview.png
+          path: artifacts/*.png
           if-no-files-found: error
