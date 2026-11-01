@@ -209,6 +209,7 @@ func _test_visual_meshes() -> void:
 	_check(danfo_model != null and danfo_model.mesh != null, "danfo uses the imported detailed minibus 3D model")
 	if danfo_model != null:
 		_check(ModelBoundsScript.get_scaled_dimensions(danfo_model).is_equal_approx(Vector3(2.0, 2.25, 4.65)), "danfo visual is fitted to a 2.25m roof height and 4.65m body length")
+	print("DEBUG_DANFO_SURFACE_COUNT=%d" % danfo_model.mesh.get_surface_count())
 	_check(danfo_model.mesh.get_surface_count() >= 5, "danfo model retains separate body, window, wheel and light materials")
 	var danfo_materials_valid := true
 	for surface_index in range(danfo_model.mesh.get_surface_count()):
