@@ -12,6 +12,7 @@ The prototype is configured around Godot's Compatibility renderer and a conserva
 - Shared materials are cached instead of creating a new StandardMaterial3D for every repeated colour.
 - Static blockout geometry is simple and does not use expensive physics simulation.
 - Ambient traffic is capped at eight visual-only vehicles and rendered through three shared MultiMesh batches (body, cabin and wheels); traffic cars have no individual physics bodies or navigation agents.
+- Sidewalk pedestrians are capped at four and rendered/animated through four shared MultiMesh batches (torso, head, arms and legs); pedestrians have no individual physics bodies or navigation agents.
 
 These are design choices to reduce GPU state changes, draw calls, memory duplication and shader cost. They are not yet proof of a target frame rate.
 
