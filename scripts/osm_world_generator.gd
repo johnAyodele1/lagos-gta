@@ -8,6 +8,7 @@ class_name OSMWorldGenerator
 const WORLD_RADIUS_METRES := 450.0
 const MAX_BUILDINGS := 2200
 const MAX_ROADS := 450
+const MAX_PROCEDURAL_COMPOUNDS := 24
 const MAX_FACADE_WINDOWS := 14000
 const ROAD_COLOR := Color(0.105, 0.115, 0.12)
 const SIDEWALK_COLOR := Color(0.43, 0.42, 0.38)
