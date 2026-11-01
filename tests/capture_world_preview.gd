@@ -25,12 +25,14 @@ func _capture_world() -> void:
 	if player != null:
 		player.mouse_captured = false
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		player.camera_yaw_pivot.rotation = Vector3.ZERO
 		player.camera_pivot.rotation = Vector3.ZERO
-		player.camera_mount.rotation.x = deg_to_rad(-14.0)
+		player.camera.rotation = Vector3(deg_to_rad(-14.0), 0.0, 0.0)
 		print("PREVIEW_PLAYER_POSITION=", player.global_position)
 		print("PREVIEW_PLAYER_ROTATION=", player.global_rotation)
-		print("PREVIEW_PIVOT_ROTATION=", player.camera_pivot.global_rotation)
-		print("PREVIEW_CAMERA_MOUNT_ROTATION=", player.camera_mount.global_rotation)
+		print("PREVIEW_YAW_PIVOT_ROTATION=", player.camera_yaw_pivot.global_rotation)
+		print("PREVIEW_SPRING_ROTATION=", player.camera_pivot.global_rotation)
+		print("PREVIEW_SPRING_HIT_LENGTH=", player.camera_pivot.get_hit_length())
 		print("PREVIEW_CAMERA_ROTATION=", player.camera.global_rotation)
 		print("PREVIEW_CAMERA_POSITION=", player.camera.global_position)
 		print("PREVIEW_CAMERA_FORWARD=", -player.camera.global_basis.z)
