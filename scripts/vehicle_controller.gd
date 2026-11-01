@@ -205,7 +205,7 @@ func _add_wheel(wheel_position: Vector3, radius: float, width: float, color: Col
 func enter_vehicle(player: Node) -> void:
 	if driver != null:
 		return
-	if not is_instance_valid(player) or player.camera_pivot == null or player.camera == null or player.body_mesh == null:
+	if not is_instance_valid(player) or player.camera_pivot == null or player.camera == null:
 		push_error("Cannot enter the danfo: player camera or visual rig is not ready.")
 		return
 	driver = player
@@ -214,7 +214,8 @@ func enter_vehicle(player: Node) -> void:
 	player.set_physics_process(false)
 	player.collision_layer = 0
 	player.collision_mask = 0
-	player.body_mesh.visible = false
+	if player.body_mesh != null:
+		player.body_mesh.visible = false
 	player.camera_yaw_pivot.reparent(self, false)
 	player.camera_yaw_pivot.position = Vector3(0.0, 2.4, 0.0)
 	player.camera_yaw_pivot.rotation = Vector3.ZERO
@@ -272,7 +273,8 @@ func exit_vehicle() -> void:
 	player.velocity = Vector3.ZERO
 	player.collision_layer = _driver_collision_layer
 	player.collision_mask = _driver_collision_mask
-	player.body_mesh.visible = true
+	if player.body_mesh != null:
+		player.body_mesh.visible = true
 	player.set_physics_process(true)
 
 func _physics_process(delta: float) -> void:
