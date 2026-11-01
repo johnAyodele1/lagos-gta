@@ -11,9 +11,11 @@ const MAX_CAMERA_PITCH: float = deg_to_rad(35.0)
 
 var camera_pivot: Node3D
 var camera: Camera3D
+var body_mesh: MeshInstance3D
 var mouse_captured: bool = false
 var mobile_controls: Node
 var jump_requested: bool = false
+var interact_requested: bool = false
 
 static func normalize_move_input(input_vector: Vector2) -> Vector2:
 	return input_vector.limit_length(1.0)
@@ -35,7 +37,7 @@ func _build_body() -> void:
 	collision.position.y = 0.9
 	add_child(collision)
 
-	var body_mesh := MeshInstance3D.new()
+	body_mesh = MeshInstance3D.new()
 	var capsule_mesh := CapsuleMesh.new()
 	capsule_mesh.radius = 0.38
 	capsule_mesh.height = 1.8
@@ -88,6 +90,13 @@ func _physics_process(delta: float) -> void:
 	if mobile_controls != null:
 		wants_jump = wants_jump or mobile_controls.consume_jump_request()
 
+	var nearby_vehicle := _get_nearest_vehicle()
+	if nearby_vehicle != null and (interact_requested or wants_jump):
+		interact_requested = false
+		nearby_vehicle.enter_vehicle(self)
+		return
+	interact_requested = false
+
 	if not is_on_floor():
 		velocity.y -= GRAVITY * delta
 	elif wants_jump:
@@ -106,6 +115,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_mouse_capture()
 		elif event.keycode == KEY_SPACE:
 			jump_requested = true
+		elif event.keycode == KEY_E:
+			interact_requested = true
+
+func _get_nearest_vehicle() -> Node3D:
+	var nearest: Node3D
+	var nearest_distance := 7.0
+	for candidate in get_tree().get_nodes_in_group("drivable_vehicle"):
+		if not is_instance_valid(candidate) or not candidate is Node3D:
+			continue
+		var distance := global_position.distance_to(candidate.global_position)
+		if distance < nearest_distance:
+			nearest = candidate
+			nearest_distance = distance
+	return nearest
 
 func _apply_look_delta(look_delta: Vector2) -> void:
 	if look_delta.is_zero_approx():
