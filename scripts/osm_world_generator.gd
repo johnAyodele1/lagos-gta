@@ -916,7 +916,11 @@ func _append_facade_windows(
 				for horizontal_offset in [-0.50, 0.50]:
 					frame_vertical.append(Transform3D(
 						basis.scaled(Vector3(0.065, 1.06, 0.07)),
-						Vector3(center.x + outward.x * 0.025, y, center.y + outward.y * 0.025)
+						Vector3(
+							center.x + basis.x.x * float(horizontal_offset) + outward.x * 0.025,
+							y,
+							center.y + basis.x.z * float(horizontal_offset) + outward.y * 0.025
+						)
 					))
 			# Metal security bars are common on ground-floor Lagos shop and
 			# residential windows. Limit their count for mobile draw/instance cost.
