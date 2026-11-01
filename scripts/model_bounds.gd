@@ -15,6 +15,8 @@ static func ensure_surface_materials(root: Node3D, fallback_colors: Array[Color]
 		if mesh_instance.mesh == null or not (mesh_instance.mesh is ArrayMesh):
 			continue
 		var mesh_copy := mesh_instance.mesh.duplicate() as ArrayMesh
+		if mesh_copy == null:
+			continue
 		var changed := false
 		for surface_index in range(mesh_copy.get_surface_count()):
 			if mesh_copy.surface_get_material(surface_index) != null:
