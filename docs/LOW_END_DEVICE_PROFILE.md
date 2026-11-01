@@ -11,7 +11,7 @@ The prototype is configured around Godot's Compatibility renderer and a conserva
 - Repeated windows, road markings, streetlights, market stall parts, compound walls, rooftop tanks and utility props are batched with MultiMesh.
 - Shared materials are cached instead of creating a new StandardMaterial3D for every repeated colour.
 - Static blockout geometry is simple and does not use expensive physics simulation.
-- Ambient traffic is capped at eight visual-only vehicles and rendered through three shared MultiMesh batches (body, cabin and wheels); traffic cars have no individual physics bodies or navigation agents.
+- Ambient traffic is capped at eight vehicles and rendered through three shared MultiMesh batches (body, cabin and wheels); each vehicle uses one simple AnimatableBody3D collision proxy rather than a detailed render-mesh collider or navigation agent.
 - Sidewalk pedestrians are capped at four and rendered/animated through four shared MultiMesh batches (torso, head, arms and legs); pedestrians have no individual physics bodies or navigation agents.
 
 These are design choices to reduce GPU state changes, draw calls, memory duplication and shader cost. They are not yet proof of a target frame rate.
@@ -38,7 +38,7 @@ The final minimum supported Android/iOS devices must be selected only after real
 2. Add distance-based visibility ranges and lower-detail building meshes.
 3. Add texture atlases and compressed mobile texture formats once production art is integrated.
 4. Keep traffic and pedestrian counts capped and use shared MultiMesh batches or object pools before increasing their counts.
-5. Use simple collision proxies; do not use detailed render meshes as physics colliders.
+5. Use simple collision proxies for traffic and player interaction; do not use detailed render meshes as physics colliders. Keep moving collider count capped and measure physics time on target devices.
 6. Stream neighbourhood chunks and release distant district resources.
 7. Provide Low / Balanced / High presets only after profiling proves the settings improve actual devices.
 8. Test app resume, thermal throttling, low storage and low-memory background termination.
