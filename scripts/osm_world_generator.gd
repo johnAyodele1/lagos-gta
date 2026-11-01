@@ -152,7 +152,10 @@ func _add_ground() -> void:
 	mesh.size = Vector2(WORLD_RADIUS_METRES * 2.2, WORLD_RADIUS_METRES * 2.2)
 	ground.mesh = mesh
 	ground.position.y = -0.16
-	ground.material_override = _material("ground", Color(0.24, 0.29, 0.22))
+	var ground_material := _material("ground", Color(0.32, 0.29, 0.24))
+	ground_material.albedo_texture = _make_noise_texture(61, 0.22)
+	ground_material.roughness = 0.98
+	ground.material_override = ground_material
 	ground.name = "YabaDistrictGround"
 	add_child(ground)
 	var body := StaticBody3D.new()
