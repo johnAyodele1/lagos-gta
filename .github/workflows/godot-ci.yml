@@ -57,3 +57,25 @@ jobs:
             echo "Godot reported runtime errors during the game smoke test."
             exit 1
           fi
+
+      - name: Capture rendered Yaba world
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOG_FILE="$(mktemp)"
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a "$GODOT_BIN" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/capture_world_preview.gd 2>&1 | tee "$LOG_FILE"
+          if grep -E "SCRIPT ERROR|ERROR:" "$LOG_FILE"; then
+            echo "Godot reported runtime errors during visual capture."
+            exit 1
+          fi
+          PREVIEW_PATH="$(find "$HOME/.local/share/godot/app_userdata" -type f -name 'yaba-world-preview.png' -print -quit)"
+          test -n "$PREVIEW_PATH"
+          mkdir -p artifacts
+          cp "$PREVIEW_PATH" artifacts/yaba-world-preview.png
+
+      - name: Upload Yaba world screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: yaba-world-preview
+          path: artifacts/yaba-world-preview.png
+          if-no-files-found: error
