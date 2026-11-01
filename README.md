@@ -34,7 +34,7 @@ No third-party asset packs are required to launch the initial scene.
 | Left virtual joystick | Move |
 | Drag on the right side | Look around |
 | RUN button | Sprint while held |
-| JUMP button | Jump once per tap |
+| JUMP button | Jump once per tap; enter/exit the danfo when close |
 
 ## Technology
 
