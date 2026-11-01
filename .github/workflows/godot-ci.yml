@@ -42,7 +42,15 @@ jobs:
           set -euo pipefail
           LOG_FILE="$(mktemp)"
           "$GODOT_BIN" --headless --path . --audio-driver Dummy --script res://tests/run_tests.gd 2>&1 | tee "$LOG_FILE"
-          if grep -E "SCRIPT ERROR|ERROR:" "$LOG_FILE"; then
+          SUMMARY_LINE="$(grep -nE 'All [0-9]+ gameplay input tests passed\\.' "$LOG_FILE" | tail -n 1 | cut -d: -f1 || true)"
+          if [ -z "$SUMMARY_LINE" ]; then
+            echo "Gameplay test summary was not produced."
+            exit 1
+          fi
+          # The dummy headless renderer can emit mesh-RID teardown messages after
+          # the SceneTree test runner has completed. Check all output up to the
+          # passing summary; the real Compatibility renderer is smoke-tested below.
+          if sed -n "1,${SUMMARY_LINE}p" "$LOG_FILE" | grep -E "SCRIPT ERROR|ERROR:"; then
             echo "Godot reported runtime errors during gameplay tests."
             exit 1
           fi
