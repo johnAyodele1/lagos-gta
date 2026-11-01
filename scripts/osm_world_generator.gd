@@ -1,6 +1,6 @@
 extends Node3D
-const LABEL_FONT = preload("res://assets/fonts/Roboto.ttf")
 class_name OSMWorldGenerator
+const LABEL_FONT = preload("res://assets/fonts/Roboto.ttf")
 
 ## Builds a mobile-conscious Yaba district from a normalized OpenStreetMap extract.
 ## Roads, building footprints and mapped barriers remain data-driven; facade details
