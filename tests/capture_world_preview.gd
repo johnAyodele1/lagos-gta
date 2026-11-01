@@ -63,7 +63,7 @@ func _capture_world() -> void:
 		quit(1)
 		return
 	if player != null:
-		var player_model := player.get_node_or_null("RiggedLagosPlayer") as Node3D
+		var player_model := player.body_mesh.get_node_or_null("RiggedLagosPlayer") as Node3D if player.body_mesh != null else null
 		if player_model == null:
 			push_error("Rendered player rig is missing from the scene.")
 			quit(1)
