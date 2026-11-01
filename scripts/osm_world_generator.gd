@@ -726,6 +726,7 @@ func _select_hero_facade() -> Dictionary:
 			"angle": angle
 		}
 	if best.is_empty():
+		print("Hero facade: no eligible residential frontage was found in the mapped Yaba buildings.")
 		return {}
 	# Validate the imported scene before suppressing any procedural wall geometry.
 	var packed_scene: PackedScene = load(asset_path) as PackedScene
@@ -743,6 +744,7 @@ func _select_hero_facade() -> Dictionary:
 		return {}
 	best["model"] = model
 	best["width_axis"] = "x" if dimensions.x >= dimensions.z else "z"
+	print("Hero facade selected: building=", best["building_index"], " frontage=", best["frontage_length"], " height=", best["height"], " dimensions=", dimensions, " width_axis=", best["width_axis"])
 	best["model_width"] = maxf(dimensions.x, dimensions.z)
 	best["model_depth"] = minf(dimensions.x, dimensions.z)
 	return best
