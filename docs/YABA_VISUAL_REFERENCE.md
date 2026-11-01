@@ -60,3 +60,8 @@ The player and danfo spawn selector now prefers a named public street over an un
 
 These figures matter. The map geometry is real OSM geometry, but it is not a survey-grade reconstruction. A street with estimated width or a building with fallback height must not be presented as exact. The renderer should preserve known surface tags and avoid inventing precise dimensions where the source does not provide them. A later mapping pass should add locally verified road widths, building storeys, compound gates and frontage classification from properly licensed field references.
 
+
+
+## Imported architectural asset pass
+
+The project now has a build-time import path for the CC0 [Poly Haven Modular Urban Apartments Facade](https://polyhaven.com/a/modular_urban_apartments_facade) (James Ray Cock). The model is used as one hero frontage only: OSM still determines the building footprint, street-facing edge and collision; the imported GLB supplies the visible facade. This is a generic modular residential asset, not a surveyed Yaba building, so it must not be described as an exact reconstruction. The rest of the district remains on the procedural fallback until a larger set of locally appropriate, rights-cleared assets is imported and tested.
