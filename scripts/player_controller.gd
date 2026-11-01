@@ -16,6 +16,11 @@ var mouse_captured: bool = false
 var mobile_controls: Node
 var jump_requested: bool = false
 var interact_requested: bool = false
+var _left_arm_pivot: Node3D
+var _right_arm_pivot: Node3D
+var _left_leg_pivot: Node3D
+var _right_leg_pivot: Node3D
+var _animation_clock: float = 0.0
 
 static func normalize_move_input(input_vector: Vector2) -> Vector2:
 	return input_vector.limit_length(1.0)
@@ -37,28 +42,59 @@ func _build_body() -> void:
 	collision.position.y = 0.9
 	add_child(collision)
 
+	# A lightweight stylised human rig made from low-poly primitives.
+	# The visual root is hidden while the player is seated in a vehicle.
 	body_mesh = MeshInstance3D.new()
-	var capsule_mesh := CapsuleMesh.new()
-	capsule_mesh.radius = 0.38
-	capsule_mesh.height = 1.8
-	body_mesh.mesh = capsule_mesh
-	body_mesh.position.y = 0.9
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.12, 0.32, 0.72)
-	material.roughness = 0.85
-	body_mesh.material_override = material
+	var torso := CapsuleMesh.new()
+	torso.radius = 0.29
+	torso.height = 0.92
+	body_mesh.mesh = torso
+	body_mesh.position.y = 1.08
+	body_mesh.material_override = _character_material(Color(0.12, 0.38, 0.34))
 	add_child(body_mesh)
 
-	camera_pivot = Node3D.new()
-	camera_pivot.position.y = 1.55
-	add_child(camera_pivot)
+	var head := MeshInstance3D.new()
+	var head_mesh := SphereMesh.new()
+	head_mesh.radius = 0.23
+	head_mesh.height = 0.46
+	head.mesh = head_mesh
+	head.position = Vector3(0.0, 0.72, 0.0)
+	head.material_override = _character_material(Color(0.38, 0.22, 0.14))
+	body_mesh.add_child(head)
 
-	camera = Camera3D.new()
-	camera.position = Vector3(0.0, 0.35, 4.8)
-	camera.rotation.x = deg_to_rad(-9.0)
-	camera.current = true
-	camera.far = 180.0
-	camera_pivot.add_child(camera)
+	_left_arm_pivot = _create_limb(Vector3(-0.34, 0.28, 0.0), 0.12, 0.76, Color(0.38, 0.22, 0.14))
+	_right_arm_pivot = _create_limb(Vector3(0.34, 0.28, 0.0), 0.12, 0.76, Color(0.38, 0.22, 0.14))
+	_left_leg_pivot = _create_limb(Vector3(-0.16, -0.42, 0.0), 0.15, 0.82, Color(0.10, 0.12, 0.14))
+	_right_leg_pivot = _create_limb(Vector3(0.16, -0.42, 0.0), 0.15, 0.82, Color(0.10, 0.12, 0.14))
+
+func _character_material(color: Color) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.roughness = 0.9
+	return material
+
+func _create_limb(limb_position: Vector3, radius: float, height: float, color: Color) -> Node3D:
+	var pivot := Node3D.new()
+	pivot.position = limb_position
+	var mesh_instance := MeshInstance3D.new()
+	var capsule := CapsuleMesh.new()
+	capsule.radius = radius
+	capsule.height = height
+	mesh_instance.mesh = capsule
+	mesh_instance.position.y = -height * 0.42
+	mesh_instance.material_override = _character_material(color)
+	pivot.add_child(mesh_instance)
+	body_mesh.add_child(pivot)
+	return pivot
+
+func _update_character_animation(delta: float) -> void:
+	_animation_clock += delta
+	var horizontal_speed := Vector2(velocity.x, velocity.z).length()
+	var swing := sin(_animation_clock * 9.0) * 0.48 if horizontal_speed > 0.35 else 0.0
+	_left_leg_pivot.rotation.x = swing
+	_right_leg_pivot.rotation.x = -swing
+	_left_arm_pivot.rotation.x = -swing * 0.65
+	_right_arm_pivot.rotation.x = swing * 0.65
 
 func _physics_process(delta: float) -> void:
 	var input_vector := Vector2.ZERO
@@ -106,6 +142,7 @@ func _physics_process(delta: float) -> void:
 		_apply_look_delta(mobile_controls.consume_look_delta())
 
 	move_and_slide()
+	_update_character_animation(delta)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and mouse_captured:
