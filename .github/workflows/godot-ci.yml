@@ -1,0 +1,37 @@
+name: Godot CI
+
+on:
+  push:
+    branches:
+      - main
+      - "feat/**"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Godot
+        run: |
+          GODOT_VERSION=4.3-stable
+          curl --fail --location --retry 3 \
+            "https://github.com/godotengine/godot/releases/download/$GODOT_VERSION/Godot_v$GODOT_VERSION_linux.x86_64.zip" \
+            --output godot.zip
+          unzip godot.zip -d godot-bin
+          chmod +x godot-bin/Godot_v$GODOT_VERSION_linux.x86_64
+          echo "$PWD/godot-bin" >> "$GITHUB_PATH"
+          echo "GODOT_BIN=$PWD/godot-bin/Godot_v$GODOT_VERSION_linux.x86_64" >> "$GITHUB_ENV"
+
+      - name: Import project and parse scripts
+        run: "$GODOT_BIN" --headless --editor --path . --quit
+
+      - name: Run prototype headlessly
+        run: "$GODOT_BIN" --headless --path . --quit-after 5
