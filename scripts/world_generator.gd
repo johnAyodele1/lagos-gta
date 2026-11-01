@@ -1,6 +1,6 @@
 extends Node3D
-const LABEL_FONT = preload("res://assets/fonts/Roboto.ttf")
 class_name WorldGenerator
+const LABEL_FONT = preload("res://assets/fonts/Roboto.ttf")
 
 const ROAD_COLOR := Color(0.12, 0.13, 0.14)
 const SIDEWALK_COLOR := Color(0.48, 0.46, 0.40)
