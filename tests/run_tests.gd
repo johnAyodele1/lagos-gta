@@ -5,6 +5,7 @@ const MobileControlsScript = preload("res://scripts/mobile_controls.gd")
 const LegalConsentScript = preload("res://scripts/legal_consent.gd")
 const WorldGeneratorScript = preload("res://scripts/world_generator.gd")
 const OSMWorldGeneratorScript = preload("res://scripts/osm_world_generator.gd")
+const GraphicsProfileScript = preload("res://scripts/graphics_profile.gd")
 const VehicleScript = preload("res://scripts/vehicle_controller.gd")
 const TrafficManagerScript = preload("res://scripts/traffic_manager.gd")
 const PedestrianManagerScript = preload("res://scripts/pedestrian_manager.gd")
@@ -24,6 +25,7 @@ func _run() -> void:
 	_test_mobile_touch_routing()
 	_test_legal_consent_versioning()
 	_test_world_generation_batching()
+	_test_graphics_profiles()
 	await _test_osm_world_generator()
 	_test_vehicle_speed_limits()
 	_test_ambient_traffic()
@@ -144,6 +146,14 @@ func _test_world_generation_batching() -> void:
 	_check(world.get_node_or_null("ParkedKekeTricycle") != null, "Yaba market includes a parked keke tricycle landmark")
 	_check(world._material_cache.size() < 40, "generated geometry reuses a bounded shared material set")
 	world.queue_free()
+
+func _test_graphics_profiles() -> void:
+	var low := GraphicsProfileScript.get_profile("low")
+	var balanced := GraphicsProfileScript.get_profile("balanced")
+	var high := GraphicsProfileScript.get_profile("high")
+	_check(not bool(low["shadows"]) and int(low["shadow_atlas_size"]) == 512, "low graphics profile protects older mobile GPUs")
+	_check(bool(balanced["shadows"]) and int(balanced["shadow_splits"]) == 2, "balanced mobile profile keeps short-range directional shadows")
+	_check(int(high["shadow_atlas_size"]) == 2048 and float(high["far_clip"]) == 300.0, "high profile reserves longer view distance for desktop hardware")
 
 func _test_osm_world_generator() -> void:
 	var sample := {
