@@ -138,6 +138,11 @@ func _test_vehicle_speed_limits() -> void:
 	root.add_child(vehicle)
 	var player = PlayerScript.new()
 	root.add_child(player)
+	_check(player.body_mesh.get_child_count() >= 5, "player spawns with a low-poly 3D head and articulated limbs")
+	player.velocity = Vector3(0.0, 0.0, 2.0)
+	player._update_character_animation(0.1)
+	_check(not is_zero_approx(player._left_leg_pivot.rotation.x), "player leg animation responds to movement")
+	_check(not is_zero_approx(player._right_arm_pivot.rotation.x), "player arms counter-swing during movement")
 	vehicle.position = Vector3(0.0, 0.0, 5.0)
 	player.position = Vector3.ZERO
 	_check(player._get_nearest_vehicle() == vehicle, "player detects a danfo within interaction range")
