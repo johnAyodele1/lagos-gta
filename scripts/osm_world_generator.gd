@@ -831,7 +831,7 @@ func _add_umbrella_batch(batch_name: String, transforms: Array[Transform3D], col
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(instance)
 
-func _resolve_building_height(building: Dictionary, footprint_area: float) -> float:
+static func _resolve_building_height(building: Dictionary, footprint_area: float) -> float:
 	var source := str(building.get("height_source", ""))
 	var mapped_height := float(building.get("height_m", 6.2))
 	if source in ["osm:height", "estimated:building-levels"]:
