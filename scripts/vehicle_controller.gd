@@ -11,6 +11,7 @@ const GRAVITY: float = 18.0
 const WORLD_COLLISION_LAYER: int = 1
 const VEHICLE_COLLISION_LAYER: int = 2
 const PLAYER_COLLISION_LAYER: int = 4
+const NPC_COLLISION_LAYER: int = 8
 
 var driver: Node
 var current_speed: float = 0.0
@@ -32,7 +33,7 @@ static func acceleration_for(current: float, target: float) -> float:
 
 func _ready() -> void:
 	collision_layer = VEHICLE_COLLISION_LAYER
-	collision_mask = WORLD_COLLISION_LAYER | PLAYER_COLLISION_LAYER
+	collision_mask = WORLD_COLLISION_LAYER | PLAYER_COLLISION_LAYER | NPC_COLLISION_LAYER
 	floor_snap_length = 0.35
 	safe_margin = 0.04
 	max_slides = 8
