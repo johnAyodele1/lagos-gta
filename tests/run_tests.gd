@@ -292,11 +292,11 @@ func _test_osm_world_generator() -> void:
 	_check(world.get_barrier_count() == 1, "OSM world generator retains mapped compound barriers")
 	var frontage_world = OSMWorldGeneratorScript.new()
 	var frontage_roads: Array[Dictionary] = [
-		{"name": "Hughes Avenue", "highway": "residential", "surface": "paved", "width_m": 6.0, "coordinates": [[-50.0, 0.0], [50.0, 0.0]]}
+		{"name": "Hughes Avenue", "highway": "residential", "surface": "paved", "width_m": 6.0, "coordinates": [[10.0, -50.0], [10.0, 50.0]]}
 	]
 	frontage_world._roads = frontage_roads
 	var commercial_outline: Array[Vector2] = [Vector2(15.0, -5.0), Vector2(20.0, -5.0), Vector2(20.0, 5.0), Vector2(15.0, 5.0)]
-	_check(frontage_world._closest_frontage_edge(commercial_outline) in [0, 2], "commercial shopfront orientation follows the closest mapped street edge")
+	_check(frontage_world._closest_frontage_edge(commercial_outline) == 3, "commercial shopfront orientation follows the closest mapped street edge")
 	frontage_world.free()
 	_check(world.get_node_or_null("OSMPavedRoadSurfaces") != null and world.get_node_or_null("OSMUnpavedLateriteRoadSurfaces") != null, "OSM paved and unpaved streets generate distinct 3D road surfaces")
 	_check(world.get_node_or_null("OSMRoadsideDrainage") != null, "mapped streets include roadside drainage channels")
