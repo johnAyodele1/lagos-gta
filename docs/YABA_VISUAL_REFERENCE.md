@@ -7,7 +7,7 @@ This document keeps the environment work tied to real Yaba streets rather than a
 - [University Road, Yaba — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Unilag_University_Road,_Yaba.jpg): two-storey mixed-use frontage, balcony, roadside fence, danfo and keke activity.
 - [Old Yaba Road commercial property](https://privateproperty.ng/listings/commercial-property-for-sale-old-yaba-road-yaba-lagos-6PAGGJ): three-storey mixed-use building, ground-floor shops, recessed balconies, metal railings, awnings and overhead power lines.
 - [Yaba market street scene](https://medium.com/@damisolasulaiman/soft-launching-december-in-lagos-2933246fd28f): crowded market edge, umbrellas, roadside stalls, parked cars and uneven street frontage.
-- [Yaba streets — World Bank environmental assessment](https://documents1.worldbank.org/curated/en/223891517330286708/pdf/SFG3973-V2-EA-PUBLIC-Disclosed-1-30-2018.pdf): reference photographs and description of streets around Yaba/Akoka.
+- [Yaba streets — World Bank environmental assessment](https://documents1.worldbank.org/curated/en/223891517330286708/pdf/SFG3973-V2-EA-P146330-PUBLIC-Disclosed-1-30-2018.pdf): reference photographs and description of streets around Yaba/Akoka.
 - [Lagos architectural landscape](https://www.icwa.org/how-long-is-now-lagos-fast-evolving-architectural-landscape/): older bungalows, 1980s tenement blocks, newer stucco apartments, high gates and mixed building upkeep.
 
 ## Visual characteristics to model
