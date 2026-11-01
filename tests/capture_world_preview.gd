@@ -21,7 +21,7 @@ func _capture_world() -> void:
 		legal_layer.visible = false
 
 	var player := main_scene.get_node_or_null("Player") as PlayerController
-	var world := main_scene.get_node_or_null("YabaWorld") as OSMWorldGenerator
+	var world := main_scene.get_node_or_null("YabaOpenStreetMapDistrict") as OSMWorldGenerator
 	if player != null:
 		print("PREVIEW_PLAYER_POSITION=", player.global_position)
 		print("PREVIEW_CAMERA_POSITION=", player.camera.global_position)
