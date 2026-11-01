@@ -10,8 +10,8 @@ The prototype is configured around Godot's Compatibility renderer and a conserva
 - Camera far plane is 120m (Low), 220m (Balanced) or 300m (High); a collision-aware SpringArm3D keeps the camera out of mapped walls.
 - Repeated windows, road markings, shopfront details, compound walls, rooftop tanks and utility props are batched with MultiMesh.
 - Shared materials are cached instead of creating a new StandardMaterial3D for every repeated colour.
-- Static blockout geometry is simple and does not use expensive physics simulation.
-- Ambient traffic is capped at eight vehicles and follows OSM road polylines. Three shared MultiMesh batches render custom tapered 3D vehicle meshes; each vehicle uses one simple AnimatableBody3D collision proxy.
+- Mapped static buildings are combined into shared render geometry; static collision is simpler than the visible meshes.
+- Ambient traffic is capped at eight vehicles and follows OSM road polylines. Five shared MultiMesh batches render custom tapered 3D vehicle meshes, windows, lights and wheels; each vehicle uses one simple AnimatableBody3D collision proxy.
 - Sidewalk pedestrians are capped at four, follow OSM-derived sidewalk offsets and use five shared MultiMesh batches (custom torso, head, hair, arms and legs), plus four capsule collision proxies.
 
 The OSM importer currently supplies 587 mapped road ways and 7,470 building footprints; the runtime generator caps the initial playable radius to 450m and selects up to 2,200 buildings and 450 roads. These are engineering budgets, not proof of a target frame rate. The in-game QUALITY button cycles Low / Balanced / High and persists the selection to `user://settings.cfg` (`[graphics] quality`).
