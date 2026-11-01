@@ -14,7 +14,7 @@ The prototype is configured around Godot's Compatibility renderer and a conserva
 - Ambient traffic is capped at eight vehicles and follows OSM road polylines. Three shared MultiMesh batches render custom tapered 3D vehicle meshes; each vehicle uses one simple AnimatableBody3D collision proxy.
 - Sidewalk pedestrians are capped at four, follow OSM-derived sidewalk offsets and use five shared MultiMesh batches (custom torso, head, hair, arms and legs), plus four capsule collision proxies.
 
-The OSM importer currently supplies 587 mapped road ways and 7,470 building footprints; the runtime generator caps the initial playable radius to 450m and selects up to 2,200 buildings and 450 roads. These are engineering budgets, not proof of a target frame rate. The default mobile quality is Balanced; override it in `user://settings.cfg` with `[graphics]` and `quality = low|balanced|high`.
+The OSM importer currently supplies 587 mapped road ways and 7,470 building footprints; the runtime generator caps the initial playable radius to 450m and selects up to 2,200 buildings and 450 roads. These are engineering budgets, not proof of a target frame rate. The in-game QUALITY button cycles Low / Balanced / High and persists the selection to `user://settings.cfg` (`[graphics] quality`).
 
 ## Proposed performance acceptance targets
 
