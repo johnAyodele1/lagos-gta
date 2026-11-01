@@ -152,6 +152,14 @@ func _spawn_traffic() -> void:
 			})
 
 func _create_vehicle_visuals() -> void:
+	if DisplayServer.get_name() == "headless":
+		for index in range(_traffic.size()):
+			var visual := MeshInstance3D.new()
+			visual.name = "TrafficVehicleVisual_%02d" % index
+			add_child(visual)
+			_traffic_visuals.append(visual)
+			_traffic_visual_local_transforms.append(visual.transform)
+		return
 	var model_meshes: Array[Mesh] = []
 	for model_path in TRAFFIC_MODEL_PATHS:
 		var model_mesh := load(model_path) as Mesh
