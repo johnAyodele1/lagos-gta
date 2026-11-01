@@ -514,6 +514,18 @@ func _test_pedestrians() -> void:
 				if mesh_instance.get_active_material(surface_index) == null:
 					pedestrian_materials_valid = false
 		_check(pedestrian_materials_valid, "every pedestrian mesh surface has an assigned material")
+		var pedestrian_skin_found := false
+		var pedestrian_override_clear := true
+		for mesh_node in pedestrian_meshes:
+			var mesh_instance := mesh_node as MeshInstance3D
+			if mesh_instance.material_override != null:
+				pedestrian_override_clear = false
+			for surface_index in range(mesh_instance.mesh.get_surface_count()):
+				var surface_material := mesh_instance.get_surface_override_material(surface_index) as StandardMaterial3D
+				if surface_material != null and surface_material.albedo_color.is_equal_approx(Color(0.48, 0.29, 0.19)):
+					pedestrian_skin_found = true
+		_check(pedestrian_skin_found and pedestrian_override_clear, "pedestrians preserve their individual skin and clothing palette")
+		_check(is_equal_approx(absf(pedestrians._visuals[0].rotation.y), PI), "pedestrian rigs face along their sidewalk routes")
 	_check(pedestrians.get_pedestrian_collision_count() == 4, "each pedestrian has a low-cost capsule collision proxy")
 	var starting_distance := pedestrians.get_pedestrian_distance(0)
 	var starting_position := pedestrians.get_pedestrian_position(0)
