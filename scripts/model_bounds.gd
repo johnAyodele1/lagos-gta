@@ -37,7 +37,11 @@ static func fit_dimensions(root: Node3D, target_size: Vector3) -> bool:
 static func _combined_local_bounds(root: Node3D) -> AABB:
 	var has_bounds := false
 	var combined := AABB()
-	for node in root.find_children("*", "MeshInstance3D", true, false):
+	var mesh_nodes: Array[Node] = []
+	if root is MeshInstance3D:
+		mesh_nodes.append(root)
+	mesh_nodes.append_array(root.find_children("*", "MeshInstance3D", true, false))
+	for node in mesh_nodes:
 		var mesh_instance := node as MeshInstance3D
 		if mesh_instance.mesh == null:
 			continue
