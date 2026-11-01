@@ -163,6 +163,9 @@ func _add_ground() -> void:
 	var ground_material := _material("ground", Color(0.32, 0.29, 0.24))
 	ground_material.albedo_texture = _make_noise_texture(61, 0.22)
 	ground_material.roughness_texture = _make_noise_texture(62, 0.16)
+	ground_material.normal_enabled = true
+	ground_material.normal_texture = _make_normal_texture(63, 1.5)
+	ground_material.normal_scale = 0.18
 	ground_material.roughness = 0.98
 	ground.material_override = ground_material
 	ground.name = "YabaDistrictGround"
@@ -292,10 +295,16 @@ func _add_road_network() -> void:
 	var asphalt_material := _material("asphalt", ROAD_COLOR)
 	asphalt_material.albedo_texture = _make_noise_texture(17, 0.24)
 	asphalt_material.roughness_texture = _make_noise_texture(81, 0.18)
+	asphalt_material.normal_enabled = true
+	asphalt_material.normal_texture = _make_normal_texture(82, 3.0)
+	asphalt_material.normal_scale = 0.42
 	asphalt_material.roughness = 0.98
 	var concrete_material := _material("sidewalk", SIDEWALK_COLOR)
 	concrete_material.albedo_texture = _make_noise_texture(29, 0.16)
 	concrete_material.roughness_texture = _make_noise_texture(30, 0.12)
+	concrete_material.normal_enabled = true
+	concrete_material.normal_texture = _make_normal_texture(31, 1.8)
+	concrete_material.normal_scale = 0.28
 	concrete_material.roughness = 0.96
 	_create_surface_mesh(road_vertices, road_normals, road_indices, road_uvs, asphalt_material, "OSMRoadSurfaces")
 	_create_surface_mesh(sidewalk_vertices, sidewalk_normals, sidewalk_indices, sidewalk_uvs, concrete_material, "OSMSidewalks")
@@ -330,6 +339,22 @@ func _make_noise_texture(seed_value: int, variation: float) -> Texture2D:
 			var fine := grain.get_noise_2d(sample.x, sample.y)
 			var value := clampf(0.79 + broad * variation * 0.72 + medium * variation * 0.42 + fine * variation * 0.18, 0.36, 1.0)
 			image.set_pixel(x, y, Color(value, value * 0.995, value * 0.985, 1.0))
+	image.generate_mipmaps()
+	return ImageTexture.create_from_image(image)
+
+func _make_normal_texture(seed_value: int, bump_scale: float) -> Texture2D:
+	var height_noise := FastNoiseLite.new()
+	height_noise.seed = seed_value
+	height_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	height_noise.frequency = 0.075
+	height_noise.fractal_octaves = 3
+	const TEXTURE_SIZE := 128
+	var image := Image.create(TEXTURE_SIZE, TEXTURE_SIZE, false, Image.FORMAT_RGBA8)
+	for y in range(TEXTURE_SIZE):
+		for x in range(TEXTURE_SIZE):
+			var value := 0.5 + height_noise.get_noise_2d(float(x), float(y)) * 0.18
+			image.set_pixel(x, y, Color(value, value, value, 1.0))
+	image.bump_map_to_normal_map(bump_scale)
 	image.generate_mipmaps()
 	return ImageTexture.create_from_image(image)
 
@@ -518,6 +543,9 @@ func _add_building_network() -> void:
 		var facade_material := _material("building_vertex", Color.WHITE, 0.94, true)
 		facade_material.albedo_texture = _make_noise_texture(43, 0.18)
 		facade_material.roughness_texture = _make_noise_texture(44, 0.12)
+		facade_material.normal_enabled = true
+		facade_material.normal_texture = _make_normal_texture(45, 1.4)
+		facade_material.normal_scale = 0.22
 		building_mesh.surface_set_material(0, facade_material)
 		var building_instance := MeshInstance3D.new()
 		building_instance.name = "OSMBuildingFootprintsAndFacades"
