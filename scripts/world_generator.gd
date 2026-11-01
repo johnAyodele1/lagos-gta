@@ -58,6 +58,23 @@ func _add_box(parent: Node3D, box_size: Vector3, position: Vector3, color: Color
 		body.add_child(collision)
 		parent.add_child(body)
 
+func _add_box_batch(parent: Node3D, box_size: Vector3, transforms: Array[Transform3D], color: Color) -> void:
+	if transforms.is_empty():
+		return
+	var multi_mesh := MultiMesh.new()
+	multi_mesh.transform_format = MultiMesh.TRANSFORM_3D
+	var box := BoxMesh.new()
+	box.size = box_size
+	multi_mesh.mesh = box
+	multi_mesh.instance_count = transforms.size()
+	for index in range(transforms.size()):
+		multi_mesh.set_instance_transform(index, transforms[index])
+	var batch := MultiMeshInstance3D.new()
+	batch.multimesh = multi_mesh
+	batch.material_override = _material(color)
+	batch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(batch)
+
 func _add_ground() -> void:
 	_add_box(self, Vector3(150.0, 0.5, 150.0), Vector3(0.0, -0.35, 0.0), Color(0.28, 0.38, 0.24), true)
 
@@ -67,10 +84,14 @@ func _add_road_network() -> void:
 	for side in [-1.0, 1.0]:
 		_add_box(self, Vector3(3.0, 0.16, 130.0), Vector3(side * 10.5, 0.0, 0.0), SIDEWALK_COLOR)
 		_add_box(self, Vector3(130.0, 0.16, 3.0), Vector3(0.0, 0.0, side * 10.5), SIDEWALK_COLOR)
+	var vertical_markings: Array[Transform3D] = []
+	var horizontal_markings: Array[Transform3D] = []
 	for z in range(-58, 60, 8):
-		_add_box(self, Vector3(0.18, 0.025, 3.4), Vector3(0.0, 0.0, float(z)), Color(0.88, 0.82, 0.60))
+		vertical_markings.append(Transform3D(Basis(), Vector3(0.0, 0.0, float(z))))
 	for x in range(-58, 60, 8):
-		_add_box(self, Vector3(3.4, 0.025, 0.18), Vector3(float(x), 0.005, 0.0), Color(0.88, 0.82, 0.60))
+		horizontal_markings.append(Transform3D(Basis(), Vector3(float(x), 0.005, 0.0)))
+	_add_box_batch(self, Vector3(0.18, 0.025, 3.4), vertical_markings, Color(0.88, 0.82, 0.60))
+	_add_box_batch(self, Vector3(3.4, 0.025, 0.18), horizontal_markings, Color(0.88, 0.82, 0.60))
 
 func _add_buildings() -> void:
 	var rng := RandomNumberGenerator.new()
@@ -138,11 +159,15 @@ func _add_window_batch(transforms: Array[Transform3D], side_facing: bool) -> voi
 	add_child(instance)
 
 func _add_street_lights() -> void:
+	var poles: Array[Transform3D] = []
+	var arms: Array[Transform3D] = []
 	for z in range(-48, 50, 24):
 		for side in [-1.0, 1.0]:
 			var pole_x: float = float(side) * 12.8
-			_add_box(self, Vector3(0.16, 5.5, 0.16), Vector3(pole_x, 2.75, float(z)), Color(0.18, 0.19, 0.18))
-			_add_box(self, Vector3(1.0, 0.16, 0.16), Vector3(pole_x + side * 0.4, 5.35, float(z)), Color(0.18, 0.19, 0.18))
+			poles.append(Transform3D(Basis(), Vector3(pole_x, 2.75, float(z))))
+			arms.append(Transform3D(Basis(), Vector3(pole_x + side * 0.4, 5.35, float(z))))
+	_add_box_batch(self, Vector3(0.16, 5.5, 0.16), poles, Color(0.18, 0.19, 0.18))
+	_add_box_batch(self, Vector3(1.0, 0.16, 0.16), arms, Color(0.18, 0.19, 0.18))
 
 func _add_cylinder(parent: Node3D, radius: float, height: float, position: Vector3, color: Color, rotation: Vector3 = Vector3.ZERO) -> void:
 	var wheel := MeshInstance3D.new()
@@ -233,15 +258,24 @@ func _add_market_stalls() -> void:
 func _add_compound_details() -> void:
 	# Low compound walls, rooftop water tanks and utility poles are common visual cues
 	# in many Lagos neighbourhoods. Keep these as simple static meshes for mobile.
+	var compound_walls: Array[Transform3D] = []
 	for plot_x in [-25.0, 25.0]:
 		for plot_z in [-46.0, -23.0, 0.0, 23.0, 46.0]:
-			_add_box(self, Vector3(0.18, 1.25, 12.0), Vector3(plot_x - 7.8, 0.625, plot_z), Color(0.62, 0.57, 0.47))
-			_add_box(self, Vector3(0.18, 1.25, 12.0), Vector3(plot_x + 7.8, 0.625, plot_z), Color(0.62, 0.57, 0.47))
+			compound_walls.append(Transform3D(Basis(), Vector3(plot_x - 7.8, 0.625, plot_z)))
+			compound_walls.append(Transform3D(Basis(), Vector3(plot_x + 7.8, 0.625, plot_z)))
+	_add_box_batch(self, Vector3(0.18, 1.25, 12.0), compound_walls, Color(0.62, 0.57, 0.47))
 	# Elevated rooftop tanks: recognisable silhouettes without expensive simulation.
-	for tank_position in [Vector3(-25.0, 16.8, -23.0), Vector3(25.0, 13.2, 23.0)]:
-		_add_box(self, Vector3(2.2, 2.6, 2.2), tank_position, Color(0.12, 0.25, 0.38))
+	var tanks: Array[Transform3D] = [
+		Transform3D(Basis(), Vector3(-25.0, 16.8, -23.0)),
+		Transform3D(Basis(), Vector3(25.0, 13.2, 23.0))
+	]
+	_add_box_batch(self, Vector3(2.2, 2.6, 2.2), tanks, Color(0.12, 0.25, 0.38))
 	# Utility poles and a few overhead cable runs frame the street.
+	var utility_poles: Array[Transform3D] = []
+	var cable_runs: Array[Transform3D] = []
 	for z in [-38.0, 0.0, 38.0]:
-		_add_box(self, Vector3(0.18, 7.0, 0.18), Vector3(-13.6, 3.5, z), Color(0.20, 0.18, 0.15))
-		_add_box(self, Vector3(0.18, 7.0, 0.18), Vector3(13.6, 3.5, z), Color(0.20, 0.18, 0.15))
-		_add_box(self, Vector3(0.12, 0.12, 27.2), Vector3(0.0, 6.6, z), Color(0.08, 0.08, 0.07))
+		utility_poles.append(Transform3D(Basis(), Vector3(-13.6, 3.5, z)))
+		utility_poles.append(Transform3D(Basis(), Vector3(13.6, 3.5, z)))
+		cable_runs.append(Transform3D(Basis(), Vector3(0.0, 6.6, z)))
+	_add_box_batch(self, Vector3(0.18, 7.0, 0.18), utility_poles, Color(0.20, 0.18, 0.15))
+	_add_box_batch(self, Vector3(0.12, 0.12, 27.2), cable_runs, Color(0.08, 0.08, 0.07))
