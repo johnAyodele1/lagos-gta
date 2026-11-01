@@ -725,6 +725,10 @@ func _append_compound_wall_segment(
 func _add_utility_network() -> void:
 	var pole_transforms: Array[Transform3D] = []
 	var wire_transforms: Array[Transform3D] = []
+	var crossarm_transforms: Array[Transform3D] = []
+	var insulator_transforms: Array[Transform3D] = []
+	var streetlight_arm_transforms: Array[Transform3D] = []
+	var streetlight_lamp_transforms: Array[Transform3D] = []
 	var placed_poles := 0
 	for road in _roads:
 		if str(road.get("highway", "")) in ["footway", "path", "pedestrian"]:
@@ -743,6 +747,29 @@ func _add_utility_network() -> void:
 			var midpoint := (points[index] + points[index + 1]) * 0.5 + outward * (width * 0.5 + 2.0)
 			pole_transforms.append(Transform3D(Basis(), Vector3(midpoint.x, 3.0, midpoint.y)))
 			placed_poles += 1
+
+			var road_angle := atan2(-direction.y, direction.x)
+			var crossarm_angle := road_angle + PI * 0.5
+			crossarm_transforms.append(Transform3D(
+				Basis(Vector3.UP, crossarm_angle).scaled(Vector3(1.55, 0.13, 0.13)),
+				Vector3(midpoint.x, 5.55, midpoint.y)
+			))
+			var cross_direction := Vector2(cos(crossarm_angle), -sin(crossarm_angle))
+			for cross_side in [-0.55, 0.55]:
+				var insulator_point := midpoint + cross_direction * cross_side
+				insulator_transforms.append(Transform3D(Basis(), Vector3(insulator_point.x, 5.70, insulator_point.y)))
+
+			var toward_road := -outward
+			var lamp_angle := atan2(-toward_road.y, toward_road.x)
+			streetlight_arm_transforms.append(Transform3D(
+				Basis(Vector3.UP, lamp_angle).scaled(Vector3(1.0, 0.075, 0.075)),
+				Vector3(midpoint.x + toward_road.x * 0.48, 5.15, midpoint.y + toward_road.y * 0.48)
+			))
+			streetlight_lamp_transforms.append(Transform3D(
+				Basis(Vector3.UP, lamp_angle).scaled(Vector3(0.34, 0.12, 0.22)),
+				Vector3(midpoint.x + toward_road.x * 0.98, 5.12, midpoint.y + toward_road.y * 0.98)
+			))
+
 			var wire_start := Vector3(points[index].x + outward.x * (width * 0.5 + 2.0), 6.0, points[index].y + outward.y * (width * 0.5 + 2.0))
 			var wire_end := Vector3(points[index + 1].x + outward.x * (width * 0.5 + 2.0), 6.0, points[index + 1].y + outward.y * (width * 0.5 + 2.0))
 			var wire_direction := wire_end - wire_start
@@ -751,7 +778,11 @@ func _add_utility_network() -> void:
 				var basis := Basis().looking_at(wire_direction.normalized(), Vector3.UP) * Basis(Vector3.RIGHT, PI * 0.5)
 				wire_transforms.append(Transform3D(basis.scaled(Vector3(0.025, wire_length, 0.025)), (wire_start + wire_end) * 0.5))
 	_add_cylinder_batch("OSMUtilityPoles", 0.09, 6.0, pole_transforms, Color(0.20, 0.18, 0.15))
+	_add_cylinder_batch("OSMUtilityInsulators", 0.045, 0.18, insulator_transforms, Color(0.25, 0.24, 0.20))
 	_add_cylinder_batch("OSMOverheadWires", 0.025, 1.0, wire_transforms, Color(0.06, 0.06, 0.055))
+	_add_box_batch("OSMUtilityCrossarms", Vector3.ONE, crossarm_transforms, Color(0.28, 0.23, 0.16))
+	_add_box_batch("OSMStreetlightArms", Vector3.ONE, streetlight_arm_transforms, Color(0.16, 0.17, 0.16))
+	_add_box_batch("OSMStreetlightHeads", Vector3.ONE, streetlight_lamp_transforms, Color(0.76, 0.73, 0.62))
 
 func _add_road_labels() -> void:
 	var count := 0
