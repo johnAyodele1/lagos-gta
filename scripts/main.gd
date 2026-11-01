@@ -122,6 +122,22 @@ func _add_hud() -> void:
 	_quality_button.pressed.connect(_cycle_graphics_quality)
 	layer.add_child(_quality_button)
 
+	var map_attribution := Label.new()
+	map_attribution.name = "OpenStreetMapAttribution"
+	map_attribution.text = "Map data © OpenStreetMap contributors · ODbL 1.0"
+	map_attribution.anchor_left = 1.0
+	map_attribution.anchor_right = 1.0
+	map_attribution.anchor_top = 0.0
+	map_attribution.anchor_bottom = 0.0
+	map_attribution.offset_left = -300.0
+	map_attribution.offset_right = -16.0
+	map_attribution.offset_top = 62.0
+	map_attribution.offset_bottom = 82.0
+	map_attribution.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	map_attribution.add_theme_font_size_override("font_size", 10)
+	map_attribution.add_theme_color_override("font_color", Color(0.92, 0.92, 0.88))
+	layer.add_child(map_attribution)
+
 func _cycle_graphics_quality() -> void:
 	var options := ["low", "balanced", "high"]
 	var current := str(_graphics_profile.get("name", "balanced"))
