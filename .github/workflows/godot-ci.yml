@@ -1,0 +1,46 @@
+name: Godot CI
+
+on:
+  push:
+    branches:
+      - main
+      - "feat/**"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          GODOT_VERSION="4.3-stable"
+          GODOT_ARCHIVE="Godot_v${GODOT_VERSION}_linux.x86_64"
+          curl --fail --location --retry 3 \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/${GODOT_ARCHIVE}.zip" \
+            --output godot.zip
+          unzip godot.zip -d godot-bin
+          chmod +x "godot-bin/${GODOT_ARCHIVE}"
+          echo "$PWD/godot-bin" >> "$GITHUB_PATH"
+          echo "GODOT_BIN=$PWD/godot-bin/${GODOT_ARCHIVE}" >> "$GITHUB_ENV"
+
+      - name: Import project and parse scripts
+        run: '"$GODOT_BIN" --headless --editor --path . --quit'
+
+      - name: Run gameplay input tests
+        run: '"$GODOT_BIN" --headless --path . --script res://tests/run_tests.gd'
+
+      - name: Run prototype with the Compatibility renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a "$GODOT_BIN" --path . --rendering-method gl_compatibility --audio-driver Dummy --quit-after 5

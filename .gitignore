@@ -1,0 +1,13 @@
+# Godot generated/imported files
+.godot/
+.import/
+.export/
+# Exported builds
+build/
+dist/
+exports/
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
