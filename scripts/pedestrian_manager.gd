@@ -159,6 +159,8 @@ func _create_rigged_visuals() -> void:
 			animation_player.speed_scale = float(_walkers[index]["speed"])
 
 func _apply_pedestrian_materials(model: Node3D, shirt_color: Color, skin_color: Color) -> void:
+	if DisplayServer.get_name() == "headless":
+		return
 	var palette: Array[Color] = [
 		shirt_color, shirt_color, skin_color, Color(0.08, 0.09, 0.10),
 		Color(0.025, 0.025, 0.025), Color(0.28, 0.27, 0.25),
