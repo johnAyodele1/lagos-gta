@@ -5,6 +5,9 @@ on:
     branches: ["feat/district-visual-asset-overhaul-v2"]
     paths:
       - tools/import_polyhaven_district_materials.py
+      - tools/test_import_polyhaven_district_materials.py
+      - scripts/district_pbr_materials.gd
+      - scripts/osm_world_generator.gd
       - .github/workflows/import-polyhaven-district-materials.yml
 permissions:
   contents: write
