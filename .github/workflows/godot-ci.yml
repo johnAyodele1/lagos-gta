@@ -40,10 +40,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a "$GODOT_BIN" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/run_tests.gd
+          LOG_FILE="$(mktemp)"
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a "$GODOT_BIN" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/run_tests.gd 2>&1 | tee "$LOG_FILE"
+          if grep -E "SCRIPT ERROR|ERROR:" "$LOG_FILE"; then
+            echo "Godot reported runtime errors during gameplay tests."
+            exit 1
+          fi
 
       - name: Run prototype with the Compatibility renderer
         shell: bash
         run: |
           set -euo pipefail
-          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a "$GODOT_BIN" --path . --rendering-method gl_compatibility --audio-driver Dummy --quit-after 5
+          LOG_FILE="$(mktemp)"
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a "$GODOT_BIN" --path . --rendering-method gl_compatibility --audio-driver Dummy --quit-after 5 2>&1 | tee "$LOG_FILE"
+          if grep -E "SCRIPT ERROR|ERROR:" "$LOG_FILE"; then
+            echo "Godot reported runtime errors during the game smoke test."
+            exit 1
+          fi
