@@ -36,10 +36,23 @@ func _ensure_scene_materials() -> void:
 	fallback.albedo_color = Color(0.42, 0.42, 0.40)
 	fallback.roughness = 0.9
 	var missing_surfaces := 0
+	var empty_mesh_nodes := 0
 	var affected_nodes: Array[String] = []
 	for node in find_children("*", "MeshInstance3D", true, false):
 		var mesh_instance := node as MeshInstance3D
 		if mesh_instance.mesh == null:
+			empty_mesh_nodes += 1
+			if mesh_instance.get_child_count() == 0:
+				mesh_instance.queue_free()
+			else:
+				var invisible_placeholder := BoxMesh.new()
+				invisible_placeholder.size = Vector3.ONE * 0.001
+				var invisible_material := StandardMaterial3D.new()
+				invisible_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				invisible_material.albedo_color = Color(0.0, 0.0, 0.0, 0.0)
+				invisible_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+				mesh_instance.mesh = invisible_placeholder
+				mesh_instance.material_override = invisible_material
 			continue
 		# Instance overrides are not a substitute for a valid source surface
 		# material on every renderer/backend. Repair a duplicate mesh resource
@@ -64,6 +77,7 @@ func _ensure_scene_materials() -> void:
 	for node in find_children("*", "MultiMeshInstance3D", true, false):
 		var batch := node as MultiMeshInstance3D
 		if batch.multimesh == null or batch.multimesh.mesh == null:
+			batch.queue_free()
 			continue
 		var batch_mesh_copy := batch.multimesh.mesh.duplicate() as Mesh
 		if batch_mesh_copy == null:
@@ -84,6 +98,8 @@ func _ensure_scene_materials() -> void:
 			batch.material_override = fallback
 	if missing_surfaces > 0:
 		push_warning("Assigned fallback base materials to %d render surfaces: %s" % [missing_surfaces, ", ".join(affected_nodes)])
+	if empty_mesh_nodes > 0:
+		push_warning("Repaired or removed %d empty MeshInstance3D nodes before rendering." % empty_mesh_nodes)
 
 func _build_environment() -> void:
 	var world_environment := WorldEnvironment.new()
