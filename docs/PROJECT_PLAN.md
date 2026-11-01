@@ -12,6 +12,7 @@ Build an original open-world 3D game rooted in Lagos, Nigeria. The project shoul
 - Touchscreen virtual joystick, drag-to-look, sprint and jump controls.
 - Procedurally generated Yaba-inspired road junction, sidewalks, multi-storey buildings, batched windows, rooftop tanks, compound walls, utility poles, market stalls, produce crates, a danfo stop and district signage.
 - A controllable yellow danfo minibus with arcade steering, forward/reverse limits, mobile joystick driving, sprint boost, camera follow and enter/exit interaction.
+- A lightweight articulated 3D player avatar with a procedural walk cycle, plus a parked keke tricycle landmark.
 - Shared material cache and MultiMesh batching for repeated building windows.
 - First-run Terms & Conditions and Privacy Notice with explicit consent, versioning, local storage and a persistent legal-access button.
 - Automated headless tests for movement normalization, camera pitch limits and joystick deadzone/clamping.
