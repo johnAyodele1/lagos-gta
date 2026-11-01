@@ -52,10 +52,20 @@ static func _combined_local_bounds(root: Node3D) -> AABB:
 				mesh_bounds.size.y if (corner_index & 2) != 0 else 0.0,
 				mesh_bounds.size.z if (corner_index & 4) != 0 else 0.0
 			)
-			var point := root.to_local(mesh_instance.to_global(corner))
+			var point := _relative_transform(root, mesh_instance) * corner
 			if not has_bounds:
 				combined = AABB(point, Vector3.ZERO)
 				has_bounds = true
 			else:
 				combined = combined.expand(point)
 	return combined
+
+static func _relative_transform(root: Node3D, node: Node3D) -> Transform3D:
+	var result := Transform3D.IDENTITY
+	var current: Node3D = node
+	while current != null and current != root:
+		result = current.transform * result
+		current = current.get_parent() as Node3D
+	if current != root:
+		return Transform3D.IDENTITY
+	return result
