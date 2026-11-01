@@ -164,6 +164,7 @@ func _apply_pedestrian_materials(model: Node3D, shirt_color: Color, skin_color: 
 		Color(0.025, 0.025, 0.025), Color(0.28, 0.27, 0.25),
 		Color(0.025, 0.022, 0.018), Color(0.025, 0.022, 0.018), Color(0.015, 0.012, 0.01)
 	]
+	ModelBoundsScript.ensure_surface_materials(model, palette)
 	for node in model.find_children("*", "MeshInstance3D", true, false):
 		var mesh_instance := node as MeshInstance3D
 		if mesh_instance.mesh == null:
