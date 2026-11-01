@@ -138,10 +138,12 @@ func _capture_world() -> void:
 		preview_camera.name = "UnderpassPreviewCamera"
 		preview_camera.fov = 72.0
 		root.add_child(preview_camera)
-		preview_camera.global_position = underpass.global_transform * Vector3(0, 6.0, -16.0)
-		var underpass_target: Vector3 = underpass.global_position + Vector3.UP * 1.8
+		preview_camera.global_position = underpass.global_transform * Vector3(0, 4.2, -7.0)
+		var underpass_target: Vector3 = underpass.global_transform * Vector3(0, 1.7, 0)
 		preview_camera.look_at(underpass_target, Vector3.UP)
 		preview_camera.make_current()
+		preview_camera.current = true
+		print("PREVIEW_UNDERPASS_VIEWPORT_CAMERA=", get_viewport().get_camera_3d().get_path() if get_viewport().get_camera_3d() != null else NodePath())
 		print("PREVIEW_UNDERPASS_POSITION=", underpass.global_position)
 		print("PREVIEW_UNDERPASS_CAMERA_POSITION=", preview_camera.global_position)
 		print("PREVIEW_UNDERPASS_CAMERA_TARGET=", underpass_target)
