@@ -2,6 +2,8 @@ extends SceneTree
 
 const PlayerScript = preload("res://scripts/player_controller.gd")
 const MobileControlsScript = preload("res://scripts/mobile_controls.gd")
+const WorldGeneratorScript = preload("res://scripts/world_generator.gd")
+const MainSceneScript = preload("res://scripts/main.gd")
 
 var failures: int = 0
 var assertions: int = 0
@@ -13,6 +15,8 @@ func _run() -> void:
 	_test_normalize_move_input()
 	_test_camera_pitch_clamp()
 	_test_mobile_joystick()
+	_check(WorldGeneratorScript != null, "world generator script compiles")
+	_check(MainSceneScript != null, "main scene script and dependencies compile")
 	if failures > 0:
 		push_error("%d of %d gameplay input tests failed." % [failures, assertions])
 		quit(1)
