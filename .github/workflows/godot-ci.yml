@@ -42,7 +42,7 @@ jobs:
           set -euo pipefail
           LOG_FILE="$(mktemp)"
           "$GODOT_BIN" --headless --path . --audio-driver Dummy --script res://tests/run_tests.gd 2>&1 | tee "$LOG_FILE"
-          SUMMARY_LINE="$(grep -nE 'All [0-9]+ gameplay input tests passed\\.' "$LOG_FILE" | tail -n 1 | cut -d: -f1 || true)"
+          SUMMARY_LINE="$(grep -nE 'All [0-9]+ gameplay input tests passed\.' "$LOG_FILE" | tail -n 1 | cut -d: -f1 || true)"
           if [ -z "$SUMMARY_LINE" ]; then
             echo "Gameplay test summary was not produced."
             exit 1
