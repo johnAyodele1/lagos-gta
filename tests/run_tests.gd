@@ -239,10 +239,11 @@ func _test_osm_world_generator() -> void:
 	_check(is_equal_approx(OSMWorldGeneratorScript._resolve_building_height({"height_source": "estimated:yes-default", "building": "yes"}, 400.0), 11.5), "larger unmapped Yaba footprints receive varied multi-storey massing")
 	_check(is_equal_approx(OSMWorldGeneratorScript._resolve_building_height({"building": "industrial"}, 500.0), 5.5), "industrial building height estimates do not use residential footprint tiers")
 	var spawn_world = OSMWorldGeneratorScript.new()
-	spawn_world._roads = [
+	var spawn_roads: Array[Dictionary] = [
 		{"name": "", "highway": "service", "surface": "unpaved", "width_m": 4.0, "coordinates": [[-5.0, 0.0], [5.0, 0.0]]},
 		{"name": "Olajuwon Street", "highway": "residential", "surface": "unpaved", "width_m": 6.0, "coordinates": [[20.0, -50.0], [20.0, 50.0]]}
 	]
+	spawn_world._roads = spawn_roads
 	var spawn_road := spawn_world._nearest_road_sample()
 	_check(str(spawn_road["name"]) == "Olajuwon Street", "player and danfo spawn on a named public Yaba street instead of an unnamed service lane")
 	spawn_world.free()
