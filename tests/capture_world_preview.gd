@@ -13,11 +13,13 @@ func _validate_render_materials(scene: Node) -> bool:
 	var empty_meshes := 0
 	for node in scene.find_children("*", "MeshInstance3D", true, false):
 		var mesh_instance := node as MeshInstance3D
+		# MeshInstance3D is also used as a transform/visibility container for
+		# imported character scenes. A null mesh on such a parent is not renderable
+		# geometry and must not be reported as an empty render node.
 		if mesh_instance.mesh == null:
-			empty_meshes += 1
 			continue
 		for surface_index in range(mesh_instance.mesh.get_surface_count()):
-			if mesh_instance.mesh.surface_get_material(surface_index) == null:
+			if mesh_instance.get_active_material(surface_index) == null:
 				missing_materials += 1
 				print("PREVIEW_NULL_MATERIAL_PATH=", mesh_instance.get_path(), " surface=", surface_index)
 	for node in scene.find_children("*", "MultiMeshInstance3D", true, false):
@@ -26,7 +28,7 @@ func _validate_render_materials(scene: Node) -> bool:
 			empty_meshes += 1
 			continue
 		for surface_index in range(batch.multimesh.mesh.get_surface_count()):
-			if batch.multimesh.mesh.surface_get_material(surface_index) == null:
+			if batch.get_active_material(surface_index) == null:
 				missing_materials += 1
 				print("PREVIEW_NULL_MULTIMESH_MATERIAL_PATH=", batch.get_path(), " surface=", surface_index)
 	for node in scene.find_children("*", "Label3D", true, false):
