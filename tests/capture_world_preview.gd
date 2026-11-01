@@ -24,8 +24,14 @@ func _capture_world() -> void:
 	var world := main_scene.get_node_or_null("YabaOpenStreetMapDistrict") as OSMWorldGenerator
 	if player != null:
 		print("PREVIEW_PLAYER_POSITION=", player.global_position)
+		print("PREVIEW_PLAYER_ROTATION=", player.global_rotation)
+		print("PREVIEW_PIVOT_ROTATION=", player.camera_pivot.global_rotation)
+		print("PREVIEW_CAMERA_ROTATION=", player.camera.global_rotation)
 		print("PREVIEW_CAMERA_POSITION=", player.camera.global_position)
 		print("PREVIEW_CAMERA_FORWARD=", -player.camera.global_basis.z)
+		var player_target := player.global_position + Vector3.UP * 1.0
+		var direction_to_player := (player_target - player.camera.global_position).normalized()
+		print("PREVIEW_PLAYER_IN_FRONT_DOT=", direction_to_player.dot(-player.camera.global_basis.z))
 		print("PREVIEW_BODY_VISIBLE=", player.body_mesh.visible)
 		print("PREVIEW_CAMERA_CURRENT=", player.camera.current)
 		print("PREVIEW_SPRING_LENGTH=", player.camera_pivot.spring_length)
