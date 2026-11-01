@@ -1,6 +1,6 @@
 extends CharacterBody3D
-const LABEL_FONT = preload("res://assets/fonts/Roboto.ttf")
 class_name VehicleController
+const LABEL_FONT = preload("res://assets/fonts/Roboto.ttf")
 
 const MAX_FORWARD_SPEED: float = 22.0
 const MAX_REVERSE_SPEED: float = 8.0
