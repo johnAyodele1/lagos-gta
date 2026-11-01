@@ -122,4 +122,31 @@ func _capture_world() -> void:
 		push_error("Unable to save world preview: %s" % error_string(save_error))
 		quit(1)
 		return
+
+	# Capture a second view at the mapped Yaba Flyover mechanic bay. This is
+	# separate from the normal spawn screenshot so the landmark is actually reviewed.
+	var underpass := world.find_child("YabaUnderpassMechanicBay", true, false) as Node3D if world != null else null
+	if underpass != null and player != null:
+		player.set_process(false)
+		player.set_physics_process(false)
+		player.camera_pivot.set_process(false)
+		player.camera_pivot.set_physics_process(false)
+		player.global_position = underpass.global_transform * Vector3(0, 0, -8.0)
+		player.camera.global_position = underpass.global_transform * Vector3(0, 6.0, -16.0)
+		player.camera.look_at(underpass.global_position + Vector3.UP * 1.8, Vector3.UP)
+		player.camera.make_current()
+		await process_frame
+		var underpass_image := root.get_texture().get_image()
+		if underpass_image == null or underpass_image.is_empty():
+			push_error("Underpass preview capture returned an empty image.")
+			quit(1)
+			return
+		var underpass_error := underpass_image.save_png("user://yaba-underpass-preview.png")
+		if underpass_error != OK:
+			push_error("Unable to save underpass preview: %s" % error_string(underpass_error))
+			quit(1)
+			return
+		print("PREVIEW_UNDERPASS_CAPTURED=", underpass.get_path())
+	else:
+		push_warning("No mapped Yaba bridge mechanic bay was available for the underpass screenshot.")
 	quit()
