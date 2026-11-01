@@ -2,6 +2,7 @@ extends SceneTree
 
 const PlayerScript = preload("res://scripts/player_controller.gd")
 const MobileControlsScript = preload("res://scripts/mobile_controls.gd")
+const LegalConsentScript = preload("res://scripts/legal_consent.gd")
 
 var failures: int = 0
 var assertions: int = 0
@@ -15,6 +16,7 @@ func _run() -> void:
 	_test_mobile_joystick()
 	_test_mobile_button_state()
 	_test_mobile_touch_routing()
+	_test_legal_consent_versioning()
 	_test_project_scripts_load()
 	if failures > 0:
 		push_error("%d of %d gameplay input tests failed." % [failures, assertions])
@@ -93,6 +95,12 @@ func _test_mobile_touch_routing() -> void:
 	_check(controls.consume_look_delta() == Vector2.ZERO, "app focus loss clears camera drag")
 	_check(not controls.consume_jump_request(), "app focus loss clears pending jump")
 	controls.free()
+
+func _test_legal_consent_versioning() -> void:
+	_check(not LegalConsentScript.is_current_consent(0), "first launch requires explicit legal consent")
+	_check(LegalConsentScript.is_current_consent(LegalConsentScript.LEGAL_VERSION), "current legal version remains accepted")
+	_check(not LegalConsentScript.is_current_consent(LegalConsentScript.LEGAL_VERSION - 1), "updated terms require renewed acceptance")
+	_check(not LegalConsentScript.is_current_consent(LegalConsentScript.LEGAL_VERSION + 1), "unknown future consent versions are not silently accepted")
 
 func _test_project_scripts_load() -> void:
 	var world_script = ResourceLoader.load("res://scripts/world_generator.gd")
