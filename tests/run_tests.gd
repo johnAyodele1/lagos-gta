@@ -274,6 +274,8 @@ func _test_osm_world_generator() -> void:
 	var compound_player = PlayerScript.new()
 	root.add_child(compound_player)
 	compound_player.global_position = Vector3(3.0, 0.5, -6.2)
+	# Diagnostic: isolate the wall/camera rendering path from the character mesh.
+	compound_player.body_mesh.visible = false
 	await physics_frame
 	var compound_collision = compound_player.move_and_collide(Vector3(6.0, 0.0, 0.0))
 	_check(compound_collision != null, "player cannot walk through art-directed residential compound walls")
