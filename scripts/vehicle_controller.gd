@@ -50,6 +50,8 @@ func _build_vehicle() -> void:
 	body_collision.shape = body_shape
 	body_collision.position.y = 1.175
 	add_child(body_collision)
+	if DisplayServer.get_name() == "headless":
+		return
 
 	var danfo_mesh := load("res://assets/models/vehicles/danfo/car-minibus-citrus.obj") as Mesh
 	if danfo_mesh == null:
