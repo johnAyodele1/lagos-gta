@@ -125,7 +125,9 @@ func _capture_world() -> void:
 
 	# Capture a second view at the mapped Yaba Flyover mechanic bay. This is
 	# separate from the normal spawn screenshot so the landmark is actually reviewed.
-	var underpass := world.find_child("YabaUnderpassMechanicBay", true, false) as Node3D if world != null else null
+	var underpass: Node3D = null
+	if world != null:
+		underpass = world.find_child("YabaUnderpassMechanicBay", true, false) as Node3D
 	if underpass != null and player != null:
 		player.set_process(false)
 		player.set_physics_process(false)
