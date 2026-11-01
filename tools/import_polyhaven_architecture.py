@@ -117,13 +117,19 @@ def main() -> None:
             destination = output_dir / "modular_urban_apartments_facade.glb"
             shutil.copy2(selected_model, destination)
         else:
-            source_root = selected_model.parent
+            # Preserve the complete archive tree: Poly Haven's glTF references
+            # texture files in sibling subdirectories, not just beside the scene.
             destination_root = output_dir / "source"
             if destination_root.exists():
                 shutil.rmtree(destination_root)
-            shutil.copytree(source_root, destination_root)
-            destination = destination_root / "source.gltf"
-            shutil.copy2(destination_root / selected_model.name, destination)
+            shutil.copytree(extracted, destination_root)
+            relative_model = selected_model.relative_to(extracted)
+            destination = destination_root / relative_model
+            renamed_scene = destination.with_name("source.gltf")
+            if destination != renamed_scene:
+                shutil.copy2(destination, renamed_scene)
+                destination.unlink()
+            destination = renamed_scene
     elif suffix == ".glb":
         destination = output_dir / "modular_urban_apartments_facade.glb"
         destination.write_bytes(payload)
@@ -147,6 +153,7 @@ def main() -> None:
         "imported_scene": str(destination.relative_to(output_dir)),
         "runtime_network_dependency": False,
     }, indent=2) + "\n", encoding="utf-8")
+    shutil.rmtree(staging, ignore_errors=True)
     print(f"Downloaded and verified Poly Haven source package: {destination}")
     print("Next step: convert source.gltf to the runtime GLB when the source package is glTF.")
 
