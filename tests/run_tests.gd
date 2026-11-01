@@ -177,12 +177,12 @@ func _test_ambient_traffic() -> void:
 	var traffic = TrafficManagerScript.new()
 	root.add_child(traffic)
 	_check(traffic.get_traffic_count() == 8, "Yaba district spawns a bounded eight-car ambient traffic pool")
-	var first_vehicle := traffic.get_child(0) as Node3D
 	var starting_distance := traffic.get_traffic_distance(0)
+	var starting_position := traffic.get_traffic_position(0)
 	traffic._process(1.0)
 	_check(traffic.get_traffic_distance(0) > starting_distance, "ambient traffic advances every vehicle along its lane")
-	_check(first_vehicle.position.z > -60.0, "north-south traffic advances along the road instead of remaining static")
-	_check(first_vehicle.get_child_count() >= 6, "traffic vehicles include low-poly body, cabin and wheel meshes")
+	_check(traffic.get_traffic_position(0).z > starting_position.z, "north-south traffic advances along the road instead of remaining static")
+	_check(traffic.get_child_count() == 3, "all background traffic is rendered through three shared multimesh batches")
 	traffic.queue_free()
 
 func _test_project_scripts_load() -> void:
