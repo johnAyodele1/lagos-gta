@@ -53,7 +53,10 @@ The current district is built from OSM road centre-lines and building footprints
 
 ## Current map-data quality (2026-11-01 extract)
 
-The committed OSM extract contains 587 road ways, 7,470 building footprints and only one mapped barrier way in the current bounds. Its road surface tags are 33 paved, 477 unpaved and 77 unknown. Only one road has an explicit width; the other 586 widths are estimates based on highway class or lane count. Building height coverage is much weaker: only one footprint has an explicit height, while most footprints have a generic fallback height because OSM does not provide levels or height tags.
+The committed OSM extract contains 587 road ways, 7,470 building footprints and only one mapped barrier way in the current bounds. Its road surface tags are 33 paved, 477 unpaved and 77 unknown. Only one road has an explicit width; the other 586 widths are estimates based on highway class or lane count. Building height coverage is much weaker: only one footprint has an explicit height and none currently has a mapped storey count. The renderer uses explicit heights where present, then a documented footprint-area tier estimate for unknown residential-scale buildings; industrial, roof and grandstand types use separate fallbacks. These are visual estimates, not surveyed storeys.
+
+
+The player and danfo spawn selector now prefers a named public street over an unnamed service/access lane. This avoids beginning the game in an empty market/service yard when a nearby named Yaba street is available. Untagged street-edge footprints may receive a limited inferred shopfront treatment based on proximity to mapped roads; those are art-direction decisions, not verified OSM shop classifications.
 
 These figures matter. The map geometry is real OSM geometry, but it is not a survey-grade reconstruction. A street with estimated width or a building with fallback height must not be presented as exact. The renderer should preserve known surface tags and avoid inventing precise dimensions where the source does not provide them. A later mapping pass should add locally verified road widths, building storeys, compound gates and frontage classification from properly licensed field references.
 
