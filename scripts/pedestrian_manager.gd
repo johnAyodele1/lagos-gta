@@ -30,6 +30,7 @@ var _head_batch: MultiMeshInstance3D
 var _arm_batch: MultiMeshInstance3D
 var _leg_batch: MultiMeshInstance3D
 var _collision_bodies: Array[AnimatableBody3D] = []
+var _last_directions: Array[Vector3] = []
 var _elapsed := 0.0
 
 static func advance_distance(distance: float, speed: float, delta: float, route_length: float = 110.0) -> float:
@@ -193,6 +194,7 @@ func _create_collision_proxies() -> void:
 		_collision_bodies.append(body)
 
 func _update_batches() -> void:
+	_last_directions.clear()
 	for index in range(_walkers.size()):
 		var walker: Dictionary = _walkers[index]
 		var route: Dictionary = _routes[int(walker["route_index"])]
@@ -200,6 +202,7 @@ func _update_batches() -> void:
 		var position: Vector2 = sample["position"]
 		var direction: Vector2 = sample["direction"]
 		var direction_3d := Vector3(direction.x, 0.0, direction.y)
+		_last_directions.append(direction_3d)
 		var basis := Basis.looking_at(direction_3d, Vector3.UP)
 		var phase := float(walker["phase"])
 		var stride := sin(_elapsed * 6.0 + phase) * 0.24
@@ -258,3 +261,8 @@ func get_pedestrian_position(index: int) -> Vector3:
 	if index < 0 or index >= _walkers.size():
 		return Vector3.ZERO
 	return _torso_batch.multimesh.get_instance_transform(index).origin
+
+func get_pedestrian_direction(index: int) -> Vector3:
+	if index < 0 or index >= _last_directions.size():
+		return Vector3.ZERO
+	return _last_directions[index]
