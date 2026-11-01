@@ -183,6 +183,7 @@ func _test_visual_meshes() -> void:
 	_check(is_equal_approx(player.camera.rotation.x, deg_to_rad(-14.0)), "third-person camera pitches down toward the street instead of looking at the sky")
 	_check(player.camera.rotation.is_equal_approx(Vector3(deg_to_rad(-14.0), 0.0, 0.0)), "camera keeps its downward street-facing pitch")
 	var rigged_player: Node3D
+	var player_meshes: Array[Node] = []
 	if player.body_mesh != null:
 		rigged_player = player.get_node_or_null("RiggedLagosPlayer") as Node3D
 	await process_frame
@@ -193,7 +194,7 @@ func _test_visual_meshes() -> void:
 			_check(is_equal_approx(player_local_bounds.size.y * rigged_player.scale.y, 1.76), "player visual is normalized to 1.76m rather than scaling larger than the danfo")
 			var player_animation := rigged_player.find_child("AnimationPlayer", true, false) as AnimationPlayer
 			_check(player_animation != null and player_animation.has_animation("HumanArmature|Man_Walk"), "player model includes real walk animation clips")
-			var player_meshes: Array[Node] = rigged_player.find_children("*", "MeshInstance3D", true, false)
+			player_meshes = rigged_player.find_children("*", "MeshInstance3D", true, false)
 			var player_materials_valid := not player_meshes.is_empty()
 			for mesh_node in player_meshes:
 				var mesh_instance := mesh_node as MeshInstance3D
