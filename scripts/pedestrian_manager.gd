@@ -154,22 +154,21 @@ func _create_rigged_visuals() -> void:
 			animation_player.speed_scale = float(_walkers[index]["speed"])
 
 func _apply_pedestrian_materials(model: Node3D, shirt_color: Color, skin_color: Color) -> void:
+	var palette: Array[Color] = [
+		shirt_color, shirt_color, skin_color, Color(0.08, 0.09, 0.10),
+		Color(0.025, 0.025, 0.025), Color(0.28, 0.27, 0.25),
+		Color(0.025, 0.022, 0.018), Color(0.025, 0.022, 0.018), Color(0.015, 0.012, 0.01)
+	]
 	for node in model.find_children("*", "MeshInstance3D", true, false):
 		var mesh_instance := node as MeshInstance3D
 		if mesh_instance.mesh == null:
 			continue
 		for surface_index in range(mesh_instance.mesh.get_surface_count()):
-			var source_material := mesh_instance.get_active_material(surface_index)
-			if not source_material is StandardMaterial3D:
-				continue
-			var material := (source_material as StandardMaterial3D).duplicate() as StandardMaterial3D
-			var material_name := source_material.resource_name.to_lower()
-			if material_name.contains("shirt") or surface_index <= 1:
-				material.albedo_color = shirt_color
-				mesh_instance.set_surface_override_material(surface_index, material)
-			elif material_name.contains("skin") or surface_index == 2:
-				material.albedo_color = skin_color
-				mesh_instance.set_surface_override_material(surface_index, material)
+			var material := StandardMaterial3D.new()
+			material.albedo_color = palette[mini(surface_index, palette.size() - 1)]
+			material.roughness = 0.88
+			mesh_instance.set_surface_override_material(surface_index, material)
+
 
 func _create_collision_proxies() -> void:
 	for index in range(_walkers.size()):
