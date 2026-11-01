@@ -143,7 +143,7 @@ func _capture_world() -> void:
 		preview_camera.look_at(underpass_target, Vector3.UP)
 		preview_camera.make_current()
 		preview_camera.current = true
-		print("PREVIEW_UNDERPASS_VIEWPORT_CAMERA=", root.get_viewport().get_camera_3d().get_path() if get_viewport().get_camera_3d() != null else NodePath())
+		print("PREVIEW_UNDERPASS_CAMERA_CURRENT=", preview_camera.current)
 		print("PREVIEW_UNDERPASS_POSITION=", underpass.global_position)
 		print("PREVIEW_UNDERPASS_CAMERA_POSITION=", preview_camera.global_position)
 		print("PREVIEW_UNDERPASS_CAMERA_TARGET=", underpass_target)
