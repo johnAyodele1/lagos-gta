@@ -29,6 +29,7 @@ const SKIN_COLORS: Array[Color] = [
 var _routes: Array[Dictionary] = []
 var _walkers: Array[Dictionary] = []
 var _visuals: Array[Node3D] = []
+var _visual_local_transforms: Array[Transform3D] = []
 var _animation_players: Array[AnimationPlayer] = []
 var _collision_bodies: Array[AnimatableBody3D] = []
 var _last_directions: Array[Vector3] = []
@@ -150,6 +151,7 @@ func _create_rigged_visuals() -> void:
 		if not ModelBoundsScript.fit_height(visual, 1.68):
 			push_warning("Pedestrian %02d could not be normalized to human height." % index)
 		_visuals.append(visual)
+		_visual_local_transforms.append(visual.transform)
 		var animation_player := visual.find_child("AnimationPlayer", true, false) as AnimationPlayer
 		_animation_players.append(animation_player)
 		if animation_player != null and animation_player.has_animation("HumanArmature|Man_Walk"):
@@ -204,7 +206,7 @@ func _update_rigged_visuals() -> void:
 		var basis := Basis.looking_at(direction_3d, Vector3.UP)
 		var world_transform := global_transform * Transform3D(basis, world_position)
 		if index < _visuals.size():
-			_visuals[index].global_transform = world_transform
+			_visuals[index].global_transform = world_transform * _visual_local_transforms[index]
 		if index < _collision_bodies.size():
 			_collision_bodies[index].global_transform = world_transform
 
