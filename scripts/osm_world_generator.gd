@@ -64,7 +64,6 @@ func generate_from_data(data: Dictionary) -> bool:
 	_add_ground()
 	_add_road_network()
 	_add_building_network()
-	_add_facade_batches()
 	_add_barrier_network()
 	_add_utility_network()
 	_add_road_labels()
