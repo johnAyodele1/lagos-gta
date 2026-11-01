@@ -244,8 +244,14 @@ func _test_osm_world_generator() -> void:
 		{"name": "Olajuwon Street", "highway": "residential", "surface": "unpaved", "width_m": 6.0, "coordinates": [[20.0, -50.0], [20.0, 50.0]]}
 	]
 	spawn_world._roads = spawn_roads
+	var spawn_buildings: Array[Dictionary] = [
+		{"outline": [[10.0, -5.0], [15.0, -5.0], [15.0, 5.0], [10.0, 5.0], [10.0, -5.0]]},
+		{"outline": [[25.0, -5.0], [30.0, -5.0], [30.0, 5.0], [25.0, 5.0], [25.0, -5.0]]}
+	]
+	spawn_world._buildings = spawn_buildings
 	var spawn_road := spawn_world._nearest_road_sample()
 	_check(str(spawn_road["name"]) == "Olajuwon Street", "player and danfo spawn on a named public Yaba street instead of an unnamed service lane")
+	_check(int(spawn_road["frontage_count"]) >= 2, "spawn selector prefers a street with mapped building frontage on both sides")
 	spawn_world.free()
 	var sample := {
 		"schema_version": 1,
