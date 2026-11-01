@@ -7,6 +7,7 @@ on:
     paths:
       - tools/fetch_yaba_osm.py
       - data/osm/yaba.overpassql
+      - .github/workflows/import-yaba-osm.yml
 
 permissions:
   contents: write
@@ -43,12 +44,18 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin "$GITHUB_REF_NAME"
-          git rebase "origin/$GITHUB_REF_NAME"
           git add assets/data/yaba_osm.json
           if git diff --cached --quiet; then
             echo "Yaba OSM extract is unchanged."
             exit 0
           fi
           git commit -m "data: import Yaba OpenStreetMap geometry"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          for attempt in 1 2 3; do
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+          done
+          echo "Unable to publish the refreshed OSM extract after three attempts."
+          exit 1
