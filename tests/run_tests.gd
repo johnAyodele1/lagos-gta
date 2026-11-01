@@ -30,6 +30,7 @@ func _run() -> void:
 	_test_pedestrians()
 	await _test_player_building_collision()
 	await _test_traffic_collision()
+	await _test_pedestrian_collision()
 	_test_project_scripts_load()
 	if failures > 0:
 		push_error("%d of %d gameplay input tests failed." % [failures, assertions])
@@ -227,13 +228,15 @@ func _test_ambient_traffic() -> void:
 	_check(is_equal_approx(TrafficManagerScript.advance_distance(10.0, 5.0, 1.0, 0.0), 0.0), "invalid zero-length traffic route is handled safely")
 
 	var traffic = TrafficManagerScript.new()
+	traffic.configure_from_roads(_sample_osm_roads())
 	root.add_child(traffic)
+	_check(traffic.get_route_count() == 4, "ambient traffic derives two-way lanes from mapped OSM road centre-lines")
 	_check(traffic.get_traffic_count() == 8, "Yaba district spawns a bounded eight-car ambient traffic pool")
 	var starting_distance := traffic.get_traffic_distance(0)
 	var starting_position := traffic.get_traffic_position(0)
 	traffic._process(1.0)
-	_check(traffic.get_traffic_distance(0) > starting_distance, "ambient traffic advances every vehicle along its lane")
-	_check(traffic.get_traffic_position(0).z > starting_position.z, "north-south traffic advances along the road instead of remaining static")
+	_check(traffic.get_traffic_distance(0) > starting_distance, "ambient traffic advances along its mapped road polyline")
+	_check(traffic.get_traffic_position(0) != starting_position, "ambient traffic transforms follow the road geometry")
 	_check(traffic.get_child_count() == 11, "traffic uses three shared render batches plus eight lightweight collision proxies")
 	_check(traffic.get_traffic_collision_count() == 8, "every ambient traffic vehicle has a physics collision proxy")
 	traffic.queue_free()
@@ -245,15 +248,24 @@ func _test_pedestrians() -> void:
 	_check(is_equal_approx(PedestrianManagerScript.advance_distance(12.0, 2.0, -1.0), 12.0), "negative frame delta cannot rewind pedestrians")
 
 	var pedestrians = PedestrianManagerScript.new()
+	pedestrians.configure_from_roads(_sample_osm_roads())
 	root.add_child(pedestrians)
+	_check(pedestrians.get_route_count() == 4, "pedestrian paths are offset from mapped OSM roads to follow their sidewalks")
 	_check(pedestrians.get_pedestrian_count() == 4, "Yaba sidewalks spawn a bounded four-person pedestrian population")
+	_check(pedestrians.get_pedestrian_collision_count() == 4, "each pedestrian has a low-cost capsule collision proxy")
 	var starting_distance := pedestrians.get_pedestrian_distance(0)
 	var starting_position := pedestrians.get_pedestrian_position(0)
 	pedestrians._process(1.0)
-	_check(pedestrians.get_pedestrian_distance(0) > starting_distance, "pedestrians walk along their sidewalk routes")
+	_check(pedestrians.get_pedestrian_distance(0) > starting_distance, "pedestrians walk along their mapped sidewalk routes")
 	_check(pedestrians.get_pedestrian_position(0) != starting_position, "pedestrian render transforms update as they walk")
-	_check(pedestrians.get_child_count() == 4, "pedestrian bodies and animated limbs use four shared multimesh batches")
+	_check(pedestrians.get_child_count() == 8, "pedestrian bodies use four shared mesh batches plus four collision proxies")
 	pedestrians.queue_free()
+
+func _sample_osm_roads() -> Array[Dictionary]:
+	return [
+		{"id": "sample-east-west", "name": "Hughes Avenue", "highway": "residential", "width_m": 6.0, "oneway": "no", "coordinates": [[-80.0, 0.0], [80.0, 0.0]]},
+		{"id": "sample-north-south", "name": "Herbert Macaulay Way", "highway": "secondary", "width_m": 8.0, "oneway": "no", "coordinates": [[0.0, -80.0], [0.0, 80.0]]}
+	]
 
 func _test_player_building_collision() -> void:
 	var world = WorldGeneratorScript.new()
@@ -272,16 +284,35 @@ func _test_player_building_collision() -> void:
 
 func _test_traffic_collision() -> void:
 	var traffic = TrafficManagerScript.new()
+	traffic.configure_from_roads(_sample_osm_roads())
 	root.add_child(traffic)
 	var player = PlayerScript.new()
 	root.add_child(player)
-	player.global_position = Vector3(-3.1, 0.5, -5.0)
+	var vehicle_position := traffic.get_traffic_position(0)
+	var vehicle_direction := traffic.get_traffic_direction(0)
+	player.global_position = Vector3(vehicle_position.x, 0.5, vehicle_position.z) - vehicle_direction * 5.0
 	await physics_frame
-	var collision = player.move_and_collide(Vector3(0.0, 0.0, 10.0))
+	var collision = player.move_and_collide(vehicle_direction * 10.0)
 	_check(collision != null, "player capsule collides with an ambient traffic vehicle")
 	_check(player.global_position.z < 1.5, "player cannot walk through an ambient traffic vehicle")
 	player.queue_free()
 	traffic.queue_free()
+	await physics_frame
+
+func _test_pedestrian_collision() -> void:
+	var pedestrians = PedestrianManagerScript.new()
+	pedestrians.configure_from_roads(_sample_osm_roads())
+	root.add_child(pedestrians)
+	var player = PlayerScript.new()
+	root.add_child(player)
+	var pedestrian_position := pedestrians.get_pedestrian_position(0)
+	var pedestrian_direction := pedestrians.get_pedestrian_direction(0)
+	player.global_position = Vector3(pedestrian_position.x, 0.5, pedestrian_position.z) - pedestrian_direction * 3.0
+	await physics_frame
+	var collision = player.move_and_collide(pedestrian_direction * 6.0)
+	_check(collision != null, "player capsule collides with a moving pedestrian")
+	player.queue_free()
+	pedestrians.queue_free()
 	await physics_frame
 
 func _test_project_scripts_load() -> void:
