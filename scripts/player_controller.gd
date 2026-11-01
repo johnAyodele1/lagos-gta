@@ -302,7 +302,7 @@ func _update_character_animation(delta: float) -> void:
 	var horizontal_speed := Vector2(velocity.x, velocity.z).length()
 	if _rigged_animation_player != null:
 		var animation_name := "HumanArmature|Man_Idle"
-		if not is_on_floor():
+		if not is_on_floor() and absf(velocity.y) > 0.1:
 			animation_name = "HumanArmature|Man_Jump"
 		elif horizontal_speed > 0.35:
 			animation_name = "HumanArmature|Man_Run" if horizontal_speed > WALK_SPEED * 1.15 else "HumanArmature|Man_Walk"
