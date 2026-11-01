@@ -866,7 +866,7 @@ func get_player_spawn_position() -> Vector3:
 	for longitudinal_offset in longitudinal_offsets:
 		var road_candidate := road_position + direction * longitudinal_offset
 		for side_sign in [1.0, -1.0]:
-			var candidate := road_candidate + side * sidewalk_offset * side_sign
+			var candidate: Vector2 = road_candidate + side * sidewalk_offset * side_sign
 			var clearance := _spawn_clearance(candidate)
 			if clearance > best_clearance:
 				best_clearance = clearance
