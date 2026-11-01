@@ -1,82 +1,89 @@
 #!/usr/bin/env python3
-"""Join Yaba OSM building ways to OpenBuildingMap's ODbL height/occupancy tile."""
+"""Enrich Yaba OSM building ways from the cloud-native OpenBuildingMap Parquet tile."""
 from __future__ import annotations
-import argparse, bz2, json, math, re, shutil, sqlite3, tempfile
+import argparse
+import json
+import math
+import re
 from pathlib import Path
-from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INPUT = ROOT / "assets/data/yaba_osm.json"
 LAT, LON, ZOOM = 6.51147, 3.37000, 6
-URL = "https://datapub.gfz.de/download/10.5880.GFZ.LKUT.2025.002-Caweb/2025-002_Oostwegel-et-al_data/building.{quadkey}.gpkg.bz2"
-UA = "LagosGTA-OpenBuildingMapImporter/1.0 (https://github.com/johnAyodele1/lagos-gta)"
-MAX_COMPRESSED_BYTES = 1024 * 1024 * 1024
+PARQUET_URL = "https://data.source.coop/tge-labs/openbuildingmap/building.{quadkey}.parquet"
 
 def quadkey_for(lat: float, lon: float, zoom: int = ZOOM) -> str:
     n = 1 << zoom
     x = int((lon + 180.0) / 360.0 * n)
     y = int((1.0 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2.0 * n)
-    out = []
+    digits = []
     for level in range(zoom, 0, -1):
         mask = 1 << (level - 1)
-        out.append(str((1 if x & mask else 0) + (2 if y & mask else 0)))
-    return "".join(out)
+        digits.append(str((1 if x & mask else 0) + (2 if y & mask else 0)))
+    return "".join(digits)
 
 def parse_height_taxonomy(value: str | None) -> tuple[float | None, str | None, float | None]:
+    """Return (metres, taxonomy key, approximate storeys); prefer HHT over story counts."""
     if not value:
         return None, None, None
-    parts = [p.strip() for p in value.split("+")]
+    parts = [part.strip() for part in value.split("+")]
     for part in parts:
-        m = re.fullmatch(r"HHT:(\d+(?:\.\d+)?)", part, re.I)
-        if m and 2 <= float(m.group(1)) <= 100:
-            return float(m.group(1)), "HHT", None
+        match = re.fullmatch(r"HHT:(\d+(?:\.\d+)?)", part, re.I)
+        if match and 2.0 <= float(match.group(1)) <= 100.0:
+            return float(match.group(1)), "HHT", None
     for key in ("H", "HAPP", "HBET"):
         for part in parts:
-            m = re.fullmatch(rf"{key}:(\d+(?:\.\d+)?)(?:\s*[-–]\s*(\d+(?:\.\d+)?))?", part, re.I)
-            if m:
-                stories = (float(m.group(1)) + float(m.group(2) or m.group(1))) / 2
-                if 1 <= stories <= 40:
+            match = re.fullmatch(rf"{key}:(\d+(?:\.\d+)?)(?:\s*[-–]\s*(\d+(?:\.\d+)?))?", part, re.I)
+            if match:
+                stories = (float(match.group(1)) + float(match.group(2) or match.group(1))) / 2.0
+                if 1.0 <= stories <= 40.0:
                     return stories * 3.1, key, stories
     return None, None, None
 
-def download_tile(url: str, destination: Path) -> None:
-    req = Request(url, headers={"User-Agent": UA, "Accept": "application/octet-stream"})
-    with urlopen(req, timeout=180) as response:
-        declared = response.headers.get("Content-Length")
-        if declared and int(declared) > MAX_COMPRESSED_BYTES:
-            raise RuntimeError(f"OpenBuildingMap tile exceeds 1 GiB compressed limit: {declared} bytes")
-        total = 0
-        with bz2.BZ2File(response) as source, destination.open("wb") as target:
-            while chunk := source.read(1024 * 1024):
-                total += len(chunk)
-                if total > 1024 * 1024 * 1024:
-                    raise RuntimeError("OpenBuildingMap tile exceeds 1 GiB expanded limit")
-                target.write(chunk)
-    if not destination.is_file() or destination.stat().st_size == 0:
-        raise RuntimeError("OpenBuildingMap download produced an empty GeoPackage")
-
-def lookup(gpkg: Path, osm_ids: list[int]) -> dict[int, tuple[str | None, str | None]]:
-    db = sqlite3.connect(f"file:{gpkg}?mode=ro", uri=True)
-    try:
-        tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-        if "building" not in tables:
-            raise RuntimeError("GeoPackage has no building table")
-        columns = {r[1] for r in db.execute("PRAGMA table_info(building)")}
-        required = {"id", "height", "occupancy", "source_id"}
-        if not required.issubset(columns):
-            raise RuntimeError(f"GeoPackage missing columns: {sorted(required - columns)}")
-        db.execute("CREATE TEMP TABLE wanted_osm_ids (id INTEGER PRIMARY KEY)")
-        db.executemany("INSERT OR IGNORE INTO wanted_osm_ids(id) VALUES (?)", ((item,) for item in osm_ids))
-        query = (
-            "SELECT b.id,b.height,b.occupancy FROM building AS b "
-            "INNER JOIN wanted_osm_ids AS w ON w.id=b.id WHERE b.source_id=0"
+def records_from_rows(rows: list[tuple], osm_ids: list[int]) -> dict[int, tuple[str | None, str | None]]:
+    wanted = set(osm_ids)
+    records: dict[int, tuple[str | None, str | None]] = {}
+    for row_id, height, occupancy, source in rows:
+        if str(source).upper() != "OSM":
+            continue
+        try:
+            osm_id = int(row_id)
+        except (TypeError, ValueError):
+            continue
+        if osm_id not in wanted:
+            continue
+        records[osm_id] = (
+            str(height) if height not in (None, "") else None,
+            str(occupancy) if occupancy not in (None, "") else None,
         )
-        found = {}
-        for row_id, height, occupancy in db.execute(query):
-            found[int(row_id)] = (str(height) if height else None, str(occupancy) if occupancy else None)
-        return found
+    return records
+
+def query_openbuildingmap(url: str, bounds: dict[str, float], osm_ids: list[int]) -> dict[int, tuple[str | None, str | None]]:
+    try:
+        import duckdb
+    except ImportError as exc:
+        raise RuntimeError("Install the pinned DuckDB dependency before OpenBuildingMap enrichment") from exc
+    connection = duckdb.connect(database=":memory:")
+    try:
+        connection.execute("INSTALL httpfs")
+        connection.execute("LOAD httpfs")
+        # Source Cooperative exposes public range-readable Parquet. DuckDB reads
+        # only the required columns and spatially matching row groups over HTTPS.
+        query = """
+            SELECT id, height, occupancy, source
+            FROM read_parquet(?)
+            WHERE source = 'OSM'
+              AND bbox.xmin <= ? AND bbox.xmax >= ?
+              AND bbox.ymin <= ? AND bbox.ymax >= ?
+        """
+        rows = connection.execute(query, [
+            url,
+            float(bounds["east"]), float(bounds["west"]),
+            float(bounds["north"]), float(bounds["south"]),
+        ]).fetchall()
+        return records_from_rows(rows, osm_ids)
     finally:
-        db.close()
+        connection.close()
 
 def enrich(data: dict, records: dict[int, tuple[str | None, str | None]], quadkey: str) -> dict[str, int]:
     counts = {"matched_osm_buildings": 0, "height_enriched": 0, "occupancy_enriched": 0}
@@ -101,9 +108,14 @@ def enrich(data: dict, records: dict[int, tuple[str | None, str | None]], quadke
             building["occupancy_source"] = "OpenBuildingMap-ODbL-1.0"
             counts["occupancy_enriched"] += 1
     data["building_enrichment"] = {
-        "source": "OpenBuildingMap", "version": "2025-002", "quadkey": quadkey,
-        "license": "ODbL-1.0", "source_url": "https://doi.org/10.5880/GFZ.LKUT.2025.002",
-        "join": "OSM way ID; source_id=0 only", "counts": counts,
+        "source": "OpenBuildingMap",
+        "version": "2025-002",
+        "quadkey": quadkey,
+        "license": "ODbL-1.0",
+        "source_url": "https://doi.org/10.5880/GFZ.LKUT.2025.002",
+        "parquet_url": PARQUET_URL.format(quadkey=quadkey),
+        "join": "OSM way ID; source='OSM' only; spatial bbox prefilter",
+        "counts": counts,
     }
     return counts
 
@@ -112,22 +124,20 @@ def main() -> int:
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
     args = parser.parse_args()
     data = json.loads(args.input.read_text(encoding="utf-8"))
-    ids = sorted({int(b["id"]) for b in data.get("buildings", []) if str(b.get("id", "")).isdigit()})
-    if not ids:
+    osm_ids = sorted({int(item["id"]) for item in data.get("buildings", []) if str(item.get("id", "")).isdigit()})
+    if not osm_ids:
         raise RuntimeError("No numeric OSM building IDs found")
     quadkey = quadkey_for(LAT, LON)
-    with tempfile.TemporaryDirectory(prefix="lagos-obm-") as temp:
-        gpkg = Path(temp) / f"building.{quadkey}.gpkg"
-        download_tile(URL.format(quadkey=quadkey), gpkg)
-        records = lookup(gpkg, ids)
+    url = PARQUET_URL.format(quadkey=quadkey)
+    records = query_openbuildingmap(url, data["bounds"], osm_ids)
     if not records:
-        raise RuntimeError(f"No OSM IDs matched OpenBuildingMap tile {quadkey}")
+        raise RuntimeError(f"No OSM building IDs matched OpenBuildingMap Parquet tile {quadkey}")
     counts = enrich(data, records, quadkey)
-    tmp = args.input.with_suffix(args.input.suffix + ".tmp")
-    tmp.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    tmp.replace(args.input)
+    temporary = args.input.with_suffix(args.input.suffix + ".tmp")
+    temporary.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    temporary.replace(args.input)
     print(f"OpenBuildingMap {quadkey}: {counts}")
-    print("Source: GFZ OpenBuildingMap | Licence: ODbL-1.0")
+    print(f"Source: {url} | Licence: ODbL-1.0")
     return 0
 
 if __name__ == "__main__":
