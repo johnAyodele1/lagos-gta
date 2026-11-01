@@ -7,12 +7,12 @@
 - **Source:** https://polyhaven.com/a/modular_urban_apartments_facade
 - **Licence:** CC0 1.0
 - **Source dimensions:** 51.53 m wide × 6.665 m deep × 17.00 m high
-- **Source geometry:** approximately 118,215 triangles
+- **Source geometry:** approximately 270,045 triangles
 - **Purpose:** one measured, textured hero frontage on a mapped Yaba building; not a replacement for every building in the district.
 
 The import workflow calls the official Poly Haven files API with a project-specific User-Agent, prefers a 2K or 1K glTF package, verifies the API-provided MD5 when available, converts the source scene into a self-contained GLB and commits the resulting runtime asset to the current feature branch. The game has no runtime download dependency.
 
-The GLB is currently imported and stored as an asset only; the world generator is not yet instancing it. The existing building facades remain procedural until the model is aligned and validated in Godot. Do not instance this 118k-triangle source across thousands of OSM footprints. Profile its draw calls, materials, texture memory and GPU cost on Android before expanding the asset set. The mapped OSM footprint and collision remain authoritative; the imported facade is a visual replacement for one selected street-facing wall only.
+The runtime instantiates this GLB on one selected residential frontage only. Its measured import is 270,045 triangles and 41.3 MB, so it is deliberately not instanced across thousands of OSM footprints. Remaining buildings still use data-driven procedural facades. Profile its draw calls, materials, texture memory and GPU cost on Android before expanding the asset set. The mapped OSM footprint and collision remain authoritative; the imported facade is a visual replacement for one selected street-facing wall only.
 
 ## Local regeneration
 
