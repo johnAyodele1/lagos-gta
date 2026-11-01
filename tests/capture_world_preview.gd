@@ -6,6 +6,36 @@ extends SceneTree
 func _initialize() -> void:
 	call_deferred("_capture_world")
 
+func _validate_render_materials(scene: Node) -> bool:
+	var missing_materials := 0
+	var empty_meshes := 0
+	for node in scene.find_children("*", "MeshInstance3D", true, false):
+		var mesh_instance := node as MeshInstance3D
+		if mesh_instance.mesh == null:
+			empty_meshes += 1
+			continue
+		for surface_index in range(mesh_instance.mesh.get_surface_count()):
+			if mesh_instance.mesh.surface_get_material(surface_index) == null:
+				missing_materials += 1
+	for node in scene.find_children("*", "MultiMeshInstance3D", true, false):
+		var batch := node as MultiMeshInstance3D
+		if batch.multimesh == null or batch.multimesh.mesh == null:
+			empty_meshes += 1
+			continue
+		for surface_index in range(batch.multimesh.mesh.get_surface_count()):
+			if batch.multimesh.mesh.surface_get_material(surface_index) == null:
+				missing_materials += 1
+	for node in scene.find_children("*", "Label3D", true, false):
+		var label := node as Label3D
+		if label.material_override == null:
+			missing_materials += 1
+	print("PREVIEW_EMPTY_RENDER_NODES=", empty_meshes)
+	print("PREVIEW_MISSING_BASE_MATERIALS=", missing_materials)
+	if empty_meshes > 0 or missing_materials > 0:
+		push_error("Rendered scene contains empty mesh nodes or missing base materials.")
+		return false
+	return true
+
 func _capture_world() -> void:
 	var packed_scene := load("res://scenes/main.tscn") as PackedScene
 	if packed_scene == null:
@@ -22,6 +52,33 @@ func _capture_world() -> void:
 
 	var player := main_scene.get_node_or_null("Player") as PlayerController
 	var world := main_scene.get_node_or_null("YabaOpenStreetMapDistrict") as OSMWorldGenerator
+	if not _validate_render_materials(main_scene):
+		quit(1)
+		return
+	if player != null:
+		var player_model := player.get_node_or_null("RiggedLagosPlayer") as Node3D
+		if player_model == null:
+			push_error("Rendered player rig is missing from the scene.")
+			quit(1)
+			return
+		var player_bounds: AABB = ModelBoundsScript._combined_local_bounds(player_model)
+		var player_height := player_bounds.size.y * player_model.scale.y
+		print("PREVIEW_PLAYER_HEIGHT_METRES=", player_height)
+		if absf(player_height - 1.76) > 0.03:
+			push_error("Player visual height is outside the 1.76m scale target.")
+			quit(1)
+			return
+	var danfo_model := main_scene.get_node_or_null("YabaDanfo/DanfoModel") as MeshInstance3D
+	if danfo_model == null:
+		push_error("Rendered danfo model is missing from the scene.")
+		quit(1)
+		return
+	var danfo_dimensions := ModelBoundsScript.get_scaled_dimensions(danfo_model)
+	print("PREVIEW_DANFO_DIMENSIONS_METRES=", danfo_dimensions)
+	if not danfo_dimensions.is_equal_approx(Vector3(2.0, 2.25, 4.65)):
+		push_error("Danfo visual dimensions do not match the 2.25m by 4.65m target.")
+		quit(1)
+		return
 	if player != null:
 		player.mouse_captured = false
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
