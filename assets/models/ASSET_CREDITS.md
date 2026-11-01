@@ -63,3 +63,11 @@ The minibus is a generic CC0 base mesh, not a scanned or exact Lagos Danfo vehic
 - Height and occupancy enrichment: OpenBuildingMap, GFZ Data Services, ODbL-1.0, DOI https://doi.org/10.5880/GFZ.LKUT.2025.002
 - Join key: matching OSM way ID only; OpenBuildingMap Google/Microsoft-only footprints are not added to the existing OSM scene
 - Height estimates remain estimates; explicit OSM height values take precedence
+
+## Poly Haven underpass assets
+
+- Runtime models: `assets/models/lagos_underpass/*.glb` (Modular Factory Facade, Concrete Road Barrier, Portable Generator, Modular Industrial Pipes 01).
+- Source: https://polyhaven.com/; licence: CC0 1.0 Universal.
+- Importer: `tools/import_polyhaven_underpass.py`; curated asset IDs, 1K glTF preference, MD5 verification when supplied, local GLB output and no runtime download.
+- Art-direction reference: https://polyhaven.com/a/abandoned_workshop_02 (HDRI panorama by Sergej Majboroda; not a 3D workshop model and not used as the outdoor global sky).
+- Lagos details: mapped bridge supports and a Yaba mechanic bay are art-directed scene additions, not surveyed OSM business data.

@@ -2,6 +2,7 @@ extends Node3D
 class_name OSMWorldGenerator
 const LABEL_FONT = preload("res://assets/fonts/Roboto.ttf")
 const ModelBoundsScript = preload("res://scripts/model_bounds.gd")
+const UnderpassSetpiece = preload("res://scripts/lagos_underpass_setpiece.gd")
 
 ## Builds a mobile-conscious Yaba district from a normalized OpenStreetMap extract.
 ## Roads, building footprints and mapped barriers remain data-driven; facade details
@@ -68,6 +69,7 @@ func generate_from_data(data: Dictionary) -> bool:
 
 	_add_ground()
 	_add_road_network()
+	_add_lagos_underpasses()
 	_add_building_network()
 	_add_market_stalls()
 	_add_parked_keke()
@@ -307,21 +309,24 @@ func _add_road_network() -> void:
 		var width := clampf(float(road.get("width_m", 6.0)), 2.0, 24.0)
 		var highway := str(road.get("highway", ""))
 		var mapped_surface := str(road.get("surface", "unknown")).to_lower()
+		var road_tags: Dictionary = road.get("tags", {})
+		var bridge_value := str(road_tags.get("bridge", "no")).to_lower()
+		var deck_y := 5.0 if bridge_value not in ["", "no", "false", "0"] else 0.015
 		match mapped_surface:
 			"unpaved", "ground", "dirt", "earth", "compacted", "fine_gravel", "gravel":
-				_append_ribbon(laterite_vertices, laterite_normals, laterite_indices, points, width, 0.0, 0.016, laterite_uvs)
+				_append_ribbon(laterite_vertices, laterite_normals, laterite_indices, points, width, 0.0, deck_y, laterite_uvs)
 			"paved", "asphalt", "concrete", "concrete:plates", "paving_stones", "sett":
-				_append_ribbon(road_vertices, road_normals, road_indices, points, width, 0.0, 0.015, road_uvs)
+				_append_ribbon(road_vertices, road_normals, road_indices, points, width, 0.0, deck_y, road_uvs)
 			_:
-				_append_ribbon(unknown_road_vertices, unknown_road_normals, unknown_road_indices, points, width, 0.0, 0.015, unknown_road_uvs)
+				_append_ribbon(unknown_road_vertices, unknown_road_normals, unknown_road_indices, points, width, 0.0, deck_y, unknown_road_uvs)
 		if highway in ["footway", "path", "pedestrian"]:
 			continue
-		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, width * 0.5 + 1.25, 0.045, sidewalk_uvs)
-		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, -(width * 0.5 + 1.25), 0.045, sidewalk_uvs)
-		_append_ribbon(drain_vertices, drain_normals, drain_indices, points, 0.30, width * 0.5 + 0.20, 0.025, drain_uvs)
-		_append_ribbon(drain_vertices, drain_normals, drain_indices, points, 0.30, -(width * 0.5 + 0.20), 0.025, drain_uvs)
-		_append_ribbon(curb_vertices, curb_normals, curb_indices, points, 0.18, width * 0.5 + 0.45, 0.11, curb_uvs)
-		_append_ribbon(curb_vertices, curb_normals, curb_indices, points, 0.18, -(width * 0.5 + 0.45), 0.11, curb_uvs)
+		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, width * 0.5 + 1.25, deck_y + 0.03, sidewalk_uvs)
+		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, -(width * 0.5 + 1.25), deck_y + 0.03, sidewalk_uvs)
+		_append_ribbon(drain_vertices, drain_normals, drain_indices, points, 0.30, width * 0.5 + 0.20, deck_y + 0.01, drain_uvs)
+		_append_ribbon(drain_vertices, drain_normals, drain_indices, points, 0.30, -(width * 0.5 + 0.20), deck_y + 0.01, drain_uvs)
+		_append_ribbon(curb_vertices, curb_normals, curb_indices, points, 0.18, width * 0.5 + 0.45, deck_y + 0.08, curb_uvs)
+		_append_ribbon(curb_vertices, curb_normals, curb_indices, points, 0.18, -(width * 0.5 + 0.45), deck_y + 0.08, curb_uvs)
 		for segment_index in range(points.size() - 1):
 			var segment_start := points[segment_index]
 			var segment := points[segment_index + 1] - segment_start
@@ -1560,3 +1565,9 @@ func get_barrier_count() -> int:
 
 func is_generated() -> bool:
 	return _generated
+
+
+func _add_lagos_underpasses() -> void:
+	var generated := UnderpassSetpiece.build(self, _roads)
+	if generated > 0:
+		print("Generated %d mapped Lagos bridge underpass setpiece(s)." % generated)

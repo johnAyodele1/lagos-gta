@@ -33,7 +33,7 @@ SELECTED_TAGS = (
     "building", "building:levels", "height", "roof:shape", "barrier", "fence_type",
     "shop", "amenity", "landuse", "addr:street", "addr:housenumber",
     "building:material", "building:colour", "roof:material", "roof:colour", "roof:levels",
-    "building:min_level", "min_height",
+    "building:min_level", "min_height", "bridge", "layer", "tunnel",
 )
 
 ROAD_WIDTHS = {
