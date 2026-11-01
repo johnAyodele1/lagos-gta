@@ -10,7 +10,7 @@ The district includes extruded building footprints, textured asphalt and concret
 
 The player has a custom low-poly avatar and collision-aware third-person camera. The danfo is a custom tapered 3D minibus mesh. Ambient cars and pedestrians follow road/sidewalk routes derived from the OSM geometry. Player, building, barrier, compound-wall, vehicle and NPC collision tests are included.
 
-A licensed architecture import pipeline has brought a CC0 Poly Haven modular apartment facade into the local asset library. It is imported at build time (no runtime download), but is not yet wired into the world generator; current OSM building facades remain procedural until the imported model is aligned and visually validated. The source model is a generic modern apartment facade, not a surveyed Yaba building. See [the architecture asset pipeline](docs/ARCHITECTURE_ASSET_PIPELINE.md).
+A licensed architecture import pipeline brings a CC0 Poly Haven modular apartment facade into the project at build time (no runtime download). The world generator uses it on one selected residential frontage; all other OSM buildings retain data-driven procedural facades. The model is generic modern architecture, not a surveyed Yaba building. See [the architecture asset pipeline](docs/ARCHITECTURE_ASSET_PIPELINE.md).
 
 This is still an early vertical slice, not a finished GTA-scale game or photorealistic world. The current in-game vehicles and characters are procedural low-poly models; production-quality licensed vehicle assets and properly rigged human models remain outstanding. The 450m district is not a streaming open world. Physical Android/iOS profiling and signed store builds have not been completed.
 
