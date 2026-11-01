@@ -1,6 +1,7 @@
 extends Node3D
 class_name OSMWorldGenerator
 const LABEL_FONT = preload("res://assets/fonts/Roboto.ttf")
+const ModelBoundsScript = preload("res://scripts/model_bounds.gd")
 
 ## Builds a mobile-conscious Yaba district from a normalized OpenStreetMap extract.
 ## Roads, building footprints and mapped barriers remain data-driven; facade details
@@ -732,11 +733,11 @@ func _select_hero_facade() -> Dictionary:
 	if packed == null:
 		return {}
 	var model := packed.instantiate() as Node3D
-	if model == null or not ModelBounds.fit_height(model, float(best["height"])):
+	if model == null or not ModelBoundsScript.fit_height(model, float(best["height"])):
 		if model != null:
 			model.free()
 		return {}
-	var dimensions := ModelBounds.get_scaled_dimensions(model)
+	var dimensions := ModelBoundsScript.get_scaled_dimensions(model)
 	if dimensions.x <= 0.001:
 		model.free()
 		return {}
