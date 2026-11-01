@@ -162,6 +162,7 @@ func _add_ground() -> void:
 	ground.position.y = -0.16
 	var ground_material := _material("ground", Color(0.32, 0.29, 0.24))
 	ground_material.albedo_texture = _make_noise_texture(61, 0.22)
+	ground_material.roughness_texture = _make_noise_texture(62, 0.16)
 	ground_material.roughness = 0.98
 	ground.material_override = ground_material
 	ground.name = "YabaDistrictGround"
@@ -289,10 +290,12 @@ func _add_road_network() -> void:
 		if width >= 7.0 and str(road.get("highway", "")) in ["primary", "secondary", "tertiary"]:
 			_append_road_markings(points, marking_vertices, marking_normals, marking_indices, marking_uvs)
 	var asphalt_material := _material("asphalt", ROAD_COLOR)
-	asphalt_material.albedo_texture = _make_noise_texture(17, 0.20)
+	asphalt_material.albedo_texture = _make_noise_texture(17, 0.24)
+	asphalt_material.roughness_texture = _make_noise_texture(81, 0.18)
 	asphalt_material.roughness = 0.98
 	var concrete_material := _material("sidewalk", SIDEWALK_COLOR)
-	concrete_material.albedo_texture = _make_noise_texture(29, 0.12)
+	concrete_material.albedo_texture = _make_noise_texture(29, 0.16)
+	concrete_material.roughness_texture = _make_noise_texture(30, 0.12)
 	concrete_material.roughness = 0.96
 	_create_surface_mesh(road_vertices, road_normals, road_indices, road_uvs, asphalt_material, "OSMRoadSurfaces")
 	_create_surface_mesh(sidewalk_vertices, sidewalk_normals, sidewalk_indices, sidewalk_uvs, concrete_material, "OSMSidewalks")
@@ -300,16 +303,33 @@ func _add_road_network() -> void:
 	_create_surface_mesh(marking_vertices, marking_normals, marking_indices, marking_uvs, _material("road_markings", Color(0.88, 0.84, 0.67)), "OSMRoadMarkings")
 
 func _make_noise_texture(seed_value: int, variation: float) -> Texture2D:
-	var noise := FastNoiseLite.new()
-	noise.seed = seed_value
-	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
-	noise.frequency = 0.045
-	noise.fractal_octaves = 3
-	var image := Image.create(128, 128, false, Image.FORMAT_RGBA8)
-	for y in range(128):
-		for x in range(128):
-			var value := 1.0 - absf(noise.get_noise_2d(float(x), float(y))) * variation
-			image.set_pixel(x, y, Color(value, value, value, 1.0))
+	# Layer broad weathering, compact aggregate and fine surface grain instead of
+	# stretching one low-frequency noise field across the entire street.
+	var weathering := FastNoiseLite.new()
+	weathering.seed = seed_value
+	weathering.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	weathering.frequency = 0.012
+	weathering.fractal_octaves = 3
+	var aggregate := FastNoiseLite.new()
+	aggregate.seed = seed_value + 17
+	aggregate.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	aggregate.frequency = 0.085
+	aggregate.fractal_octaves = 2
+	var grain := FastNoiseLite.new()
+	grain.seed = seed_value + 31
+	grain.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	grain.frequency = 0.34
+	grain.fractal_octaves = 2
+	const TEXTURE_SIZE := 256
+	var image := Image.create(TEXTURE_SIZE, TEXTURE_SIZE, false, Image.FORMAT_RGBA8)
+	for y in range(TEXTURE_SIZE):
+		for x in range(TEXTURE_SIZE):
+			var sample := Vector2(float(x), float(y))
+			var broad := weathering.get_noise_2d(sample.x, sample.y)
+			var medium := aggregate.get_noise_2d(sample.x, sample.y)
+			var fine := grain.get_noise_2d(sample.x, sample.y)
+			var value := clampf(0.79 + broad * variation * 0.72 + medium * variation * 0.42 + fine * variation * 0.18, 0.36, 1.0)
+			image.set_pixel(x, y, Color(value, value * 0.995, value * 0.985, 1.0))
 	image.generate_mipmaps()
 	return ImageTexture.create_from_image(image)
 
@@ -496,7 +516,8 @@ func _add_building_network() -> void:
 	if not vertices.is_empty() and not indices.is_empty():
 		building_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, building_arrays)
 		var facade_material := _material("building_vertex", Color.WHITE, 0.94, true)
-		facade_material.albedo_texture = _make_noise_texture(43, 0.14)
+		facade_material.albedo_texture = _make_noise_texture(43, 0.18)
+		facade_material.roughness_texture = _make_noise_texture(44, 0.12)
 		building_mesh.surface_set_material(0, facade_material)
 		var building_instance := MeshInstance3D.new()
 		building_instance.name = "OSMBuildingFootprintsAndFacades"
