@@ -188,6 +188,8 @@ func _fit_rigged_character_dimensions() -> void:
 			push_warning("Player model could not be fitted to the 1.76m character scale.")
 
 func _apply_rigged_character_materials(model: Node3D, shirt_color: Color, skin_color: Color, pants_color: Color) -> void:
+	if DisplayServer.get_name() == "headless":
+		return
 	var palette: Array[Color] = [
 		shirt_color, shirt_color, skin_color, pants_color,
 		Color(0.025, 0.025, 0.025), Color(0.28, 0.27, 0.25),
