@@ -176,7 +176,7 @@ func _test_visual_meshes() -> void:
 	var player = PlayerScript.new()
 	root.add_child(player)
 	if DisplayServer.get_name() != "headless":
-		_check(player.body_mesh.mesh == null and player.body_mesh.get_node_or_null("RiggedLagosPlayer") != null, "player avatar is a rigged imported 3D character rather than primitive body parts")
+		_check(player.body_mesh.mesh != null and not player.body_mesh.visible and player.get_node_or_null("RiggedLagosPlayer") != null, "player avatar is a rigged imported 3D character with a valid hidden fallback mesh")
 	_check(player.camera_pivot is SpringArm3D, "player uses a collision-aware third-person spring arm")
 	_check(player.camera_yaw_pivot is Node3D and player.camera_yaw_pivot.get_parent() == player, "camera has a dedicated yaw pivot under the player")
 	_check(player.camera_pivot.get_parent() == player.camera_yaw_pivot and is_zero_approx(player.camera_pivot.rotation.x), "spring-arm remains level and camera stays a direct spring-arm child")
@@ -184,7 +184,7 @@ func _test_visual_meshes() -> void:
 	_check(player.camera.rotation.is_equal_approx(Vector3(deg_to_rad(-14.0), 0.0, 0.0)), "camera keeps its downward street-facing pitch")
 	var rigged_player: Node3D
 	if player.body_mesh != null:
-		rigged_player = player.body_mesh.get_node_or_null("RiggedLagosPlayer") as Node3D
+		rigged_player = player.get_node_or_null("RiggedLagosPlayer") as Node3D
 	await process_frame
 	if DisplayServer.get_name() != "headless":
 		_check(rigged_player != null, "player uses the imported rigged Lagos character model")
