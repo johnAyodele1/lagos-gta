@@ -116,10 +116,10 @@ func exit_vehicle() -> void:
 	var player = driver
 	driver = null
 	player.camera_pivot.reparent(player, false)
-	player.camera_pivot.position = Vector3(0.0, 1.55, 0.0)
+	player.camera_pivot.position = Vector3(0.0, 1.72, 0.0)
 	player.camera_pivot.rotation = Vector3.ZERO
-	player.camera.position = Vector3(0.0, 0.35, 4.8)
-	player.camera.rotation.x = deg_to_rad(-9.0)
+	player.camera.position = Vector3(0.0, 2.15, 7.2)
+	player.camera.rotation.x = deg_to_rad(-14.0)
 	player.global_position = global_position + global_basis.x * 3.0 + Vector3.UP * 0.5
 	player.velocity = Vector3.ZERO
 	player.collision_layer = _driver_collision_layer
