@@ -84,6 +84,23 @@ def road_width(tags: dict[str, str]) -> tuple[float, str]:
     return ROAD_WIDTHS.get(highway, 6.0), "estimated:highway-default"
 
 
+DEFAULT_BUILDING_HEIGHTS = {
+    "house": 6.2,
+    "detached": 6.2,
+    "semidetached_house": 6.2,
+    "residential": 7.2,
+    "commercial": 7.2,
+    "apartments": 10.0,
+    "office": 9.3,
+    "school": 7.2,
+    "university": 10.0,
+    "retail": 4.2,
+    "industrial": 5.5,
+    "warehouse": 5.5,
+    "yes": 6.2,
+}
+
+
 def building_height(tags: dict[str, str]) -> tuple[float, str]:
     explicit = parse_distance(tags.get("height"))
     if explicit is not None:
@@ -94,7 +111,10 @@ def building_height(tags: dict[str, str]) -> tuple[float, str]:
             return round(levels * 3.1, 2), "estimated:building-levels"
     except ValueError:
         pass
-    return 4.2, "estimated:single-storey-default"
+    building_type = tags.get("building", "")
+    default_height = DEFAULT_BUILDING_HEIGHTS.get(building_type, 6.2)
+    source = f"estimated:{building_type}-default" if building_type in DEFAULT_BUILDING_HEIGHTS else "estimated:building-type-default"
+    return default_height, source
 
 
 def compact_tags(raw: dict[str, str]) -> dict[str, str]:
