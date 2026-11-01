@@ -37,12 +37,46 @@ func _run() -> void:
 	await _test_player_danfo_collision()
 	await _test_pedestrian_collision()
 	_test_project_scripts_load()
+	_debug_render_materials()
 	if failures > 0:
 		push_error("%d of %d gameplay input tests failed." % [failures, assertions])
 		quit(1)
 	else:
 		print("All %d gameplay input tests passed." % assertions)
 		quit(0)
+
+func _debug_render_materials() -> void:
+	var mesh_count := 0
+	var mesh_surfaces := 0
+	var mesh_base_null := 0
+	var mesh_active_null := 0
+	for node in root.find_children("*", "MeshInstance3D", true, false):
+		var instance := node as MeshInstance3D
+		if instance.mesh == null:
+			continue
+		mesh_count += 1
+		for surface_index in range(instance.mesh.get_surface_count()):
+			mesh_surfaces += 1
+			if instance.mesh.surface_get_material(surface_index) == null:
+				mesh_base_null += 1
+			if instance.get_active_material(surface_index) == null:
+				mesh_active_null += 1
+	var batch_count := 0
+	var batch_surfaces := 0
+	var batch_base_null := 0
+	var batch_override_null := 0
+	for node in root.find_children("*", "MultiMeshInstance3D", true, false):
+		var instance := node as MultiMeshInstance3D
+		if instance.multimesh == null or instance.multimesh.mesh == null:
+			continue
+		batch_count += 1
+		if instance.material_override == null:
+			batch_override_null += 1
+		for surface_index in range(instance.multimesh.mesh.get_surface_count()):
+			batch_surfaces += 1
+			if instance.multimesh.mesh.surface_get_material(surface_index) == null:
+				batch_base_null += 1
+	print("DEBUG_RENDER_MATERIALS meshes=%d surfaces=%d base_null=%d active_null=%d batches=%d batch_surfaces=%d batch_base_null=%d batch_override_null=%d" % [mesh_count, mesh_surfaces, mesh_base_null, mesh_active_null, batch_count, batch_surfaces, batch_base_null, batch_override_null])
 
 func _check(condition: bool, description: String) -> void:
 	assertions += 1
