@@ -267,6 +267,14 @@ func _add_road_network() -> void:
 	var road_normals := PackedVector3Array()
 	var road_indices := PackedInt32Array()
 	var road_uvs := PackedVector2Array()
+	var laterite_vertices := PackedVector3Array()
+	var laterite_normals := PackedVector3Array()
+	var laterite_indices := PackedInt32Array()
+	var laterite_uvs := PackedVector2Array()
+	var unknown_road_vertices := PackedVector3Array()
+	var unknown_road_normals := PackedVector3Array()
+	var unknown_road_indices := PackedInt32Array()
+	var unknown_road_uvs := PackedVector2Array()
 	var sidewalk_vertices := PackedVector3Array()
 	var sidewalk_normals := PackedVector3Array()
 	var sidewalk_indices := PackedInt32Array()
@@ -290,7 +298,14 @@ func _add_road_network() -> void:
 			continue
 		var width := clampf(float(road.get("width_m", 6.0)), 2.0, 24.0)
 		var highway := str(road.get("highway", ""))
-		_append_ribbon(road_vertices, road_normals, road_indices, points, width, 0.0, 0.015, road_uvs)
+		var mapped_surface := str(road.get("surface", "unknown")).to_lower()
+		match mapped_surface:
+			"unpaved", "ground", "dirt", "earth", "compacted", "fine_gravel", "gravel":
+				_append_ribbon(laterite_vertices, laterite_normals, laterite_indices, points, width, 0.0, 0.016, laterite_uvs)
+			"paved", "asphalt", "concrete", "concrete:plates", "paving_stones", "sett":
+				_append_ribbon(road_vertices, road_normals, road_indices, points, width, 0.0, 0.015, road_uvs)
+			_:
+				_append_ribbon(unknown_road_vertices, unknown_road_normals, unknown_road_indices, points, width, 0.0, 0.015, unknown_road_uvs)
 		if highway in ["footway", "path", "pedestrian"]:
 			continue
 		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, width * 0.5 + 1.25, 0.045, sidewalk_uvs)
@@ -324,6 +339,20 @@ func _add_road_network() -> void:
 	asphalt_material.normal_texture = _make_normal_texture(82, 3.0)
 	asphalt_material.normal_scale = 0.42
 	asphalt_material.roughness = 0.98
+	var laterite_material := _material("laterite", Color(0.34, 0.22, 0.14))
+	laterite_material.albedo_texture = _make_noise_texture(91, 0.28)
+	laterite_material.roughness_texture = _make_noise_texture(92, 0.22)
+	laterite_material.normal_enabled = true
+	laterite_material.normal_texture = _make_normal_texture(93, 2.4)
+	laterite_material.normal_scale = 0.32
+	laterite_material.roughness = 1.0
+	var unknown_road_material := _material("unknown_road", Color(0.25, 0.24, 0.21))
+	unknown_road_material.albedo_texture = _make_noise_texture(94, 0.23)
+	unknown_road_material.roughness_texture = _make_noise_texture(95, 0.18)
+	unknown_road_material.normal_enabled = true
+	unknown_road_material.normal_texture = _make_normal_texture(96, 2.6)
+	unknown_road_material.normal_scale = 0.34
+	unknown_road_material.roughness = 1.0
 	var concrete_material := _material("sidewalk", SIDEWALK_COLOR)
 	concrete_material.albedo_texture = _make_noise_texture(29, 0.16)
 	concrete_material.roughness_texture = _make_noise_texture(30, 0.12)
@@ -331,7 +360,9 @@ func _add_road_network() -> void:
 	concrete_material.normal_texture = _make_normal_texture(31, 1.8)
 	concrete_material.normal_scale = 0.28
 	concrete_material.roughness = 0.96
-	_create_surface_mesh(road_vertices, road_normals, road_indices, road_uvs, asphalt_material, "OSMRoadSurfaces")
+	_create_surface_mesh(road_vertices, road_normals, road_indices, road_uvs, asphalt_material, "OSMPavedRoadSurfaces")
+	_create_surface_mesh(laterite_vertices, laterite_normals, laterite_indices, laterite_uvs, laterite_material, "OSMUnpavedLateriteRoadSurfaces")
+	_create_surface_mesh(unknown_road_vertices, unknown_road_normals, unknown_road_indices, unknown_road_uvs, unknown_road_material, "OSMUnclassifiedRoadSurfaces")
 	_create_surface_mesh(sidewalk_vertices, sidewalk_normals, sidewalk_indices, sidewalk_uvs, concrete_material, "OSMSidewalks")
 	_create_surface_mesh(drain_vertices, drain_normals, drain_indices, drain_uvs, _material("drainage", DRAIN_COLOR), "OSMRoadsideDrainage")
 	_create_surface_mesh(curb_vertices, curb_normals, curb_indices, curb_uvs, concrete_material, "OSMRoadsideCurbs")
