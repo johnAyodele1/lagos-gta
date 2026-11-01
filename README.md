@@ -45,8 +45,8 @@ No third-party asset packs are required to launch the initial scene.
 
 ## Roadmap
 
-1. Stabilise the third-person vertical slice on desktop and touch devices.
-2. Add a drivable vehicle and enter/exit interaction.
+1. Stabilise the third-person vertical slice on desktop and touch devices (movement, Yaba blockout and legal gate are in place).
+2. Add a drivable danfo with enter/exit interaction (first arcade driving pass implemented); next add traffic AI, vehicle damage and more vehicle types.
 3. Add Lagos street life: danfos, traffic, pedestrians, markets and audio.
 4. Add Android/iOS export presets, signing setup, device profiling and store-ready release builds.
 5. Build mission, interaction and save systems.
