@@ -13,7 +13,7 @@ const NPC_COLLISION_LAYER: int = 8
 const MIN_CAMERA_PITCH: float = deg_to_rad(-55.0)
 const MAX_CAMERA_PITCH: float = deg_to_rad(35.0)
 
-var camera_pivot: Node3D
+var camera_pivot: SpringArm3D
 var camera: Camera3D
 var body_mesh: MeshInstance3D
 var mouse_captured: bool = false
@@ -77,13 +77,21 @@ func _build_body() -> void:
 	_left_leg_pivot = _create_limb(Vector3(-0.16, -0.32, 0.0), 0.15, 0.82, Color(0.10, 0.12, 0.14))
 	_right_leg_pivot = _create_limb(Vector3(0.16, -0.32, 0.0), 0.15, 0.82, Color(0.10, 0.12, 0.14))
 
-	camera_pivot = Node3D.new()
+	# SpringArm3D keeps the third-person camera outside mapped walls and vehicles.
+	camera_pivot = SpringArm3D.new()
 	camera_pivot.position.y = 1.72
+	camera_pivot.rotation = Vector3(deg_to_rad(-14.0), PI, 0.0)
+	camera_pivot.spring_length = 7.2
+	camera_pivot.collision_mask = WORLD_COLLISION_LAYER
+	camera_pivot.margin = 0.2
+	var camera_probe := SphereShape3D.new()
+	camera_probe.radius = 0.28
+	camera_pivot.shape = camera_probe
 	add_child(camera_pivot)
 
 	camera = Camera3D.new()
-	camera.position = Vector3(0.0, 2.15, 7.2)
-	camera.rotation.x = deg_to_rad(-14.0)
+	camera.position = Vector3.ZERO
+	camera.rotation = Vector3(0.0, PI, 0.0)
 	camera.fov = 76.0
 	camera.current = true
 	camera.far = 220.0
