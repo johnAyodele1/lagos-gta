@@ -155,7 +155,7 @@ func _build_body() -> void:
 	# SpringArm3D keeps the third-person camera outside mapped walls and vehicles.
 	camera_pivot = SpringArm3D.new()
 	camera_pivot.position.y = 1.72
-	camera_pivot.rotation = Vector3(0.0, PI, 0.0)
+	camera_pivot.rotation = Vector3.ZERO
 	camera_pivot.spring_length = 7.2
 	camera_pivot.collision_mask = WORLD_COLLISION_LAYER
 	camera_pivot.margin = 0.2
@@ -166,7 +166,7 @@ func _build_body() -> void:
 
 	camera = Camera3D.new()
 	camera.position = Vector3.ZERO
-	camera.rotation = Vector3(deg_to_rad(-14.0), PI, 0.0)
+	camera.rotation = Vector3(deg_to_rad(-14.0), 0.0, 0.0)
 	camera.fov = 76.0
 	camera.current = true
 	camera.far = 220.0
