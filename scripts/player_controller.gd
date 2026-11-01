@@ -11,6 +11,7 @@ const VEHICLE_COLLISION_LAYER: int = 2
 const PLAYER_COLLISION_LAYER: int = 4
 const NPC_COLLISION_LAYER: int = 8
 const CharacterMeshFactoryScript = preload("res://scripts/character_mesh_factory.gd")
+const RIGGED_PLAYER_SCENE = preload("res://assets/models/characters/lagos_player.glb")
 const MIN_CAMERA_PITCH: float = deg_to_rad(-55.0)
 const MAX_CAMERA_PITCH: float = deg_to_rad(35.0)
 
@@ -18,6 +19,8 @@ var camera_yaw_pivot: Node3D
 var camera_pivot: SpringArm3D
 var camera: Camera3D
 var body_mesh: MeshInstance3D
+var _rigged_character: Node3D
+var _rigged_animation_player: AnimationPlayer
 var mouse_captured: bool = false
 var mobile_controls: Node
 var jump_requested: bool = false
@@ -62,6 +65,9 @@ func _build_body() -> void:
 	body_mesh.material_override = _character_material(Color(0.10, 0.34, 0.38))
 	body_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	add_child(body_mesh)
+	if _try_attach_rigged_character():
+		_build_camera_rig()
+		return
 
 	var neck := MeshInstance3D.new()
 	var neck_mesh := CapsuleMesh.new()
@@ -153,6 +159,46 @@ func _build_body() -> void:
 	_left_leg_pivot = _create_leg(Vector3(-0.16, -0.36, 0.0))
 	_right_leg_pivot = _create_leg(Vector3(0.16, -0.36, 0.0))
 
+	_build_camera_rig()
+
+func _try_attach_rigged_character() -> bool:
+	var model_scene := RIGGED_PLAYER_SCENE as PackedScene
+	if model_scene == null:
+		push_warning("Rigged player model could not be loaded; using the lightweight fallback rig.")
+		return false
+	_rigged_character = model_scene.instantiate() as Node3D
+	if _rigged_character == null:
+		push_warning("Rigged player scene has no Node3D root; using the lightweight fallback rig.")
+		return false
+	_rigged_character.name = "RiggedLagosPlayer"
+	body_mesh.mesh = null
+	body_mesh.position = Vector3.ZERO
+	body_mesh.add_child(_rigged_character)
+	_rigged_animation_player = _rigged_character.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	_apply_rigged_character_materials(_rigged_character, Color(0.10, 0.34, 0.38), Color(0.085, 0.10, 0.13))
+	if _rigged_animation_player != null and _rigged_animation_player.has_animation("HumanArmature|Man_Idle"):
+		_rigged_animation_player.play("HumanArmature|Man_Idle")
+	return true
+
+func _apply_rigged_character_materials(model: Node3D, shirt_color: Color, pants_color: Color) -> void:
+	for node in model.find_children("*", "MeshInstance3D", true, false):
+		var mesh_instance := node as MeshInstance3D
+		if mesh_instance.mesh == null:
+			continue
+		for surface_index in range(mesh_instance.mesh.get_surface_count()):
+			var source_material := mesh_instance.get_active_material(surface_index)
+			if not source_material is StandardMaterial3D:
+				continue
+			var material := (source_material as StandardMaterial3D).duplicate() as StandardMaterial3D
+			var material_name := source_material.resource_name.to_lower()
+			if material_name.contains("shirt") or surface_index <= 1:
+				material.albedo_color = shirt_color
+				mesh_instance.set_surface_override_material(surface_index, material)
+			elif material_name.contains("pants") or surface_index == 3:
+				material.albedo_color = pants_color
+				mesh_instance.set_surface_override_material(surface_index, material)
+
+func _build_camera_rig() -> void:
 	# SpringArm3D keeps the third-person camera outside mapped walls and vehicles.
 	camera_yaw_pivot = Node3D.new()
 	camera_yaw_pivot.name = "CameraYawPivot"
@@ -248,6 +294,19 @@ func _create_leg(limb_position: Vector3) -> Node3D:
 func _update_character_animation(delta: float) -> void:
 	_animation_clock += delta
 	var horizontal_speed := Vector2(velocity.x, velocity.z).length()
+	if _rigged_animation_player != null:
+		var animation_name := "HumanArmature|Man_Idle"
+		if not is_on_floor():
+			animation_name = "HumanArmature|Man_Jump"
+		elif horizontal_speed > 0.35:
+			animation_name = "HumanArmature|Man_Run" if horizontal_speed > WALK_SPEED * 1.15 else "HumanArmature|Man_Walk"
+		if _rigged_animation_player.has_animation(animation_name):
+			if _rigged_animation_player.current_animation != animation_name:
+				_rigged_animation_player.play(animation_name, 0.16)
+			_rigged_animation_player.speed_scale = clampf(horizontal_speed / WALK_SPEED, 0.85, 1.25) if horizontal_speed > 0.35 else 1.0
+		return
+	if _left_leg_pivot == null or _right_leg_pivot == null or _left_arm_pivot == null or _right_arm_pivot == null:
+		return
 	var swing := sin(_animation_clock * 9.0) * 0.48 if horizontal_speed > 0.35 else 0.0
 	_left_leg_pivot.rotation.x = swing
 	_right_leg_pivot.rotation.x = -swing
