@@ -113,10 +113,12 @@ func enter_vehicle(player: Node) -> void:
 	player.collision_mask = 0
 	player.body_mesh.visible = false
 	player.camera_pivot.reparent(self, false)
-	player.camera_pivot.position = Vector3(0.0, 3.2, 6.8)
-	player.camera_pivot.rotation = Vector3(deg_to_rad(-14.0), 0.0, 0.0)
+	player.camera_pivot.position = Vector3(0.0, 2.4, 0.0)
+	player.camera_pivot.rotation = Vector3(deg_to_rad(-12.0), PI, 0.0)
+	player.camera_pivot.spring_length = 8.0
+	player.camera_pivot.collision_mask = WORLD_COLLISION_LAYER
 	player.camera.position = Vector3.ZERO
-	player.camera.rotation = Vector3.ZERO
+	player.camera.rotation = Vector3(0.0, PI, 0.0)
 
 func _find_safe_exit_position(player: Node) -> Vector3:
 	var capsule := CapsuleShape3D.new()
@@ -152,9 +154,11 @@ func exit_vehicle() -> void:
 	driver = null
 	player.camera_pivot.reparent(player, false)
 	player.camera_pivot.position = Vector3(0.0, 1.72, 0.0)
-	player.camera_pivot.rotation = Vector3.ZERO
-	player.camera.position = Vector3(0.0, 2.15, 7.2)
-	player.camera.rotation.x = deg_to_rad(-14.0)
+	player.camera_pivot.rotation = Vector3(deg_to_rad(-14.0), PI, 0.0)
+	player.camera_pivot.spring_length = 7.2
+	player.camera_pivot.collision_mask = WORLD_COLLISION_LAYER
+	player.camera.position = Vector3.ZERO
+	player.camera.rotation = Vector3(0.0, PI, 0.0)
 	player.global_position = safe_position
 	player.velocity = Vector3.ZERO
 	player.collision_layer = _driver_collision_layer
