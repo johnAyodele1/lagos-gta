@@ -94,6 +94,9 @@ func _add_wheel(wheel_position: Vector3, radius: float, width: float, color: Col
 func enter_vehicle(player: Node) -> void:
 	if driver != null:
 		return
+	if not is_instance_valid(player) or player.camera_pivot == null or player.camera == null or player.body_mesh == null:
+		push_error("Cannot enter the danfo: player camera or visual rig is not ready.")
+		return
 	driver = player
 	_driver_collision_layer = int(player.collision_layer)
 	_driver_collision_mask = int(player.collision_mask)
