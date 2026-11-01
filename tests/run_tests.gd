@@ -170,6 +170,14 @@ func _test_visual_meshes() -> void:
 	_check(rigged_player != null, "player uses the imported rigged Lagos character model")
 	var player_animation := rigged_player.find_child("AnimationPlayer", true, false) as AnimationPlayer if rigged_player != null else null
 	_check(player_animation != null and player_animation.has_animation("HumanArmature|Man_Walk"), "player model includes real walk animation clips")
+	var player_meshes: Array[Node] = rigged_player.find_children("*", "MeshInstance3D", true, false) if rigged_player != null else []
+	var player_materials_valid := not player_meshes.is_empty()
+	for mesh_node in player_meshes:
+		var mesh_instance := mesh_node as MeshInstance3D
+		for surface_index in range(mesh_instance.mesh.get_surface_count()):
+			if mesh_instance.get_active_material(surface_index) == null:
+				player_materials_valid = false
+	_check(player_materials_valid, "every imported player mesh surface has an assigned material")
 	player.global_position = Vector3(10000.0, 100.0, 10000.0)
 	player.set_physics_process(false)
 	await physics_frame
@@ -182,6 +190,11 @@ func _test_visual_meshes() -> void:
 	var danfo_model := vehicle.get_node_or_null("DanfoModel") as MeshInstance3D
 	_check(danfo_model != null and danfo_model.mesh != null, "danfo uses the imported detailed minibus 3D model")
 	_check(danfo_model.mesh.get_surface_count() >= 5, "danfo model retains separate body, window, wheel and light materials")
+	var danfo_materials_valid := true
+	for surface_index in range(danfo_model.mesh.get_surface_count()):
+		if danfo_model.get_active_material(surface_index) == null:
+			danfo_materials_valid = false
+	_check(danfo_materials_valid, "every danfo mesh surface has a material assigned")
 	var danfo_collision := vehicle.get_child(0) as CollisionShape3D
 	var danfo_box := danfo_collision.shape as BoxShape3D if danfo_collision != null else null
 	_check(danfo_box != null and danfo_box.size.is_equal_approx(Vector3(2.35, 2.8, 4.9)), "danfo physics collider matches the model's length-along-Z orientation")
