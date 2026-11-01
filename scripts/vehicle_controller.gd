@@ -1,4 +1,5 @@
 extends CharacterBody3D
+const LABEL_FONT = preload("res://assets/fonts/Roboto.ttf")
 class_name VehicleController
 
 const MAX_FORWARD_SPEED: float = 22.0
@@ -85,7 +86,7 @@ func _build_vehicle() -> void:
 		add_child(stripe)
 
 	var route_label := Label3D.new()
-	route_label.font = ThemeDB.fallback_font
+	route_label.font = LABEL_FONT
 	route_label.material_override = _vehicle_material(Color(1.0, 0.94, 0.68), 0.0)
 	route_label.name = "DanfoDestinationBoard"
 	route_label.text = "YABA  /  TEJUOSHO"
