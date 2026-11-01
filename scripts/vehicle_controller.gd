@@ -85,6 +85,7 @@ func _build_vehicle() -> void:
 		add_child(stripe)
 
 	var route_label := Label3D.new()
+	route_label.font = ThemeDB.fallback_font
 	route_label.name = "DanfoDestinationBoard"
 	route_label.text = "YABA  /  TEJUOSHO"
 	route_label.font_size = 26
