@@ -13,6 +13,7 @@ const NPC_COLLISION_LAYER: int = 8
 const CharacterMeshFactoryScript = preload("res://scripts/character_mesh_factory.gd")
 const ModelBoundsScript = preload("res://scripts/model_bounds.gd")
 const RIGGED_PLAYER_SCENE = preload("res://assets/models/characters/lagos_player.glb")
+const ARA_PLAYER_SCENE_PATH := "res://assets/models/characters/ara/lagos_male_civilian.glb"
 const MIN_CAMERA_PITCH: float = deg_to_rad(-55.0)
 const MAX_CAMERA_PITCH: float = deg_to_rad(35.0)
 
@@ -22,6 +23,11 @@ var camera: Camera3D
 var body_mesh: MeshInstance3D
 var _rigged_character: Node3D
 var _rigged_animation_player: AnimationPlayer
+var _uses_ara_character := false
+var _idle_animation_name: StringName = &""
+var _walk_animation_name: StringName = &""
+var _run_animation_name: StringName = &""
+var _jump_animation_name: StringName = &""
 var mouse_captured: bool = false
 var mobile_controls: Node
 var jump_requested: bool = false
@@ -170,27 +176,53 @@ func _build_body() -> void:
 func _try_attach_rigged_character() -> bool:
 	if DisplayServer.get_name() == "headless":
 		return false
-	var model_scene := RIGGED_PLAYER_SCENE as PackedScene
+	var model_scene: PackedScene
+	if ResourceLoader.exists(ARA_PLAYER_SCENE_PATH):
+		model_scene = load(ARA_PLAYER_SCENE_PATH) as PackedScene
+		_uses_ara_character = model_scene != null
 	if model_scene == null:
-		push_warning("Rigged player model could not be loaded; using the lightweight fallback rig.")
+		model_scene = RIGGED_PLAYER_SCENE as PackedScene
+	if model_scene == null:
+		push_warning("No rigged player model could be loaded; using the lightweight fallback rig.")
 		return false
 	_rigged_character = model_scene.instantiate() as Node3D
 	if _rigged_character == null:
 		push_warning("Rigged player scene has no Node3D root; using the lightweight fallback rig.")
 		return false
 	_rigged_character.name = "RiggedLagosPlayer"
-	# This imported Quaternius rig faces +Z; the controller and camera use -Z
-	# as the character's forward axis. Rotate the visual root, not the collider.
-	_rigged_character.rotation.y = PI
+	# The existing Quaternius fallback faces +Z. Ara GLB exports use the
+	# glTF forward axis (-Z), matching the controller's movement direction.
+	_rigged_character.rotation.y = 0.0 if _uses_ara_character else PI
 	body_mesh.mesh = null
 	body_mesh.position = Vector3.ZERO
 	body_mesh.add_child(_rigged_character)
 	_rigged_animation_player = _rigged_character.find_child("AnimationPlayer", true, false) as AnimationPlayer
-	_apply_rigged_character_materials(_rigged_character, Color(0.10, 0.34, 0.38), Color(0.40, 0.25, 0.17), Color(0.085, 0.10, 0.13))
+	if not _uses_ara_character:
+		_apply_rigged_character_materials(_rigged_character, Color(0.10, 0.34, 0.38), Color(0.40, 0.25, 0.17), Color(0.085, 0.10, 0.13))
+	_cache_rigged_animation_names()
 	call_deferred("_fit_rigged_character_dimensions")
-	if _rigged_animation_player != null and _rigged_animation_player.has_animation("HumanArmature|Man_Idle"):
-		_rigged_animation_player.play("HumanArmature|Man_Idle")
+	if _rigged_animation_player != null and _idle_animation_name != &"":
+		_rigged_animation_player.play(_idle_animation_name)
 	return true
+
+
+func _cache_rigged_animation_names() -> void:
+	if _rigged_animation_player == null:
+		return
+	_idle_animation_name = _resolve_rigged_animation("idle", "HumanArmature|Man_Idle")
+	_walk_animation_name = _resolve_rigged_animation("walk", "HumanArmature|Man_Walk")
+	_run_animation_name = _resolve_rigged_animation("run", "HumanArmature|Man_Run")
+	_jump_animation_name = _resolve_rigged_animation("jump", "HumanArmature|Man_Jump")
+
+func _resolve_rigged_animation(keyword: String, legacy_name: String) -> StringName:
+	if _rigged_animation_player == null:
+		return &""
+	if _rigged_animation_player.has_animation(legacy_name):
+		return StringName(legacy_name)
+	for animation_name in _rigged_animation_player.get_animation_list():
+		if str(animation_name).to_lower().contains(keyword):
+			return StringName(animation_name)
+	return &""
 
 func _fit_rigged_character_dimensions() -> void:
 	if _rigged_character != null and is_instance_valid(_rigged_character):
@@ -322,12 +354,12 @@ func _update_character_animation(delta: float) -> void:
 	_animation_clock += delta
 	var horizontal_speed := Vector2(velocity.x, velocity.z).length()
 	if is_instance_valid(_rigged_animation_player):
-		var animation_name := "HumanArmature|Man_Idle"
-		if not is_on_floor() and absf(velocity.y) > 0.1:
-			animation_name = "HumanArmature|Man_Jump"
+		var animation_name := _idle_animation_name
+		if not is_on_floor() and absf(velocity.y) > 0.1 and _jump_animation_name != &"":
+			animation_name = _jump_animation_name
 		elif horizontal_speed > 0.35:
-			animation_name = "HumanArmature|Man_Run" if horizontal_speed > WALK_SPEED * 1.15 else "HumanArmature|Man_Walk"
-		if _rigged_animation_player.has_animation(animation_name):
+			animation_name = _run_animation_name if horizontal_speed > WALK_SPEED * 1.15 and _run_animation_name != &"" else _walk_animation_name
+		if animation_name != &"":
 			if _rigged_animation_player.current_animation != animation_name:
 				_rigged_animation_player.play(animation_name, 0.16)
 			_rigged_animation_player.speed_scale = clampf(horizontal_speed / WALK_SPEED, 0.85, 1.25) if horizontal_speed > 0.35 else 1.0
