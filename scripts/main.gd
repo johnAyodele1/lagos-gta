@@ -3,6 +3,7 @@ extends Node3D
 const PlayerScript = preload("res://scripts/player_controller.gd")
 const WorldScript = preload("res://scripts/world_generator.gd")
 const MobileControlsScript = preload("res://scripts/mobile_controls.gd")
+const LegalConsentScript = preload("res://scripts/legal_consent.gd")
 
 func _ready() -> void:
 	_build_environment()
@@ -12,6 +13,7 @@ func _ready() -> void:
 	world.generate()
 	_spawn_player()
 	_add_hud()
+	_add_legal_consent()
 
 func _build_environment() -> void:
 	var world_environment := WorldEnvironment.new()
@@ -28,7 +30,8 @@ func _build_environment() -> void:
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-48.0, -28.0, 0.0)
 	sun.light_energy = 1.15
-	sun.shadow_enabled = true
+	# Dynamic shadows are disabled on mobile to reduce GPU and bandwidth cost.
+	sun.shadow_enabled = not OS.has_feature("mobile")
 	add_child(sun)
 
 func _spawn_player() -> void:
@@ -45,6 +48,12 @@ func _spawn_player() -> void:
 	controls.name = "MobileControls"
 	controls_layer.add_child(controls)
 	player.mobile_controls = controls
+
+func _add_legal_consent() -> void:
+	var legal_layer := LegalConsentScript.new()
+	legal_layer.name = "LegalConsent"
+	legal_layer.layer = 20
+	add_child(legal_layer)
 
 func _add_hud() -> void:
 	var layer := CanvasLayer.new()
