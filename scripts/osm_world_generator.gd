@@ -477,10 +477,8 @@ func _add_cylinder_batch(batch_name: String, radius: float, height: float, trans
 func _add_barrier_network() -> void:
 	var wall_transforms: Array[Transform3D] = []
 	var fence_transforms: Array[Transform3D] = []
-	var barrier_body := StaticBody3D.new()
-	barrier_body.name = "OSMBarrierCollision"
-	barrier_body.collision_layer = 1
-	barrier_body.collision_mask = 0
+	var collision_root := Node3D.new()
+	collision_root.name = "OSMBarrierCollision"
 	var collider_count := 0
 	for barrier in _barriers:
 		var points := _points_from_coordinates(barrier.get("coordinates", []))
@@ -500,20 +498,26 @@ func _add_barrier_network() -> void:
 			else:
 				fence_transforms.append(transform)
 
-			# Box colliders are more reliable for thin mapped walls/fences than an open triangle strip.
+			# Keep each mapped segment as its own static box collider for predictable contacts.
+			var segment_body := StaticBody3D.new()
+			segment_body.name = "BarrierSegment_%d_%d" % [collider_count, index]
+			segment_body.collision_layer = 1
+			segment_body.collision_mask = 0
+			segment_body.position = Vector3(midpoint.x, wall_height * 0.5, midpoint.y)
+			segment_body.rotation.y = angle
 			var collision := CollisionShape3D.new()
 			var shape := BoxShape3D.new()
 			shape.size = Vector3(length, wall_height, 0.18)
 			collision.shape = shape
-			collision.position = Vector3(midpoint.x, wall_height * 0.5, midpoint.y)
-			collision.rotation.y = angle
-			barrier_body.add_child(collision)
+			segment_body.add_child(collision)
+			collision_root.add_child(segment_body)
 			collider_count += 1
 
 	_add_box_batch("OSMCompoundWalls", Vector3.ONE, wall_transforms, Color(0.60, 0.55, 0.46))
 	_add_box_batch("OSMCompoundFences", Vector3.ONE, fence_transforms, Color(0.22, 0.23, 0.21))
 	if collider_count > 0:
-		add_child(barrier_body)
+		add_child(collision_root)
+
 func _add_utility_network() -> void:
 	var pole_transforms: Array[Transform3D] = []
 	var wire_transforms: Array[Transform3D] = []
