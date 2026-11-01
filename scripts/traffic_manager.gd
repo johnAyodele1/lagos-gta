@@ -41,8 +41,8 @@ func _ready() -> void:
 		push_warning("Ambient traffic is disabled because no usable OSM road routes were supplied.")
 		return
 	_spawn_traffic()
-	_create_collision_proxies()
 	_create_vehicle_visuals()
+	_create_collision_proxies()
 	_update_vehicle_transforms()
 
 func _process(delta: float) -> void:
@@ -163,7 +163,7 @@ func _create_vehicle_visuals() -> void:
 				visual.set_surface_override_material(surface_index, fallback)
 		visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		add_child(visual)
-		if not ModelBoundsScript.fit_dimensions(visual, Vector3(1.92, 1.55, 4.2)):
+		if not ModelBoundsScript.fit_height_preserve_footprint(visual, 1.45):
 			push_error("Traffic vehicle %02d has invalid mesh bounds." % index)
 			return
 		_traffic_visuals.append(visual)
@@ -177,11 +177,12 @@ func _create_collision_proxies() -> void:
 		body.collision_layer = VEHICLE_COLLISION_LAYER
 		body.collision_mask = WORLD_COLLISION_LAYER | PLAYER_COLLISION_LAYER | NPC_COLLISION_LAYER
 		body.sync_to_physics = true
+		var dimensions := ModelBoundsScript.get_scaled_dimensions(_traffic_visuals[index])
 		var collision := CollisionShape3D.new()
 		var shape := BoxShape3D.new()
-		shape.size = Vector3(2.02, 1.62, 4.28)
+		shape.size = Vector3(dimensions.x * 1.04, dimensions.y * 1.03, dimensions.z * 1.04)
 		collision.shape = shape
-		collision.position.y = 0.81
+		collision.position.y = dimensions.y * 0.5
 		body.add_child(collision)
 		add_child(body)
 		_collision_bodies.append(body)
