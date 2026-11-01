@@ -120,6 +120,7 @@ func _test_world_generation_batching() -> void:
 	_check(multimesh_count >= 4, "building windows are batched into multimesh instances")
 	_check(district_sign_count >= 2, "district and danfo stop signs are generated")
 	_check(world.get_node_or_null("ParkedDanfoMinibus") == null, "the district does not create a duplicate static danfo when the drivable vehicle is managed by the game scene")
+	_check(world.get_node_or_null("ParkedKekeTricycle") != null, "Yaba market includes a parked keke tricycle landmark")
 	_check(world._material_cache.size() < 40, "generated geometry reuses a bounded shared material set")
 	world.queue_free()
 
