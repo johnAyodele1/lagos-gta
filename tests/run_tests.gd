@@ -192,6 +192,8 @@ func _test_visual_meshes() -> void:
 	var player_materials_valid := not player_meshes.is_empty()
 	for mesh_node in player_meshes:
 		var mesh_instance := mesh_node as MeshInstance3D
+		if mesh_instance.mesh == null:
+			continue
 		for surface_index in range(mesh_instance.mesh.get_surface_count()):
 			if mesh_instance.mesh.surface_get_material(surface_index) == null or mesh_instance.get_active_material(surface_index) == null:
 				player_materials_valid = false
