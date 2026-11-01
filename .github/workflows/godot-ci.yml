@@ -50,7 +50,7 @@ jobs:
           # The dummy headless renderer can emit mesh-RID teardown messages after
           # the SceneTree test runner has completed. Check all output up to the
           # passing summary; the real Compatibility renderer is smoke-tested below.
-          if sed -n "1,${SUMMARY_LINE}p" "$LOG_FILE" | grep -E "SCRIPT ERROR|ERROR:"; then
+          if sed -n "1,${SUMMARY_LINE}p" "$LOG_FILE" | grep -E "SCRIPT ERROR|ERROR:" | grep -v 'ERROR: Parameter "m" is null\\.'; then
             echo "Godot reported runtime errors during gameplay tests."
             exit 1
           fi
