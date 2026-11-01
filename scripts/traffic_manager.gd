@@ -150,6 +150,11 @@ func _create_vehicle_visuals() -> void:
 		if model_mesh == null:
 			push_error("Traffic vehicle model failed to import: %s" % model_path)
 			return
+		var material_probe := MeshInstance3D.new()
+		material_probe.mesh = model_mesh
+		ModelBoundsScript.ensure_surface_materials(material_probe, [Color(0.42, 0.44, 0.46)])
+		model_mesh = material_probe.mesh
+		material_probe.free()
 		model_meshes.append(model_mesh)
 	for index in range(_traffic.size()):
 		var visual := MeshInstance3D.new()
