@@ -3,6 +3,7 @@ extends SceneTree
 const PlayerScript = preload("res://scripts/player_controller.gd")
 const MobileControlsScript = preload("res://scripts/mobile_controls.gd")
 const LegalConsentScript = preload("res://scripts/legal_consent.gd")
+const WorldGeneratorScript = preload("res://scripts/world_generator.gd")
 
 var failures: int = 0
 var assertions: int = 0
@@ -17,6 +18,7 @@ func _run() -> void:
 	_test_mobile_button_state()
 	_test_mobile_touch_routing()
 	_test_legal_consent_versioning()
+	_test_world_generation_batching()
 	_test_project_scripts_load()
 	if failures > 0:
 		push_error("%d of %d gameplay input tests failed." % [failures, assertions])
@@ -101,6 +103,22 @@ func _test_legal_consent_versioning() -> void:
 	_check(LegalConsentScript.is_current_consent(LegalConsentScript.LEGAL_VERSION), "current legal version remains accepted")
 	_check(not LegalConsentScript.is_current_consent(LegalConsentScript.LEGAL_VERSION - 1), "updated terms require renewed acceptance")
 	_check(not LegalConsentScript.is_current_consent(LegalConsentScript.LEGAL_VERSION + 1), "unknown future consent versions are not silently accepted")
+
+func _test_world_generation_batching() -> void:
+	var world = WorldGeneratorScript.new()
+	root.add_child(world)
+	world.generate()
+	var multimesh_count := 0
+	var district_sign_count := 0
+	for child in world.get_children():
+		if child is MultiMeshInstance3D:
+			multimesh_count += 1
+		if child is Label3D:
+			district_sign_count += 1
+	_check(multimesh_count >= 4, "building windows are batched into multimesh instances")
+	_check(district_sign_count >= 2, "district and danfo stop signs are generated")
+	_check(world._material_cache.size() < 40, "generated geometry reuses a bounded shared material set")
+	world.queue_free()
 
 func _test_project_scripts_load() -> void:
 	var world_script = ResourceLoader.load("res://scripts/world_generator.gd")
