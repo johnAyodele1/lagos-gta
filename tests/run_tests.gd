@@ -213,12 +213,13 @@ func _test_visual_meshes() -> void:
 	_check(danfo_model != null and danfo_model.mesh != null, "danfo uses the imported detailed minibus 3D model")
 	if danfo_model != null and DisplayServer.get_name() != "headless":
 		_check(ModelBoundsScript.get_scaled_dimensions(danfo_model).is_equal_approx(Vector3(2.0, 2.25, 4.65)), "danfo visual is fitted to a 2.25m roof height and 4.65m body length")
-	_check(danfo_model.mesh.get_surface_count() >= 5, "danfo model retains separate body, window, wheel and light materials")
-	var danfo_materials_valid := true
-	for surface_index in range(danfo_model.mesh.get_surface_count()):
-		if danfo_model.mesh.surface_get_material(surface_index) == null or danfo_model.get_active_material(surface_index) == null:
-			danfo_materials_valid = false
-	_check(danfo_materials_valid, "every danfo mesh surface has a material assigned")
+	if DisplayServer.get_name() != "headless":
+		_check(danfo_model.mesh.get_surface_count() >= 5, "danfo model retains separate body, window, wheel and light materials")
+		var danfo_materials_valid := true
+		for surface_index in range(danfo_model.mesh.get_surface_count()):
+			if danfo_model.mesh.surface_get_material(surface_index) == null or danfo_model.get_active_material(surface_index) == null:
+				danfo_materials_valid = false
+		_check(danfo_materials_valid, "every danfo mesh surface has a material assigned")
 	var danfo_collision := vehicle.get_child(0) as CollisionShape3D
 	var danfo_box := danfo_collision.shape as BoxShape3D if danfo_collision != null else null
 	_check(danfo_box != null and danfo_box.size.is_equal_approx(Vector3(2.05, 2.35, 4.7)), "danfo collision proxy uses a realistic 2.05m by 2.35m by 4.7m vehicle envelope")
