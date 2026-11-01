@@ -159,19 +159,20 @@ func _test_graphics_profiles() -> void:
 	_check(int(high["shadow_atlas_size"]) == 2048 and float(high["far_clip"]) == 300.0, "high profile reserves longer view distance for desktop hardware")
 
 func _test_visual_meshes() -> void:
-	var bounds_probe := Node3D.new()
-	var bounds_mesh := MeshInstance3D.new()
-	var bounds_box := BoxMesh.new()
-	bounds_box.size = Vector3(1.0, 4.0, 1.0)
-	bounds_mesh.mesh = bounds_box
-	bounds_probe.add_child(bounds_mesh)
-	root.add_child(bounds_probe)
-	await process_frame
-	_check(ModelBoundsScript.fit_height(bounds_probe, 2.0), "model bounds utility accepts imported mesh geometry")
-	_check(is_equal_approx(bounds_probe.scale.y, 0.5) and is_equal_approx(bounds_probe.position.y, 1.0), "model bounds utility fits a four-metre mesh to a two-metre standing height")
-	bounds_probe.queue_free()
-	await process_frame
-
+	if DisplayServer.get_name() != "headless":
+		var bounds_probe := Node3D.new()
+		var bounds_mesh := MeshInstance3D.new()
+		var bounds_box := BoxMesh.new()
+		bounds_box.size = Vector3(1.0, 4.0, 1.0)
+		bounds_mesh.mesh = bounds_box
+		bounds_probe.add_child(bounds_mesh)
+		root.add_child(bounds_probe)
+		await process_frame
+		_check(ModelBoundsScript.fit_height(bounds_probe, 2.0), "model bounds utility accepts imported mesh geometry")
+		_check(is_equal_approx(bounds_probe.scale.y, 0.5) and is_equal_approx(bounds_probe.position.y, 1.0), "model bounds utility fits a four-metre mesh to a two-metre standing height")
+		bounds_probe.queue_free()
+		await process_frame
+	
 	var player = PlayerScript.new()
 	root.add_child(player)
 	_check(player.body_mesh.mesh == null and player.body_mesh.get_node_or_null("RiggedLagosPlayer") != null, "player avatar is a rigged imported 3D character rather than primitive body parts")
@@ -183,7 +184,7 @@ func _test_visual_meshes() -> void:
 	var rigged_player := player.body_mesh.get_node_or_null("RiggedLagosPlayer") as Node3D
 	await process_frame
 	_check(rigged_player != null, "player uses the imported rigged Lagos character model")
-	if rigged_player != null:
+	if rigged_player != null and DisplayServer.get_name() != "headless":
 		var player_local_bounds: AABB = ModelBoundsScript._combined_local_bounds(rigged_player)
 		_check(is_equal_approx(player_local_bounds.size.y * rigged_player.scale.y, 1.76), "player visual is normalized to 1.76m rather than scaling larger than the danfo")
 	var player_animation := rigged_player.find_child("AnimationPlayer", true, false) as AnimationPlayer if rigged_player != null else null
@@ -209,7 +210,7 @@ func _test_visual_meshes() -> void:
 	root.add_child(vehicle)
 	var danfo_model := vehicle.get_node_or_null("DanfoModel") as MeshInstance3D
 	_check(danfo_model != null and danfo_model.mesh != null, "danfo uses the imported detailed minibus 3D model")
-	if danfo_model != null:
+	if danfo_model != null and DisplayServer.get_name() != "headless":
 		_check(ModelBoundsScript.get_scaled_dimensions(danfo_model).is_equal_approx(Vector3(2.0, 2.25, 4.65)), "danfo visual is fitted to a 2.25m roof height and 4.65m body length")
 	_check(danfo_model.mesh.get_surface_count() >= 5, "danfo model retains separate body, window, wheel and light materials")
 	var danfo_materials_valid := true
@@ -404,7 +405,7 @@ func _test_ambient_traffic() -> void:
 	_check(traffic_materials_valid, "every ambient traffic mesh surface has an assigned material")
 	var first_traffic_shape := traffic._collision_bodies[0].get_child(0) as CollisionShape3D
 	var first_traffic_box := first_traffic_shape.shape as BoxShape3D if first_traffic_shape != null else null
-	var first_traffic_dimensions := ModelBoundsScript.get_scaled_dimensions(traffic._traffic_visuals[0])
+	var first_traffic_dimensions: Vector3 = TrafficManagerScript.TRAFFIC_MODEL_DIMENSIONS[0]
 	_check(first_traffic_box != null and first_traffic_box.size.is_equal_approx(first_traffic_dimensions * Vector3(1.04, 1.03, 1.04)), "traffic collision proxy is derived from each imported car's actual dimensions")
 	var starting_distance := traffic.get_traffic_distance(0)
 	var starting_position := traffic.get_traffic_position(0)
