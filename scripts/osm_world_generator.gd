@@ -1183,6 +1183,13 @@ func _nearest_road_sample() -> Dictionary:
 	var best_width := 6.0
 	var best_name := ""
 	var best_highway := ""
+	var best_frontage := 0
+	var building_centroids: Array[Vector2] = []
+	for building in _buildings:
+		var outline: Array = building.get("outline", [])
+		if outline.size() >= 4:
+			building_centroids.append(_outline_centroid(outline))
+
 	for road in _roads:
 		var highway := str(road.get("highway", ""))
 		if highway in ["footway", "path", "pedestrian", "cycleway", "steps"]:
@@ -1207,29 +1214,52 @@ func _nearest_road_sample() -> Dictionary:
 		var name_penalty := 0.0 if not road_name.is_empty() else 25.0
 		var surface_penalty := 0.0 if str(road.get("surface", "")) in ["paved", "asphalt", "concrete"] else 4.0
 		var points := _points_from_coordinates(road.get("coordinates", []))
-		for index in range(points.size() - 1):
-			var start := points[index]
-			var finish := points[index + 1]
-			var candidate: Vector2 = Geometry2D.get_closest_point_to_segment(Vector2.ZERO, start, finish)
-			var distance := candidate.length()
-			var score := distance + road_priority + name_penalty + surface_penalty
-			# Prefer a named public street over an unnamed service lane or market
-			# access road, even when the latter is a few metres closer to origin.
-			if score < best_score:
-				best_score = score
-				best_distance = distance
-				best_position = candidate
-				best_direction = (finish - start).normalized()
-				best_width = float(road.get("width_m", 6.0))
-				best_name = road_name
-				best_highway = highway
+		for segment_index in range(points.size() - 1):
+			var start := points[segment_index]
+			var finish := points[segment_index + 1]
+			var segment := finish - start
+			var segment_length := segment.length()
+			if segment_length < 1.0:
+				continue
+			var direction := segment / segment_length
+			var sample_count := maxi(1, int(ceil(segment_length / 12.0)))
+			for sample_index in range(sample_count + 1):
+				var candidate := start.lerp(finish, float(sample_index) / float(sample_count))
+				var distance := candidate.length()
+				if distance > 300.0:
+					continue
+				var left_frontage := 0
+				var right_frontage := 0
+				for building_center in building_centroids:
+					var delta := building_center - candidate
+					if delta.length() > 18.0:
+						continue
+					if direction.cross(delta) > 0.0:
+						left_frontage += 1
+					else:
+						right_frontage += 1
+				var frontage_count := left_frontage + right_frontage
+				# A slightly longer segment with buildings on both sides makes a
+				# much better starting street than the nearest empty service yard.
+				var frontage_bonus := float(frontage_count) * 20.0 + float(mini(left_frontage, right_frontage)) * 10.0
+				var score := distance + road_priority + name_penalty + surface_penalty - frontage_bonus
+				if score < best_score:
+					best_score = score
+					best_distance = distance
+					best_position = candidate
+					best_direction = direction
+					best_width = float(road.get("width_m", 6.0))
+					best_name = road_name
+					best_highway = highway
+					best_frontage = frontage_count
 	return {
 		"position": best_position,
 		"direction": best_direction,
 		"width": best_width,
 		"name": best_name,
 		"highway": best_highway,
-		"distance": best_distance
+		"distance": best_distance,
+		"frontage_count": best_frontage
 	}
 
 func get_vehicle_spawn_position() -> Vector3:
