@@ -18,6 +18,7 @@ func _run() -> void:
 	_test_normalize_move_input()
 	_test_camera_pitch_clamp()
 	_test_mobile_joystick()
+	_test_mobile_safe_area()
 	_test_mobile_button_state()
 	_test_mobile_touch_routing()
 	_test_legal_consent_versioning()
@@ -51,6 +52,17 @@ func _test_camera_pitch_clamp() -> void:
 	_check(is_equal_approx(PlayerScript.clamp_camera_pitch(-10.0), deg_to_rad(-55.0)), "camera pitch clamps at the lower limit")
 	_check(is_equal_approx(PlayerScript.clamp_camera_pitch(10.0), deg_to_rad(35.0)), "camera pitch clamps at the upper limit")
 	_check(is_equal_approx(PlayerScript.clamp_camera_pitch(0.2), 0.2), "camera pitch remains unchanged inside limits")
+
+
+func _test_mobile_safe_area() -> void:
+	var insets := MobileControlsScript.calculate_safe_insets(
+		Vector2(800.0, 400.0),
+		Vector2(1600.0, 800.0),
+		Rect2i(80, 40, 1440, 720)
+	)
+	_check(insets.is_equal_approx(Vector4(40.0, 20.0, 40.0, 20.0)), "mobile controls scale iOS notch and home-indicator safe insets into viewport coordinates")
+	_check(MobileControlsScript.calculate_safe_insets(Vector2(800.0, 400.0), Vector2.ZERO, Rect2i()).is_equal_approx(Vector4.ZERO), "safe-area calculation handles unavailable display dimensions")
+	_check(MobileControlsScript.calculate_safe_insets(Vector2(800.0, 400.0), Vector2(1600.0, 800.0), Rect2i(0, 0, 1600, 800)).is_equal_approx(Vector4.ZERO), "full-screen Android displays retain zero safe-area inset")
 
 func _test_mobile_button_state() -> void:
 	var controls = MobileControlsScript.new()
