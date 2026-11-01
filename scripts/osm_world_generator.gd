@@ -3,6 +3,7 @@ class_name OSMWorldGenerator
 const LABEL_FONT = preload("res://assets/fonts/Roboto.ttf")
 const ModelBoundsScript = preload("res://scripts/model_bounds.gd")
 const UnderpassSetpiece = preload("res://scripts/lagos_underpass_setpiece.gd")
+const DistrictPBR = preload("res://scripts/district_pbr_materials.gd")
 
 ## Builds a mobile-conscious Yaba district from a normalized OpenStreetMap extract.
 ## Roads, building footprints and mapped barriers remain data-driven; facade details
@@ -346,12 +347,13 @@ func _add_road_network() -> void:
 		if width >= 7.0 and str(road.get("highway", "")) in ["primary", "secondary", "tertiary"]:
 			_append_road_markings(points, marking_vertices, marking_normals, marking_indices, marking_uvs, deck_y + 0.013)
 	var asphalt_material := _material("asphalt", ROAD_COLOR)
-	asphalt_material.albedo_texture = _make_noise_texture(17, 0.24)
-	asphalt_material.roughness_texture = _make_noise_texture(81, 0.18)
-	asphalt_material.normal_enabled = true
-	asphalt_material.normal_texture = _make_normal_texture(82, 3.0)
-	asphalt_material.normal_scale = 0.42
-	asphalt_material.roughness = 0.98
+	if not DistrictPBR.apply(asphalt_material, "asphalt_02", Vector3(1.8, 1.8, 1.0), Color(0.82, 0.82, 0.82)):
+		asphalt_material.albedo_texture = _make_noise_texture(17, 0.24)
+		asphalt_material.roughness_texture = _make_noise_texture(81, 0.18)
+		asphalt_material.normal_enabled = true
+		asphalt_material.normal_texture = _make_normal_texture(82, 3.0)
+		asphalt_material.normal_scale = 0.42
+		asphalt_material.roughness = 0.98
 	var laterite_material := _material("laterite", Color(0.34, 0.22, 0.14))
 	laterite_material.albedo_texture = _make_noise_texture(91, 0.28)
 	laterite_material.roughness_texture = _make_noise_texture(92, 0.22)
@@ -367,12 +369,13 @@ func _add_road_network() -> void:
 	unknown_road_material.normal_scale = 0.34
 	unknown_road_material.roughness = 1.0
 	var concrete_material := _material("sidewalk", SIDEWALK_COLOR)
-	concrete_material.albedo_texture = _make_noise_texture(29, 0.16)
-	concrete_material.roughness_texture = _make_noise_texture(30, 0.12)
-	concrete_material.normal_enabled = true
-	concrete_material.normal_texture = _make_normal_texture(31, 1.8)
-	concrete_material.normal_scale = 0.28
-	concrete_material.roughness = 0.96
+	if not DistrictPBR.apply(concrete_material, "concrete_floor", Vector3(2.2, 2.2, 1.0), Color(0.88, 0.87, 0.83)):
+		concrete_material.albedo_texture = _make_noise_texture(29, 0.16)
+		concrete_material.roughness_texture = _make_noise_texture(30, 0.12)
+		concrete_material.normal_enabled = true
+		concrete_material.normal_texture = _make_normal_texture(31, 1.8)
+		concrete_material.normal_scale = 0.28
+		concrete_material.roughness = 0.96
 	_create_surface_mesh(road_vertices, road_normals, road_indices, road_uvs, asphalt_material, "OSMPavedRoadSurfaces")
 	_create_surface_mesh(laterite_vertices, laterite_normals, laterite_indices, laterite_uvs, laterite_material, "OSMUnpavedLateriteRoadSurfaces")
 	_create_surface_mesh(unknown_road_vertices, unknown_road_normals, unknown_road_indices, unknown_road_uvs, unknown_road_material, "OSMUnclassifiedRoadSurfaces")
@@ -637,11 +640,12 @@ func _add_building_network() -> void:
 	if not vertices.is_empty() and not indices.is_empty():
 		building_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, building_arrays)
 		var facade_material := _material("building_vertex", Color.WHITE, 0.94, true)
-		facade_material.albedo_texture = _make_noise_texture(43, 0.18)
-		facade_material.roughness_texture = _make_noise_texture(44, 0.12)
-		facade_material.normal_enabled = true
-		facade_material.normal_texture = _make_normal_texture(45, 1.4)
-		facade_material.normal_scale = 0.22
+		if not DistrictPBR.apply(facade_material, "concrete_floor", Vector3(1.7, 1.7, 1.0), Color.WHITE):
+			facade_material.albedo_texture = _make_noise_texture(43, 0.18)
+			facade_material.roughness_texture = _make_noise_texture(44, 0.12)
+			facade_material.normal_enabled = true
+			facade_material.normal_texture = _make_normal_texture(45, 1.4)
+			facade_material.normal_scale = 0.22
 		building_mesh.surface_set_material(0, facade_material)
 		var building_instance := MeshInstance3D.new()
 		building_instance.name = "OSMBuildingFootprintsAndFacades"

@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "source": "Poly Haven",
+  "license": "CC0 1.0",
+  "runtime_network_dependency": false,
+  "assets": {
+    "asphalt_02": {
+      "source": "https://polyhaven.com/a/asphalt_02",
+      "license": "CC0 1.0",
+      "maps": {
+        "diff": {
+          "file": "asphalt_02_diff.jpg",
+          "bytes": 731707,
+          "source_path": "diffuse/1k/jpg"
+        },
+        "nor_gl": {
+          "file": "asphalt_02_nor_gl.jpg",
+          "bytes": 1240122,
+          "source_path": "nor_gl/1k/jpg"
+        },
+        "rough": {
+          "file": "asphalt_02_rough.jpg",
+          "bytes": 544032,
+          "source_path": "blend/1k/blend/include/textures/asphalt_02_rough_1k.jpg"
+        }
+      }
+    },
+    "concrete_floor": {
+      "source": "https://polyhaven.com/a/concrete_floor",
+      "license": "CC0 1.0",
+      "maps": {
+        "diff": {
+          "file": "concrete_floor_diff.jpg",
+          "bytes": 927975,
+          "source_path": "diffuse/1k/jpg"
+        },
+        "nor_gl": {
+          "file": "concrete_floor_nor_gl.jpg",
+          "bytes": 883889,
+          "source_path": "nor_gl/1k/jpg"
+        },
+        "rough": {
+          "file": "concrete_floor_rough.jpg",
+          "bytes": 503981,
+          "source_path": "rough/1k/jpg"
+        }
+      }
+    },
+    "corrugated_iron": {
+      "source": "https://polyhaven.com/a/corrugated_iron",
+      "license": "CC0 1.0",
+      "maps": {
+        "diff": {
+          "file": "corrugated_iron_diff.jpg",
+          "bytes": 719557,
+          "source_path": "diffuse/1k/jpg"
+        },
+        "nor_gl": {
+          "file": "corrugated_iron_nor_gl.jpg",
+          "bytes": 755185,
+          "source_path": "nor_gl/1k/jpg"
+        },
+        "rough": {
+          "file": "corrugated_iron_rough.jpg",
+          "bytes": 455677,
+          "source_path": "rough/1k/jpg"
+        }
+      }
+    }
+  }
+}
