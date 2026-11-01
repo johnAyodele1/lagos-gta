@@ -80,6 +80,18 @@ func _test_mobile_touch_routing() -> void:
 	controls._begin_touch(14, Vector2(size.x * 0.7, size.y * 0.5))
 	_check(controls.look_touch_index == 14, "right-side touch is reserved for camera look")
 	controls._end_touch(14)
+
+	controls.joystick_touch_index = 15
+	controls.look_touch_index = 16
+	controls.sprint_touch_index = 17
+	controls.jump_touch_index = 18
+	controls.look_delta = Vector2(5.0, 3.0)
+	controls.jump_requested = true
+	controls._notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
+	_check(controls.get_move_vector() == Vector2.ZERO, "app focus loss clears active joystick movement")
+	_check(not controls.is_sprint_pressed(), "app focus loss releases sprint")
+	_check(controls.consume_look_delta() == Vector2.ZERO, "app focus loss clears camera drag")
+	_check(not controls.consume_jump_request(), "app focus loss clears pending jump")
 	controls.free()
 
 func _test_project_scripts_load() -> void:
