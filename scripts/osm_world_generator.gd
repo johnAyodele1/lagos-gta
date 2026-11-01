@@ -135,6 +135,13 @@ func _outline_centroid(outline: Array) -> Vector2:
 		result += Vector2(float(outline[index][0]), float(outline[index][1]))
 	return result / float(maxi(count, 1))
 
+func _label_material(color: Color) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	return material
+
 func _material(key: String, color: Color, roughness: float = 0.9, vertex_color: bool = false) -> StandardMaterial3D:
 	if _material_cache.has(key):
 		return _material_cache[key] as StandardMaterial3D
@@ -458,7 +465,7 @@ func _add_building_network() -> void:
 						shop_name = str(building.get("shop", building.get("amenity", "SHOP"))).replace("_", " ").to_upper()
 					shop_name = shop_name.substr(0, 18).to_upper()
 					var shop_label := Label3D.new()
-					shop_label.font = ThemeDB.fallback_font
+					shop_label.material_override = _label_material(Color(1.0, 0.91, 0.68))
 					shop_label.name = "YabaShopSign_%02d" % shop_label_count
 					shop_label.text = shop_name
 					shop_label.position = Vector3(midpoint.x + outward.x * 0.18, 2.77, midpoint.y + outward.y * 0.18)
@@ -818,7 +825,7 @@ func _add_road_labels() -> void:
 			continue
 		var midpoint := points[points.size() / 2]
 		var label := Label3D.new()
-		label.font = ThemeDB.fallback_font
+		label.material_override = _label_material(Color(1.0, 0.9, 0.67))
 		label.name = "StreetName_%02d" % count
 		label.text = name.to_upper()
 		label.font_size = 30
