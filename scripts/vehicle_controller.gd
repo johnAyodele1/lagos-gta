@@ -151,11 +151,11 @@ func _create_loft_mesh(sections: Array[Dictionary]) -> ArrayMesh:
 			var c := rings[ring_index][next_corner]
 			var d := rings[ring_index + 1][next_corner]
 			surface.add_vertex(a)
-			surface.add_vertex(b)
-			surface.add_vertex(c)
 			surface.add_vertex(c)
 			surface.add_vertex(b)
+			surface.add_vertex(c)
 			surface.add_vertex(d)
+			surface.add_vertex(b)
 	for cap_index in [0, rings.size() - 1]:
 		var ring: PackedVector3Array = rings[cap_index]
 		var center := Vector3.ZERO
@@ -165,8 +165,12 @@ func _create_loft_mesh(sections: Array[Dictionary]) -> ArrayMesh:
 		for corner in range(8):
 			var next_corner := (corner + 1) % 8
 			surface.add_vertex(center)
-			surface.add_vertex(ring[corner])
-			surface.add_vertex(ring[next_corner])
+			if cap_index == 0:
+				surface.add_vertex(ring[next_corner])
+				surface.add_vertex(ring[corner])
+			else:
+				surface.add_vertex(ring[corner])
+				surface.add_vertex(ring[next_corner])
 	surface.generate_normals()
 	return surface.commit()
 
