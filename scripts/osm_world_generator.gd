@@ -352,6 +352,7 @@ func _add_building_network() -> void:
 	var parapets: Array[Transform3D] = []
 	var ac_units: Array[Transform3D] = []
 	var water_tanks: Array[Transform3D] = []
+	var shop_label_count := 0
 
 	for building_index in range(_buildings.size()):
 		var building: Dictionary = _buildings[building_index]
@@ -448,6 +449,22 @@ func _add_building_network() -> void:
 			if commercial:
 				signs.append(Transform3D(Basis(Vector3.UP, angle), Vector3(midpoint.x + outward.x * 0.12, 2.75, midpoint.y + outward.y * 0.12)))
 				awnings.append(Transform3D(Basis(Vector3.UP, angle).scaled(Vector3(minf(edge.length() * 0.7, 4.0), 1.0, 1.0)), Vector3(midpoint.x + outward.x * 0.62, 3.0, midpoint.y + outward.y * 0.62)))
+				if shop_label_count < 32:
+					var shop_name := str(building.get("name", ""))
+					if shop_name.is_empty():
+						shop_name = str(building.get("shop", building.get("amenity", "SHOP"))).replace("_", " ").to_upper()
+					shop_name = shop_name.substr(0, 18).to_upper()
+					var shop_label := Label3D.new()
+					shop_label.name = "YabaShopSign_%02d" % shop_label_count
+					shop_label.text = shop_name
+					shop_label.position = Vector3(midpoint.x + outward.x * 0.18, 2.77, midpoint.y + outward.y * 0.18)
+					shop_label.rotation.y = angle
+					shop_label.font_size = 24
+					shop_label.outline_size = 5
+					shop_label.modulate = Color(1.0, 0.91, 0.68)
+					shop_label.outline_modulate = Color(0.025, 0.03, 0.03)
+					add_child(shop_label)
+					shop_label_count += 1
 			elif height >= 6.0 and building_type in ["residential", "apartments", "house", "yes"]:
 				balcony_slabs.append(Transform3D(Basis(Vector3.UP, angle), Vector3(midpoint.x + outward.x * 0.48, 3.35, midpoint.y + outward.y * 0.48)))
 				balcony_rails.append(Transform3D(Basis(Vector3.UP, angle), Vector3(midpoint.x + outward.x * 0.92, 3.92, midpoint.y + outward.y * 0.92)))
@@ -471,7 +488,7 @@ func _add_building_network() -> void:
 		var building_instance := MeshInstance3D.new()
 		building_instance.name = "OSMBuildingFootprintsAndFacades"
 		building_instance.mesh = building_mesh
-		building_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		building_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		add_child(building_instance)
 
 	if not collision_faces.is_empty():
