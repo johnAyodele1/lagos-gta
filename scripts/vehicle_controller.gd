@@ -62,7 +62,6 @@ func _build_vehicle() -> void:
 		Color(0.92, 0.72, 0.055), Color(0.055, 0.14, 0.18), Color(0.95, 0.90, 0.68),
 		Color(0.8, 0.24, 0.02), Color(0.72, 0.035, 0.025), Color(0.36, 0.36, 0.34), Color(0.025, 0.025, 0.025)
 	]
-	ModelBoundsScript.ensure_surface_materials(model, danfo_surface_colors)
 	for surface_index in range(danfo_mesh.get_surface_count()):
 		if danfo_mesh.surface_get_material(surface_index) == null:
 			var fallback := StandardMaterial3D.new()
