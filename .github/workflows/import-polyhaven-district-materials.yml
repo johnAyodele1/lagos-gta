@@ -1,0 +1,57 @@
+name: Import Poly Haven Yaba district PBR materials
+on:
+  workflow_dispatch:
+  push:
+    branches: ["feat/district-visual-asset-overhaul-v2"]
+    paths:
+      - tools/import_polyhaven_district_materials.py
+      - .github/workflows/import-polyhaven-district-materials.yml
+permissions:
+  contents: write
+concurrency:
+  group: polyhaven-district-materials
+  cancel-in-progress: true
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Importer tests
+        run: python -m unittest tools.test_import_polyhaven_district_materials -v
+      - name: Download and verify CC0 maps
+        run: python tools/import_polyhaven_district_materials.py
+      - name: Validate material manifest
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("assets/materials/polyhaven")
+          manifest = json.loads((root / "manifest.json").read_text())
+          assert set(manifest["assets"]) == {"asphalt_02", "concrete_floor", "corrugated_iron"}
+          for asset in manifest["assets"].values():
+              assert set(asset["maps"]) == {"diff", "nor_gl", "rough"}
+              for item in asset["maps"].values():
+                  path = root / item["file"]
+                  assert path.is_file() and 100 < path.stat().st_size < 18 * 1024 * 1024
+          PY
+      - name: Commit imported materials to this feature branch only
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/materials/polyhaven
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "assets: import Poly Haven Yaba district PBR materials"
+          for attempt in 1 2 3; do
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}"
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then exit 0; fi
+          done
+          exit 1
