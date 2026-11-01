@@ -34,6 +34,7 @@ func _run() -> void:
 	_test_pedestrians()
 	await _test_player_building_collision()
 	await _test_traffic_collision()
+	await _test_player_danfo_collision()
 	await _test_pedestrian_collision()
 	_test_project_scripts_load()
 	if failures > 0:
@@ -459,6 +460,21 @@ func _test_traffic_collision() -> void:
 	_check(player.global_position.z < 1.5, "player cannot walk through an ambient traffic vehicle")
 	player.queue_free()
 	traffic.queue_free()
+	await physics_frame
+
+func _test_player_danfo_collision() -> void:
+	var vehicle = VehicleScript.new()
+	root.add_child(vehicle)
+	var player = PlayerScript.new()
+	root.add_child(player)
+	vehicle.global_position = Vector3.ZERO
+	player.global_position = Vector3(0.0, 0.5, -5.0)
+	await physics_frame
+	var collision = player.move_and_collide(Vector3(0.0, 0.0, 10.0))
+	_check(collision != null, "player capsule collides with the drivable Lagos danfo")
+	_check(player.global_position.z < -2.0, "player cannot walk through the drivable danfo body")
+	player.queue_free()
+	vehicle.queue_free()
 	await physics_frame
 
 func _test_pedestrian_collision() -> void:
