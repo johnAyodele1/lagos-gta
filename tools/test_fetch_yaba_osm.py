@@ -31,6 +31,12 @@ class YabaOsmImportTests(unittest.TestCase):
         self.assertEqual(osm.building_height({"height": "12 ft"}), (3.66, "osm:height"))
         self.assertEqual(osm.building_height({"building:levels": "3"}), (9.3, "estimated:building-levels"))
 
+    def test_building_height_uses_documented_type_defaults_when_tags_are_missing(self):
+        self.assertEqual(osm.building_height({"building": "residential"}), (7.2, "estimated:residential-default"))
+        self.assertEqual(osm.building_height({"building": "apartments"}), (10.0, "estimated:apartments-default"))
+        self.assertEqual(osm.building_height({"building": "retail"}), (4.2, "estimated:retail-default"))
+        self.assertEqual(osm.building_height({}), (6.2, "estimated:building-type-default"))
+
     def test_normalize_preserves_roads_buildings_and_barriers(self):
         payload = {
             "elements": [
