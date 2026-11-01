@@ -481,7 +481,7 @@ func _add_building_network() -> void:
 	# Use one measured, licensed architectural asset as a hero frontage when the
 	# imported asset is present. Headless CI keeps the deterministic procedural
 	# fallback so tests do not depend on renderer-side imported mesh bounds.
-	var hero_facade := _select_hero_facade()
+	var hero_facade: Dictionary = _select_hero_facade()
 
 	for building_index in range(_buildings.size()):
 		var building: Dictionary = _buildings[building_index]
@@ -676,11 +676,11 @@ func _select_hero_facade() -> Dictionary:
 	if DisplayServer.get_name() == "headless" or not ResourceLoader.exists(asset_path):
 		return {}
 	var best: Dictionary = {}
-	var best_score := -INF
+	var best_score: float = -INF
 	for building_index in range(_buildings.size()):
 		var building: Dictionary = _buildings[building_index]
 		var building_type := str(building.get("building", "yes"))
-		if building_type not in ["yes", "residential", "apartments", "commercial", "retail", "office"]:
+		if not (building_type in ["yes", "residential", "apartments", "commercial", "retail", "office"]):
 			continue
 		var outline: Array[Vector2] = []
 		for coordinate in building.get("outline", []):
@@ -732,12 +732,12 @@ func _select_hero_facade() -> Dictionary:
 	var packed := load(asset_path) as PackedScene
 	if packed == null:
 		return {}
-	var model := packed.instantiate() as Node3D
+	var model: Node3D = packed.instantiate() as Node3D
 	if model == null or not ModelBoundsScript.fit_height(model, float(best["height"])):
 		if model != null:
 			model.free()
 		return {}
-	var dimensions := ModelBoundsScript.get_scaled_dimensions(model)
+	var dimensions: Vector3 = ModelBoundsScript.get_scaled_dimensions(model)
 	if dimensions.x <= 0.001:
 		model.free()
 		return {}
