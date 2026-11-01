@@ -64,6 +64,44 @@ def safe_extract(archive: Path, destination: Path) -> None:
         zipped.extractall(destination)
 
 
+
+def resolve_gltf_dependencies(scene_path: Path, metadata: object) -> None:
+    """Fetch external GLTF buffers/textures omitted from Poly Haven's scene ZIP."""
+    scene = json.loads(scene_path.read_text(encoding="utf-8"))
+    entries = collect_downloads(metadata)
+    by_basename: dict[str, list[dict[str, object]]] = {}
+    for entry in entries:
+        basename = PurePosixPath(urlparse(str(entry["url"])).path).name
+        if basename:
+            by_basename.setdefault(basename, []).append(entry)
+
+    uris: list[str] = []
+    for section in ("buffers", "images"):
+        for item in scene.get(section, []):
+            uri = item.get("uri")
+            if isinstance(uri, str) and not uri.startswith("data:"):
+                uris.append(uri)
+
+    for uri in uris:
+        target = (scene_path.parent / uri).resolve()
+        if not target.is_relative_to(scene_path.parent.resolve()):
+            raise RuntimeError(f"Unsafe external GLTF dependency path: {uri}")
+        if target.is_file():
+            continue
+        basename = PurePosixPath(uri).name
+        matches = by_basename.get(basename, [])
+        if not matches:
+            raise RuntimeError(f"Poly Haven API did not provide the GLTF dependency: {uri}")
+        selected = min(matches, key=lambda item: int(item["size"]))
+        payload = request_bytes(str(selected["url"]))
+        expected_md5 = selected.get("md5")
+        if expected_md5 and hashlib.md5(payload).hexdigest().lower() != str(expected_md5).lower():
+            raise RuntimeError(f"MD5 mismatch for GLTF dependency: {basename}")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(payload)
+        print(f"Resolved GLTF dependency: {uri} ({len(payload):,} bytes)")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -140,6 +178,9 @@ def main() -> None:
         destination.write_bytes(payload)
     else:
         raise RuntimeError(f"Unsupported Poly Haven download format: {suffix}")
+
+    if destination.suffix == ".gltf":
+        resolve_gltf_dependencies(destination, metadata)
 
     (output_dir / "polyhaven-source.json").write_text(json.dumps({
         "asset_id": ASSET_ID,
