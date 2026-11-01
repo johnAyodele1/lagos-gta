@@ -50,15 +50,20 @@ jobs:
         run: |
           set -euo pipefail
           OUT="assets/models/characters/ara"
-          mkdir -p "$OUT"
+          TMP="$OUT/.export-tmp"
+          mkdir -p "$OUT" "$TMP"
 
           export_character() {
             local output_name="$1"
             shift
-            rm -f "$OUT"/*.glb
-            (cd ara-tool && npm run export -- "$@" --detail low --formats glb --out "../$OUT")
+            if [ -f "$OUT/$output_name" ]; then
+              echo "$output_name already exists; keeping the verified asset."
+              return
+            fi
+            rm -f "$TMP"/*.glb
+            (cd ara-tool && npm run export -- "$@" --detail low --formats glb --out "../$TMP")
             local source
-            source="$(find "$OUT" -maxdepth 1 -type f -name '*.glb' -print -quit)"
+            source="$(find "$TMP" -maxdepth 1 -type f -name '*.glb' -print -quit)"
             test -n "$source"
             mv "$source" "$OUT/$output_name"
           }
@@ -78,7 +83,7 @@ jobs:
                   raise SystemExit(f"GLB exceeds GitHub's 90 MiB budget: {path}")
               print(f"{path}: {len(data):,} bytes")
           PY
-          rm -rf ara-tool
+          rm -rf "$OUT/.export-tmp" ara-tool
 
       - name: Commit character assets to feature branch
         shell: bash
