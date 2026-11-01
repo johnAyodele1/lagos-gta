@@ -163,12 +163,13 @@ func _create_vehicle_visuals() -> void:
 		var visual := MeshInstance3D.new()
 		visual.name = "TrafficVehicleVisual_%02d" % index
 		visual.mesh = model_meshes[index % model_meshes.size()]
-		for surface_index in range(visual.mesh.get_surface_count()):
-			if visual.mesh.surface_get_material(surface_index) == null:
-				var fallback := StandardMaterial3D.new()
-				fallback.albedo_color = [Color(0.12, 0.32, 0.62), Color(0.45, 0.55, 0.64), Color(0.72, 0.72, 0.68), Color(0.92, 0.72, 0.055)][index % 4]
-				fallback.roughness = 0.84
-				visual.set_surface_override_material(surface_index, fallback)
+		if DisplayServer.get_name() != "headless":
+			for surface_index in range(visual.mesh.get_surface_count()):
+				if visual.mesh.surface_get_material(surface_index) == null:
+					var fallback := StandardMaterial3D.new()
+					fallback.albedo_color = [Color(0.12, 0.32, 0.62), Color(0.45, 0.55, 0.64), Color(0.72, 0.72, 0.68), Color(0.92, 0.72, 0.055)][index % 4]
+					fallback.roughness = 0.84
+					visual.set_surface_override_material(surface_index, fallback)
 		visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		add_child(visual)
 		if DisplayServer.get_name() == "headless":
