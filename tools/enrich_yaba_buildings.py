@@ -42,8 +42,8 @@ def download_tile(url: str, destination: Path) -> None:
     req = Request(url, headers={"User-Agent": UA, "Accept": "application/octet-stream"})
     with urlopen(req, timeout=180) as response:
         declared = response.headers.get("Content-Length")
-        if declared and int(declared) > 100 * 1024 * 1024:
-            raise RuntimeError("OpenBuildingMap tile exceeds 100 MiB compressed limit")
+        if declared and int(declared) > MAX_COMPRESSED_BYTES:
+            raise RuntimeError(f"OpenBuildingMap tile exceeds 1 GiB compressed limit: {declared} bytes")
         total = 0
         with bz2.BZ2File(response) as source, destination.open("wb") as target:
             while chunk := source.read(1024 * 1024):
@@ -64,13 +64,15 @@ def lookup(gpkg: Path, osm_ids: list[int]) -> dict[int, tuple[str | None, str | 
         required = {"id", "height", "occupancy", "source_id"}
         if not required.issubset(columns):
             raise RuntimeError(f"GeoPackage missing columns: {sorted(required - columns)}")
+        db.execute("CREATE TEMP TABLE wanted_osm_ids (id INTEGER PRIMARY KEY)")
+        db.executemany("INSERT OR IGNORE INTO wanted_osm_ids(id) VALUES (?)", ((item,) for item in osm_ids))
+        query = (
+            "SELECT b.id,b.height,b.occupancy FROM building AS b "
+            "INNER JOIN wanted_osm_ids AS w ON w.id=b.id WHERE b.source_id=0"
+        )
         found = {}
-        for start in range(0, len(osm_ids), 500):
-            batch = osm_ids[start:start + 500]
-            marks = ",".join("?" for _ in batch)
-            query = f"SELECT id,height,occupancy FROM building WHERE source_id=0 AND id IN ({marks})"
-            for row_id, height, occupancy in db.execute(query, batch):
-                found[int(row_id)] = (str(height) if height else None, str(occupancy) if occupancy else None)
+        for row_id, height, occupancy in db.execute(query):
+            found[int(row_id)] = (str(height) if height else None, str(occupancy) if occupancy else None)
         return found
     finally:
         db.close()
