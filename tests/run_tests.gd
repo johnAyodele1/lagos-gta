@@ -130,6 +130,24 @@ func _test_vehicle_speed_limits() -> void:
 	_check(is_equal_approx(VehicleScript.target_speed(1.0, true), VehicleScript.MAX_FORWARD_SPEED * 1.15), "sprint control applies a capped danfo boost")
 	_check(is_equal_approx(VehicleScript.target_speed(2.0), VehicleScript.MAX_FORWARD_SPEED), "vehicle throttle clamps invalid input")
 
+	var vehicle = VehicleScript.new()
+	root.add_child(vehicle)
+	var player = PlayerScript.new()
+	root.add_child(player)
+	vehicle.enter_vehicle(player)
+	_check(vehicle.driver == player, "player becomes the active danfo driver")
+	_check(not player.body_mesh.visible, "player body is hidden while seated")
+	_check(not player.is_physics_processing(), "on-foot movement is disabled while driving")
+	_check(player.camera_pivot.get_parent() == vehicle, "third-person camera follows the danfo")
+	vehicle.exit_vehicle()
+	_check(vehicle.driver == null, "danfo releases the driver on exit")
+	_check(player.body_mesh.visible, "player body is restored after exiting")
+	_check(player.is_physics_processing(), "on-foot movement is restored after exiting")
+	_check(player.camera_pivot.get_parent() == player, "camera returns to the player after exiting")
+	player.queue_free()
+	vehicle.queue_free()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
 func _test_project_scripts_load() -> void:
 	var world_script = ResourceLoader.load("res://scripts/world_generator.gd")
 	_check(world_script is GDScript, "world generator script loads without parse errors")
