@@ -6,14 +6,25 @@ const SPRINT_SPEED: float = 8.0
 const JUMP_VELOCITY: float = 5.5
 const MOUSE_SENSITIVITY: float = 0.0025
 const GRAVITY: float = 18.0
+const MIN_CAMERA_PITCH: float = deg_to_rad(-55.0)
+const MAX_CAMERA_PITCH: float = deg_to_rad(35.0)
 
 var camera_pivot: Node3D
 var camera: Camera3D
 var mouse_captured: bool = false
+var mobile_controls: Node
+var jump_requested: bool = false
+
+static func normalize_move_input(input_vector: Vector2) -> Vector2:
+	return input_vector.limit_length(1.0)
+
+static func clamp_camera_pitch(pitch: float) -> float:
+	return clampf(pitch, MIN_CAMERA_PITCH, MAX_CAMERA_PITCH)
 
 func _ready() -> void:
 	_build_body()
-	_capture_mouse()
+	if not OS.has_feature("mobile"):
+		_capture_mouse()
 
 func _build_body() -> void:
 	var collision := CollisionShape3D.new()
@@ -48,9 +59,12 @@ func _build_body() -> void:
 
 func _physics_process(delta: float) -> void:
 	var input_vector := Vector2.ZERO
-	input_vector.x = float(Input.is_key_pressed(KEY_D)) - float(Input.is_key_pressed(KEY_A))
-	input_vector.y = float(Input.is_key_pressed(KEY_S)) - float(Input.is_key_pressed(KEY_W))
-	input_vector = input_vector.normalized()
+	input_vector.x = float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A))
+	input_vector.y = float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W))
+
+	if mobile_controls != null:
+		input_vector += mobile_controls.get_move_vector()
+	input_vector = normalize_move_input(input_vector)
 
 	var move_direction := Vector3.ZERO
 	if input_vector.length_squared() > 0.0:
@@ -61,24 +75,44 @@ func _physics_process(delta: float) -> void:
 		move_direction.y = 0.0
 		move_direction = move_direction.normalized()
 
-	var speed := SPRINT_SPEED if Input.is_key_pressed(KEY_SHIFT) else WALK_SPEED
+	var sprinting := Input.is_physical_key_pressed(KEY_SHIFT)
+	if mobile_controls != null:
+		sprinting = sprinting or mobile_controls.is_sprint_pressed()
+	var speed := SPRINT_SPEED if sprinting else WALK_SPEED
 	velocity.x = move_direction.x * speed
 	velocity.z = move_direction.z * speed
 
+	var wants_jump := jump_requested
+	jump_requested = false
+	if mobile_controls != null:
+		wants_jump = wants_jump or mobile_controls.consume_jump_request()
+
 	if not is_on_floor():
 		velocity.y -= GRAVITY * delta
-	elif Input.is_key_pressed(KEY_SPACE):
+	elif wants_jump:
 		velocity.y = JUMP_VELOCITY
+
+	if mobile_controls != null:
+		_apply_look_delta(mobile_controls.consume_look_delta())
 
 	move_and_slide()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and mouse_captured:
-		camera_pivot.rotate_y(-event.relative.x * MOUSE_SENSITIVITY)
-		camera_pivot.rotation.x -= event.relative.y * MOUSE_SENSITIVITY
-		camera_pivot.rotation.x = clamp(camera_pivot.rotation.x, deg_to_rad(-55.0), deg_to_rad(35.0))
-	elif event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		_toggle_mouse_capture()
+		_apply_look_delta(event.relative)
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			_toggle_mouse_capture()
+		elif event.keycode == KEY_SPACE:
+			jump_requested = true
+
+func _apply_look_delta(look_delta: Vector2) -> void:
+	if look_delta.is_zero_approx():
+		return
+	camera_pivot.rotate_y(-look_delta.x * MOUSE_SENSITIVITY)
+	camera_pivot.rotation.x = clamp_camera_pitch(
+		camera_pivot.rotation.x - look_delta.y * MOUSE_SENSITIVITY
+	)
 
 func _capture_mouse() -> void:
 	mouse_captured = true
