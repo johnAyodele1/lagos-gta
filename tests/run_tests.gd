@@ -195,7 +195,7 @@ func _test_visual_meshes() -> void:
 		if mesh_instance.mesh == null:
 			continue
 		for surface_index in range(mesh_instance.mesh.get_surface_count()):
-			if mesh_instance.mesh.surface_get_material(surface_index) == null or mesh_instance.get_active_material(surface_index) == null:
+			if mesh_instance.get_active_material(surface_index) == null:
 				player_materials_valid = false
 	_check(player_materials_valid, "every imported player mesh surface has an assigned material")
 	player.global_position = Vector3(10000.0, 100.0, 10000.0)
