@@ -166,6 +166,9 @@ func _test_visual_meshes() -> void:
 	_check(is_equal_approx(player.camera.rotation.x, deg_to_rad(-14.0)), "third-person camera pitches down toward the street instead of looking at the sky")
 	_check(player.camera.rotation.is_equal_approx(Vector3(deg_to_rad(-14.0), 0.0, 0.0)), "camera keeps its downward street-facing pitch")
 	_check(player.body_mesh.get_node_or_null("Head") != null or player.body_mesh.get_child_count() >= 8, "player avatar includes layered head, hair and articulated body details")
+	player.global_position = Vector3(10000.0, 100.0, 10000.0)
+	player.set_physics_process(false)
+	await physics_frame
 	await physics_frame
 	_check(player.camera_pivot.get_hit_length() > 6.5, "third-person spring arm reaches full distance in open space")
 	player.queue_free()
