@@ -265,7 +265,10 @@ func _add_road_network() -> void:
 		if points.size() < 2:
 			continue
 		var width := clampf(float(road.get("width_m", 6.0)), 2.0, 24.0)
+		var highway := str(road.get("highway", ""))
 		_append_ribbon(road_vertices, road_normals, road_indices, points, width, 0.0, 0.015, road_uvs)
+		if highway in ["footway", "path", "pedestrian"]:
+			continue
 		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, width * 0.5 + 0.85, 0.035, sidewalk_uvs)
 		_append_ribbon(sidewalk_vertices, sidewalk_normals, sidewalk_indices, points, 1.4, -(width * 0.5 + 0.85), 0.035, sidewalk_uvs)
 		_append_ribbon(drain_vertices, drain_normals, drain_indices, points, 0.22, width * 0.5 + 0.12, 0.025, drain_uvs)
@@ -661,6 +664,8 @@ func _nearest_road_sample() -> Dictionary:
 	var best_direction := Vector2.RIGHT
 	var best_width := 6.0
 	for road in _roads:
+		if str(road.get("highway", "")) in ["footway", "path", "pedestrian"]:
+			continue
 		var points := _points_from_coordinates(road.get("coordinates", []))
 		for index in range(points.size() - 1):
 			var start := points[index]
