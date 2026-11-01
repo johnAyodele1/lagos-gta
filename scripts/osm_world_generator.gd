@@ -561,13 +561,6 @@ func _add_building_network() -> void:
 			]))
 
 		if longest_edge >= 0:
-			var p0 := outline[longest_edge]
-			var p1 := outline[(longest_edge + 1) % outline.size()]
-			var edge := p1 - p0
-			var direction := edge.normalized()
-			var outward := Vector2(direction.y, -direction.x) * winding
-			var angle := atan2(-direction.y, direction.x)
-			var midpoint := (p0 + p1) * 0.5
 			var building_type := str(building.get("building", "yes"))
 			var commercial := not str(building.get("shop", "")).is_empty() or not str(building.get("amenity", "")).is_empty() or building_type in ["commercial", "retail", "office"]
 			# OSM's Yaba extract has very sparse shop tags. For untyped street-edge
@@ -577,6 +570,16 @@ func _add_building_network() -> void:
 			if not commercial and building_type == "yes" and building_index % 5 == 0 and footprint_area >= 45.0:
 				var frontage_center := _outline_centroid_from_vectors(outline)
 				commercial = _nearest_road_distance(frontage_center) <= 14.0
+			var frontage_edge := longest_edge
+			if commercial:
+				frontage_edge = _closest_frontage_edge(outline)
+			var p0 := outline[frontage_edge]
+			var p1 := outline[(frontage_edge + 1) % outline.size()]
+			var edge := p1 - p0
+			var direction := edge.normalized()
+			var outward := Vector2(direction.y, -direction.x) * winding
+			var angle := atan2(-direction.y, direction.x)
+			var midpoint := (p0 + p1) * 0.5
 			doors.append(Transform3D(Basis(Vector3.UP, angle), Vector3(midpoint.x + outward.x * 0.08, 1.12, midpoint.y + outward.y * 0.08)))
 			if commercial:
 				signs.append(Transform3D(Basis(Vector3.UP, angle), Vector3(midpoint.x + outward.x * 0.12, 2.75, midpoint.y + outward.y * 0.12)))
@@ -863,6 +866,17 @@ static func _resolve_building_height(building: Dictionary, footprint_area: float
 	if footprint_area < 650.0:
 		return 11.5
 	return 14.0
+
+func _closest_frontage_edge(outline: Array[Vector2]) -> int:
+	var best_edge := 0
+	var best_distance := INF
+	for edge_index in range(outline.size()):
+		var midpoint := (outline[edge_index] + outline[(edge_index + 1) % outline.size()]) * 0.5
+		var distance := _nearest_road_distance(midpoint)
+		if distance < best_distance:
+			best_distance = distance
+			best_edge = edge_index
+	return best_edge
 
 func _append_facade_windows(
 	windows: Array[Transform3D],
