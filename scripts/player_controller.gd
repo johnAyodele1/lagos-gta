@@ -9,6 +9,7 @@ const GRAVITY: float = 18.0
 const WORLD_COLLISION_LAYER: int = 1
 const VEHICLE_COLLISION_LAYER: int = 2
 const PLAYER_COLLISION_LAYER: int = 4
+const NPC_COLLISION_LAYER: int = 8
 const MIN_CAMERA_PITCH: float = deg_to_rad(-55.0)
 const MAX_CAMERA_PITCH: float = deg_to_rad(35.0)
 
@@ -33,7 +34,7 @@ static func clamp_camera_pitch(pitch: float) -> float:
 
 func _ready() -> void:
 	collision_layer = PLAYER_COLLISION_LAYER
-	collision_mask = WORLD_COLLISION_LAYER | VEHICLE_COLLISION_LAYER
+	collision_mask = WORLD_COLLISION_LAYER | VEHICLE_COLLISION_LAYER | NPC_COLLISION_LAYER
 	floor_snap_length = 0.35
 	safe_margin = 0.04
 	max_slides = 8
