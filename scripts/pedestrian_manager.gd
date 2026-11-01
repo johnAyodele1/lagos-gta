@@ -11,6 +11,7 @@ const PLAYER_COLLISION_LAYER: int = 4
 const VEHICLE_COLLISION_LAYER: int = 2
 const NPC_COLLISION_LAYER: int = 8
 const RIGGED_CHARACTER_SCENE = preload("res://assets/models/characters/lagos_player.glb")
+const ModelBoundsScript = preload("res://scripts/model_bounds.gd")
 
 const CLOTHING_COLORS: Array[Color] = [
 	Color(0.16, 0.30, 0.62),
@@ -146,6 +147,8 @@ func _create_rigged_visuals() -> void:
 		visual.name = "PedestrianVisual_%02d" % index
 		_apply_pedestrian_materials(visual, CLOTHING_COLORS[index % CLOTHING_COLORS.size()], SKIN_COLORS[index % SKIN_COLORS.size()])
 		add_child(visual)
+		if not ModelBoundsScript.fit_height(visual, 1.68):
+			push_warning("Pedestrian %02d could not be normalized to human height." % index)
 		_visuals.append(visual)
 		var animation_player := visual.find_child("AnimationPlayer", true, false) as AnimationPlayer
 		_animation_players.append(animation_player)
