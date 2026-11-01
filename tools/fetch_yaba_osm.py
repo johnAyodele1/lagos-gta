@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Fetch a small, reproducible Yaba road/building extract from OpenStreetMap."""
+"""Fetch a small, reproducible Yaba road/building extract from OpenStreetMap.
+
+The generated data is committed only to the active feature branch by CI.
+"""
 
 from __future__ import annotations
 
