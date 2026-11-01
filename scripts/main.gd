@@ -82,7 +82,11 @@ func _spawn_vehicle(world: OSMWorldGenerator) -> void:
 func _spawn_player(world: OSMWorldGenerator) -> void:
 	var player = PlayerScript.new()
 	player.name = "Player"
-	player.position = world.get_player_spawn_position()
+	var spawn_position: Vector3 = world.get_player_spawn_position()
+	if not spawn_position.is_finite() or not world.is_spawn_position_clear(spawn_position):
+		push_error("Player spawn is blocked by mapped Yaba geometry; refusing unsafe spawn.")
+		return
+	player.position = spawn_position
 	player.rotation.y = world.get_spawn_rotation_y()
 	add_child(player)
 	_player = player
