@@ -348,6 +348,7 @@ func _add_building_network() -> void:
 	var balcony_slabs: Array[Transform3D] = []
 	var balcony_rails: Array[Transform3D] = []
 	var parapets: Array[Transform3D] = []
+	var ac_units: Array[Transform3D] = []
 	var water_tanks: Array[Transform3D] = []
 
 	for building_index in range(_buildings.size()):
@@ -406,6 +407,11 @@ func _add_building_network() -> void:
 				Basis(Vector3.UP, angle).scaled(Vector3(length, 0.22, 0.16)),
 				Vector3(mid.x + outward.x * 0.04, height + 0.11, mid.y + outward.y * 0.04)
 			))
+			if building_index % 3 == 0 and height >= 3.5 and edge_index % 2 == 0:
+				ac_units.append(Transform3D(
+					Basis(Vector3.UP, angle).scaled(Vector3(0.62, 0.38, 0.30)),
+					Vector3(mid.x + outward.x * 0.18, minf(height * 0.58, 3.2), mid.y + outward.y * 0.18)
+				))
 
 		var roof_triangles := Geometry2D.triangulate_polygon(PackedVector2Array(outline))
 		for triangle_index in range(0, roof_triangles.size(), 3):
@@ -486,6 +492,7 @@ func _add_building_network() -> void:
 	_add_box_batch("OSMBalconySlabs", Vector3(2.5, 0.16, 0.85), balcony_slabs, Color(0.50, 0.48, 0.43))
 	_add_box_batch("OSMBalconyRails", Vector3(2.5, 0.9, 0.08), balcony_rails, Color(0.18, 0.19, 0.18))
 	_add_box_batch("OSMRoofParapets", Vector3.ONE, parapets, Color(0.50, 0.47, 0.42))
+	_add_box_batch("OSMAirConditioningUnits", Vector3.ONE, ac_units, Color(0.68, 0.68, 0.62))
 	_add_cylinder_batch("OSMRooftopWaterTanks", 0.68, 1.5, water_tanks, Color(0.10, 0.24, 0.38))
 
 func _append_facade_windows(windows: Array[Transform3D], p0: Vector2, p1: Vector2, outward: Vector2, height: float) -> void:
