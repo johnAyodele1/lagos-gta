@@ -256,7 +256,13 @@ func get_traffic_distance(index: int) -> float:
 func get_traffic_position(index: int) -> Vector3:
 	if index < 0 or index >= _traffic.size():
 		return Vector3.ZERO
-	return _traffic_visuals[index].global_position if index < _traffic_visuals.size() else Vector3.ZERO
+	if index < _traffic_visuals.size():
+		return _traffic_visuals[index].global_position
+	var item: Dictionary = _traffic[index]
+	var route: Dictionary = _routes[int(item["route_index"])]
+	var sample := _sample_route(route, float(item["distance"]))
+	var position: Vector2 = sample["position"]
+	return global_transform * Vector3(position.x, 0.0, position.y)
 
 func get_traffic_model_surface_count(index: int) -> int:
 	if index < 0 or index >= _traffic_visuals.size() or _traffic_visuals[index].mesh == null:
