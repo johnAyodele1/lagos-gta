@@ -165,7 +165,10 @@ func _test_visual_meshes() -> void:
 	_check(player.camera_pivot.get_parent() == player.camera_yaw_pivot and is_zero_approx(player.camera_pivot.rotation.x), "spring-arm remains level and camera stays a direct spring-arm child")
 	_check(is_equal_approx(player.camera.rotation.x, deg_to_rad(-14.0)), "third-person camera pitches down toward the street instead of looking at the sky")
 	_check(player.camera.rotation.is_equal_approx(Vector3(deg_to_rad(-14.0), 0.0, 0.0)), "camera keeps its downward street-facing pitch")
-	_check(player.body_mesh.get_node_or_null("Head") != null or player.body_mesh.get_child_count() >= 8, "player avatar includes layered head, hair and articulated body details")
+	var rigged_player := player.body_mesh.get_node_or_null("RiggedLagosPlayer") as Node3D
+	_check(rigged_player != null, "player uses the imported rigged Lagos character model")
+	var player_animation := rigged_player.find_child("AnimationPlayer", true, false) as AnimationPlayer if rigged_player != null else null
+	_check(player_animation != null and player_animation.has_animation("HumanArmature|Man_Walk"), "player model includes real walk animation clips")
 	player.global_position = Vector3(10000.0, 100.0, 10000.0)
 	player.set_physics_process(false)
 	await physics_frame
@@ -175,10 +178,9 @@ func _test_visual_meshes() -> void:
 
 	var vehicle = VehicleScript.new()
 	root.add_child(vehicle)
-	var danfo_body := vehicle.get_node_or_null("DanfoBodyShell") as MeshInstance3D
-	var danfo_cabin := vehicle.get_node_or_null("DanfoCabinShell") as MeshInstance3D
-	_check(danfo_body != null and danfo_body.mesh is ArrayMesh, "danfo body is a custom tapered 3D mesh, not a box primitive")
-	_check(danfo_cabin != null and danfo_cabin.mesh is ArrayMesh, "danfo cabin has shaped 3D geometry")
+	var danfo_model := vehicle.get_node_or_null("DanfoModel") as MeshInstance3D
+	_check(danfo_model != null and danfo_model.mesh != null, "danfo uses the imported detailed minibus 3D model")
+	_check(danfo_model.mesh.get_surface_count() >= 5, "danfo model retains separate body, window, wheel and light materials")
 	var danfo_collision := vehicle.get_child(0) as CollisionShape3D
 	var danfo_box := danfo_collision.shape as BoxShape3D if danfo_collision != null else null
 	_check(danfo_box != null and danfo_box.size.is_equal_approx(Vector3(2.35, 2.8, 4.9)), "danfo physics collider matches the model's length-along-Z orientation")
@@ -315,14 +317,15 @@ func _test_ambient_traffic() -> void:
 	traffic.configure_from_roads(_sample_osm_roads())
 	root.add_child(traffic)
 	_check(traffic.get_route_count() == 4, "ambient traffic derives two-way lanes from mapped OSM road centre-lines")
-	_check(traffic.get_traffic_count() == 8, "Yaba district spawns a bounded eight-car ambient traffic pool")
+	_check(traffic.get_traffic_count() == 6, "Yaba district spawns a bounded six-car model-based ambient traffic pool")
+	_check(traffic.get_traffic_model_surface_count(0) >= 5, "ambient traffic uses detailed imported multi-material vehicle meshes")
 	var starting_distance := traffic.get_traffic_distance(0)
 	var starting_position := traffic.get_traffic_position(0)
 	traffic._process(1.0)
 	_check(traffic.get_traffic_distance(0) > starting_distance, "ambient traffic advances along its mapped road polyline")
 	_check(traffic.get_traffic_position(0) != starting_position, "ambient traffic transforms follow the road geometry")
-	_check(traffic.get_child_count() == 13, "traffic uses five shared render batches plus eight lightweight collision proxies")
-	_check(traffic.get_traffic_collision_count() == 8, "every ambient traffic vehicle has a physics collision proxy")
+	_check(traffic.get_child_count() == 12, "traffic uses six imported car meshes plus six lightweight collision proxies")
+	_check(traffic.get_traffic_collision_count() == 6, "every ambient traffic vehicle has a physics collision proxy")
 	traffic.queue_free()
 
 
@@ -336,13 +339,15 @@ func _test_pedestrians() -> void:
 	root.add_child(pedestrians)
 	_check(pedestrians.get_route_count() == 4, "pedestrian paths are offset from mapped OSM roads to follow their sidewalks")
 	_check(pedestrians.get_pedestrian_count() == 4, "Yaba sidewalks spawn a bounded four-person pedestrian population")
+	_check(pedestrians._visuals.size() == 4 and pedestrians._animation_players.size() == 4, "each pedestrian uses an independent rigged character instance")
+	_check(pedestrians._animation_players[0] != null and pedestrians._animation_players[0].has_animation("HumanArmature|Man_Walk"), "pedestrian characters have real walk animation clips")
 	_check(pedestrians.get_pedestrian_collision_count() == 4, "each pedestrian has a low-cost capsule collision proxy")
 	var starting_distance := pedestrians.get_pedestrian_distance(0)
 	var starting_position := pedestrians.get_pedestrian_position(0)
 	pedestrians._process(1.0)
 	_check(pedestrians.get_pedestrian_distance(0) > starting_distance, "pedestrians walk along their mapped sidewalk routes")
 	_check(pedestrians.get_pedestrian_position(0) != starting_position, "pedestrian render transforms update as they walk")
-	_check(pedestrians.get_child_count() == 9, "pedestrian bodies use five shared mesh batches plus four collision proxies")
+	_check(pedestrians.get_child_count() == 8, "pedestrians use four rigged 3D models plus four collision proxies")
 	pedestrians.queue_free()
 
 func _sample_osm_roads() -> Array[Dictionary]:
