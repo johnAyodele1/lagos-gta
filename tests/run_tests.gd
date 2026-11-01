@@ -28,7 +28,7 @@ func _run() -> void:
 	_test_graphics_profiles()
 	_test_visual_meshes()
 	await _test_osm_world_generator()
-	_test_vehicle_speed_limits()
+	await _test_vehicle_speed_limits()
 	_test_ambient_traffic()
 	_test_pedestrians()
 	await _test_player_building_collision()
@@ -265,6 +265,7 @@ func _test_vehicle_speed_limits() -> void:
 	root.add_child(vehicle)
 	var player = PlayerScript.new()
 	root.add_child(player)
+	await physics_frame
 	_check(player.body_mesh.get_child_count() >= 5, "player spawns with a low-poly 3D head and articulated limbs")
 	_check(player.camera_pivot != null and player.camera != null, "player character rig includes a working follow camera")
 	player.velocity = Vector3(0.0, 0.0, 2.0)
