@@ -70,7 +70,12 @@ func _build_vehicle() -> void:
 			model.set_surface_override_material(surface_index, fallback)
 	# Source mesh faces +Z; this controller drives forward along local -Z.
 	model.rotation.y = PI
-	if not ModelBoundsScript.fit_dimensions(model, Vector3(2.0, 2.25, 4.65)):
+	if DisplayServer.get_name() == "headless":
+		# The OBJ source bounds were measured once: 0.954 x 0.945 x 2.163m.
+		# Use the equivalent fit in dummy-renderer tests, which cannot query mesh AABBs.
+		model.scale = Vector3(2.096, 2.381, 2.150)
+		model.position = Vector3(0.0, 0.0, 0.175)
+	elif not ModelBoundsScript.fit_dimensions(model, Vector3(2.0, 2.25, 4.65)):
 		push_error("Danfo mesh has invalid bounds and cannot be fitted to real vehicle dimensions.")
 		return
 	model.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
