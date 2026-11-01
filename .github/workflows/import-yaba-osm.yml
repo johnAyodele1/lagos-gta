@@ -31,6 +31,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Test OSM normalization without network access
+        run: python -m unittest discover -s tools -p 'test_*.py' -v
+
       - name: Fetch and normalize Yaba OSM geometry
         run: python tools/fetch_yaba_osm.py --output assets/data/yaba_osm.json
 
