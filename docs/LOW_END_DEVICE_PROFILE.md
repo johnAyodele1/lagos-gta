@@ -8,7 +8,7 @@ The prototype is configured around Godot's Compatibility renderer and a conserva
 - 3D MSAA and screen-space AA disabled in project defaults.
 - Balanced mobile profile uses two directional-shadow splits, a 1,024px shadow atlas and a 90m shadow distance; Low disables dynamic shadows and uses a 512px atlas.
 - Camera far plane is 120m (Low), 220m (Balanced) or 300m (High); a collision-aware SpringArm3D keeps the camera out of mapped walls.
-- Repeated windows, road markings, streetlights, market stall parts, compound walls, rooftop tanks and utility props are batched with MultiMesh.
+- Repeated windows, road markings, shopfront details, compound walls, rooftop tanks and utility props are batched with MultiMesh.
 - Shared materials are cached instead of creating a new StandardMaterial3D for every repeated colour.
 - Static blockout geometry is simple and does not use expensive physics simulation.
 - Ambient traffic is capped at eight vehicles and follows OSM road polylines. Three shared MultiMesh batches render custom tapered 3D vehicle meshes; each vehicle uses one simple AnimatableBody3D collision proxy.
