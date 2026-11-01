@@ -67,6 +67,7 @@ func generate_from_data(data: Dictionary) -> bool:
 	_add_road_network()
 	_add_building_network()
 	_add_market_stalls()
+	_add_parked_keke()
 	_add_barrier_network()
 	_add_residential_compounds()
 	_add_utility_network()
@@ -693,6 +694,77 @@ func _add_market_stalls() -> void:
 	_add_cylinder_batch("YabaMarketTableLegs", 0.035, 0.85, leg_transforms, Color(0.18, 0.17, 0.15))
 	_add_box_batch("YabaMarketGoodsCrates", Vector3.ONE, goods_transforms, Color(0.52, 0.34, 0.16))
 	add_child(collision_root)
+
+func _add_parked_keke() -> void:
+	if _roads.is_empty():
+		return
+	var sample := _nearest_road_sample()
+	var road_position: Vector2 = sample["position"]
+	var direction: Vector2 = sample["direction"]
+	var side := Vector2(-direction.y, direction.x)
+	var width := float(sample["width"])
+	var parked_position := road_position + direction * 28.0 + side * (width * 0.5 + 2.8)
+	var keke := Node3D.new()
+	keke.name = "YabaParkedKeke"
+	keke.position = Vector3(parked_position.x, 0.0, parked_position.y)
+	keke.rotation.y = atan2(direction.x, direction.y)
+	add_child(keke)
+	_add_keke_part(keke, "LowerBody", Vector3(1.32, 0.82, 2.0), Vector3(0.0, 0.98, -0.05), Color(0.12, 0.38, 0.24), 0.78)
+	_add_keke_part(keke, "YellowCanopy", Vector3(1.48, 0.13, 1.62), Vector3(0.0, 2.05, -0.12), Color(0.88, 0.68, 0.08), 0.82)
+	_add_keke_part(keke, "FrontWindscreen", Vector3(1.02, 0.56, 0.055), Vector3(0.0, 1.60, 0.93), Color(0.055, 0.12, 0.15), 0.24)
+	for side_sign in [-1.0, 1.0]:
+		var side_x := 0.64 * float(side_sign)
+		_add_keke_part(keke, "SideFrame", Vector3(0.055, 0.68, 1.30), Vector3(side_x, 1.55, -0.12), Color(0.10, 0.15, 0.13), 0.78)
+		_add_keke_wheel(keke, Vector3(side_x, 0.34, -0.68), "RearWheel")
+	_add_keke_wheel(keke, Vector3(0.0, 0.34, 0.82), "FrontWheel")
+	_add_keke_part(keke, "FrontBumper", Vector3(1.18, 0.12, 0.10), Vector3(0.0, 0.48, 1.04), Color(0.16, 0.16, 0.15), 0.8)
+	_add_keke_part(keke, "FrontLightLeft", Vector3(0.20, 0.14, 0.08), Vector3(-0.45, 1.18, 0.99), Color(0.95, 0.84, 0.48), 0.35)
+	_add_keke_part(keke, "FrontLightRight", Vector3(0.20, 0.14, 0.08), Vector3(0.45, 1.18, 0.99), Color(0.95, 0.84, 0.48), 0.35)
+	var keke_body := StaticBody3D.new()
+	keke_body.name = "KekeCollision"
+	keke_body.collision_layer = 1
+	keke_body.collision_mask = 0
+	var collision := CollisionShape3D.new()
+	var collision_box := BoxShape3D.new()
+	collision_box.size = Vector3(1.5, 1.9, 2.25)
+	collision.shape = collision_box
+	collision.position.y = 0.95
+	keke_body.add_child(collision)
+	keke.add_child(keke_body)
+	var route_label := Label3D.new()
+	route_label.name = "KekeRouteBoard"
+	route_label.text = "KEKE"
+	route_label.font_size = 42
+	route_label.pixel_size = 0.004
+	route_label.position = Vector3(0.0, 1.86, 0.98)
+	route_label.material_override = _label_material(Color(0.96, 0.84, 0.40))
+	keke.add_child(route_label)
+
+func _add_keke_part(parent: Node3D, part_name: String, size: Vector3, position: Vector3, color: Color, roughness: float) -> void:
+	var part := MeshInstance3D.new()
+	part.name = part_name
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	part.mesh = mesh
+	part.position = position
+	part.material_override = _material("keke_" + part_name, color, roughness)
+	part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	parent.add_child(part)
+
+func _add_keke_wheel(parent: Node3D, position: Vector3, part_name: String) -> void:
+	var wheel := MeshInstance3D.new()
+	wheel.name = part_name
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = 0.32
+	mesh.bottom_radius = 0.32
+	mesh.height = 0.18
+	mesh.radial_segments = 12
+	wheel.mesh = mesh
+	wheel.position = position
+	wheel.rotation.z = PI * 0.5
+	wheel.material_override = _material("keke_tyre", Color(0.045, 0.045, 0.042), 0.96)
+	wheel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	parent.add_child(wheel)
 
 func _add_umbrella_batch(batch_name: String, transforms: Array[Transform3D], color: Color) -> void:
 	if transforms.is_empty():
