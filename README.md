@@ -10,6 +10,8 @@ The district includes extruded building footprints, textured asphalt and concret
 
 The player has a custom low-poly avatar and collision-aware third-person camera. The danfo is a custom tapered 3D minibus mesh. Ambient cars and pedestrians follow road/sidewalk routes derived from the OSM geometry. Player, building, barrier, compound-wall, vehicle and NPC collision tests are included.
 
+A licensed architecture import pipeline now brings a CC0 Poly Haven modular apartment facade into the project as a single measured hero frontage on a mapped Yaba building. The asset is imported locally at build time (no runtime download); all other OSM buildings retain their procedural fallback until additional locally appropriate assets are verified and profiled. See [the architecture asset pipeline](docs/ARCHITECTURE_ASSET_PIPELINE.md).
+
 This is still an early vertical slice, not a finished GTA-scale game or photorealistic world. The current in-game vehicles and characters are procedural low-poly models; production-quality licensed vehicle assets and properly rigged human models remain outstanding. The 450m district is not a streaming open world. Physical Android/iOS profiling and signed store builds have not been completed.
 
 ## Run locally
@@ -59,7 +61,7 @@ The latest verified branch run passed **118 gameplay tests** and the main-scene 
 
 ## Roadmap and release gates
 
-1. Replace low-poly procedural vehicle and character meshes with optimized, properly licensed production assets and rigged animations.
+1. Replace low-poly procedural vehicle and character meshes with optimized, properly licensed production assets and rigged animations; expand the licensed architecture library with locally appropriate building variants.
 2. Add LODs and chunk streaming beyond the current 450m district.
 3. Profile GPU/CPU frame time, memory, draw calls, physics and thermals on representative low-end Android, Samsung S21-class and iOS devices.
 4. Add more Lagos districts, traffic rules, pedestrian crossings, missions, audio and save/load.
