@@ -10,7 +10,8 @@ The prototype is configured around Godot's Compatibility renderer and a conserva
 - Third-person camera far plane capped at 180 metres.
 - Repeated windows, road markings, streetlights, market stall parts, compound walls, rooftop tanks and utility props are batched with MultiMesh.
 - Shared materials are cached instead of creating a new StandardMaterial3D for every repeated colour.
-- Static blockout geometry is simple and does not use per-frame scripts or expensive physics simulation.
+- Static blockout geometry is simple and does not use expensive physics simulation.
+- Ambient traffic is capped at eight visual-only vehicles and rendered through three shared MultiMesh batches (body, cabin and wheels); traffic cars have no individual physics bodies or navigation agents.
 
 These are design choices to reduce GPU state changes, draw calls, memory duplication and shader cost. They are not yet proof of a target frame rate.
 
@@ -35,7 +36,7 @@ The final minimum supported Android/iOS devices must be selected only after real
 1. Profile draw calls, primitives, physics bodies, memory and frame time on real devices.
 2. Add distance-based visibility ranges and lower-detail building meshes.
 3. Add texture atlases and compressed mobile texture formats once production art is integrated.
-4. Add object pooling for traffic and pedestrians before increasing their counts.
+4. Keep traffic and pedestrian counts capped and use shared MultiMesh batches or object pools before increasing their counts.
 5. Use simple collision proxies; do not use detailed render meshes as physics colliders.
 6. Stream neighbourhood chunks and release distant district resources.
 7. Provide Low / Balanced / High presets only after profiling proves the settings improve actual devices.
