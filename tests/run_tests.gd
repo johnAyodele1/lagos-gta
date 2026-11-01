@@ -134,6 +134,12 @@ func _test_vehicle_speed_limits() -> void:
 	root.add_child(vehicle)
 	var player = PlayerScript.new()
 	root.add_child(player)
+	vehicle.position = Vector3(0.0, 0.0, 5.0)
+	player.position = Vector3.ZERO
+	_check(player._get_nearest_vehicle() == vehicle, "player detects a danfo within interaction range")
+	vehicle.position = Vector3(0.0, 0.0, 20.0)
+	_check(player._get_nearest_vehicle() == null, "player cannot enter a vehicle outside interaction range")
+	vehicle.position = Vector3(0.0, 0.0, 5.0)
 	vehicle.enter_vehicle(player)
 	_check(vehicle.driver == player, "player becomes the active danfo driver")
 	_check(not player.body_mesh.visible, "player body is hidden while seated")
