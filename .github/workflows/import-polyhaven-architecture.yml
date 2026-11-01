@@ -57,8 +57,8 @@ jobs:
           data = path.read_bytes()
           if len(data) < 20 or data[:4] != b"glTF":
               raise SystemExit("Imported architecture file is not a valid binary glTF.")
-          if len(data) > 200 * 1024 * 1024:
-              raise SystemExit("Imported architecture GLB exceeds the 200 MiB repository budget.")
+          if len(data) > 90 * 1024 * 1024:
+              raise SystemExit("Imported architecture GLB exceeds the 90 MiB repository budget.")
           print(f"Validated runtime GLB: {len(data):,} bytes")
           PY
 
