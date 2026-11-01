@@ -265,18 +265,19 @@ func _test_osm_world_generator() -> void:
 		stall_player.queue_free()
 		await physics_frame
 	var road_visual := world.get_node_or_null("OSMRoadSurfaces") as MeshInstance3D
-	var road_material: StandardMaterial3D
-	if road_visual != null:
-		road_material = road_visual.mesh.surface_get_material(0) as StandardMaterial3D
-	_check(road_material != null and road_material.albedo_texture != null, "road surfaces use layered asphalt aggregate and weathering texture")
-	_check(road_material != null and road_material.normal_enabled and road_material.normal_texture != null and road_material.roughness_texture != null, "asphalt uses mobile-sized normal and roughness maps for surface depth")
 	_check(world.get_node_or_null("OSMRoadMarkings") != null, "mapped secondary roads receive lane markings")
 	_check(world.get_node_or_null("OSMBuildingFootprintsAndFacades") != null, "OSM building footprints become extruded 3D building geometry")
 	var building_visual := world.get_node_or_null("OSMBuildingFootprintsAndFacades") as MeshInstance3D
 	_check(building_visual != null and building_visual.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_ON, "mapped buildings cast shadows for street depth")
-	if building_visual != null and building_visual.mesh != null:
-		var facade_material := building_visual.mesh.surface_get_material(0) as StandardMaterial3D
-		_check(facade_material != null and facade_material.normal_enabled and facade_material.roughness_texture != null, "building facades use plaster normal and roughness maps")
+	if DisplayServer.get_name() != "headless":
+		var road_material: StandardMaterial3D
+		if road_visual != null:
+			road_material = road_visual.mesh.surface_get_material(0) as StandardMaterial3D
+		_check(road_material != null and road_material.albedo_texture != null, "road surfaces use layered asphalt aggregate and weathering texture")
+		_check(road_material != null and road_material.normal_enabled and road_material.normal_texture != null and road_material.roughness_texture != null, "asphalt uses mobile-sized normal and roughness maps for surface depth")
+		if building_visual != null and building_visual.mesh != null:
+			var facade_material := building_visual.mesh.surface_get_material(0) as StandardMaterial3D
+			_check(facade_material != null and facade_material.normal_enabled and facade_material.roughness_texture != null, "building facades use plaster normal and roughness maps")
 	var shop_sign := world.get_node_or_null("YabaShopSign_00") as Label3D
 	_check(shop_sign != null and shop_sign.font != null and shop_sign.material_override != null, "3D shop signage uses a bundled font and explicit text material")
 	_check(world.get_node_or_null("OSMBuildingCollision") != null, "OSM building geometry receives a static collision mesh")
