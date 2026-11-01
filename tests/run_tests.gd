@@ -381,8 +381,10 @@ func _test_ambient_traffic() -> void:
 	_check(traffic_materials_valid, "every ambient traffic mesh surface has an assigned material")
 	var starting_distance := traffic.get_traffic_distance(0)
 	var starting_position := traffic.get_traffic_position(0)
+	var fitted_car_scale: Vector3 = traffic._traffic_visuals[0].scale
 	traffic._process(1.0)
 	_check(traffic.get_traffic_distance(0) > starting_distance, "ambient traffic advances along its mapped road polyline")
+	_check(traffic._traffic_visuals[0].scale.is_equal_approx(fitted_car_scale), "traffic route updates preserve the fitted real-world car dimensions")
 	_check(traffic.get_traffic_position(0) != starting_position, "ambient traffic transforms follow the road geometry")
 	_check(traffic.get_child_count() == 12, "traffic uses six imported car meshes plus six lightweight collision proxies")
 	_check(traffic.get_traffic_collision_count() == 6, "every ambient traffic vehicle has a physics collision proxy")
@@ -412,8 +414,10 @@ func _test_pedestrians() -> void:
 	_check(pedestrians.get_pedestrian_collision_count() == 4, "each pedestrian has a low-cost capsule collision proxy")
 	var starting_distance := pedestrians.get_pedestrian_distance(0)
 	var starting_position := pedestrians.get_pedestrian_position(0)
+	var fitted_pedestrian_scale: Vector3 = pedestrians._visuals[0].scale
 	pedestrians._process(1.0)
 	_check(pedestrians.get_pedestrian_distance(0) > starting_distance, "pedestrians walk along their mapped sidewalk routes")
+	_check(pedestrians._visuals[0].scale.is_equal_approx(fitted_pedestrian_scale), "pedestrian route updates preserve the fitted human dimensions")
 	_check(pedestrians.get_pedestrian_position(0) != starting_position, "pedestrian render transforms update as they walk")
 	_check(pedestrians.get_child_count() == 8, "pedestrians use four rigged 3D models plus four collision proxies")
 	pedestrians.queue_free()
