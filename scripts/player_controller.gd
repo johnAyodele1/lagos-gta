@@ -163,6 +163,8 @@ func _build_body() -> void:
 	_build_camera_rig()
 
 func _try_attach_rigged_character() -> bool:
+	if DisplayServer.get_name() == "headless":
+		return false
 	var model_scene := RIGGED_PLAYER_SCENE as PackedScene
 	if model_scene == null:
 		push_warning("Rigged player model could not be loaded; using the lightweight fallback rig.")
