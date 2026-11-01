@@ -989,12 +989,12 @@ func _add_residential_compounds() -> void:
 	var collision_root := Node3D.new()
 	collision_root.name = "ProceduralCompoundWallCollision"
 	var compound_count := 0
-	for building in _buildings:
+	for building_index in range(_buildings.size()):
 		if compound_count >= MAX_PROCEDURAL_COMPOUNDS:
 			break
+		var building: Dictionary = _buildings[building_index]
 		var building_type := str(building.get("building", "yes"))
-		if building_type not in ["house", "detached", "semidetached_house", "residential"]:
-			continue
+		var known_residential := building_type in ["house", "detached", "semidetached_house", "residential"]
 		var outline: Array[Vector2] = []
 		for coordinate in building.get("outline", []):
 			outline.append(Vector2(float(coordinate[0]), float(coordinate[1])))
@@ -1002,7 +1002,14 @@ func _add_residential_compounds() -> void:
 			outline.pop_back()
 		if outline.size() < 4:
 			continue
-		if absf(_polygon_signed_area(outline)) > 180.0:
+		var footprint_area := absf(_polygon_signed_area(outline))
+		# Many Yaba residential plots are only tagged building=yes. Infer a
+		# small number of likely compound houses from compact footprints, while
+		# leaving large unclassified footprints untouched.
+		var inferred_residential := building_type == "yes" and footprint_area >= 45.0 and footprint_area <= 180.0 and building_index % 4 == 1
+		if not known_residential and not inferred_residential:
+			continue
+		if footprint_area > 180.0:
 			continue
 		var centroid := _outline_centroid_from_vectors(outline)
 		if _nearest_road_distance(centroid) > 22.0:
