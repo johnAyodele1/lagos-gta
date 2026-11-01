@@ -57,6 +57,10 @@ static func get_scaled_dimensions(root: Node3D) -> Vector3:
 	)
 
 static func _combined_local_bounds(root: Node3D) -> AABB:
+	# Godot's dummy headless renderer does not expose imported mesh surface bounds.
+	# Runtime builds (Android/iOS/desktop) use the measured mesh AABBs below.
+	if DisplayServer.get_name() == "headless":
+		return AABB()
 	var has_bounds := false
 	var combined := AABB()
 	var mesh_nodes: Array[Node] = []
