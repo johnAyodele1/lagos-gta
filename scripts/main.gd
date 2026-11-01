@@ -9,6 +9,8 @@ const VehicleScript = preload("res://scripts/vehicle_controller.gd")
 const TrafficManagerScript = preload("res://scripts/traffic_manager.gd")
 const PedestrianManagerScript = preload("res://scripts/pedestrian_manager.gd")
 
+var _graphics_profile: Dictionary = {}
+
 func _ready() -> void:
 	_build_environment()
 	var world = OSMWorldScript.new()
@@ -63,8 +65,8 @@ func _spawn_player(world: OSMWorldGenerator) -> void:
 	player.name = "Player"
 	player.position = world.get_player_spawn_position()
 	player.rotation.y = world.get_spawn_rotation_y()
-	player.camera.far = float(_graphics_profile.get("far_clip", 220.0))
 	add_child(player)
+	player.camera.far = float(_graphics_profile.get("far_clip", 220.0))
 
 	var controls_layer := CanvasLayer.new()
 	controls_layer.name = "MobileControlsLayer"
