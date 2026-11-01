@@ -87,7 +87,7 @@ func _add_windows(plot: Vector2, width: float, depth: float, height: float) -> v
 	var columns := int(max(2.0, floor(width / 2.5)))
 	for row in range(rows):
 		for column in range(columns):
-			var wx: float := plot.x - width * 0.5 + 1.5 + float(column) * (width - 3.0) / max(1, columns - 1)
+			var wx: float = plot.x - width * 0.5 + 1.5 + float(column) * (width - 3.0) / float(max(1, columns - 1))
 			var wy := 1.5 + float(row) * 2.6
 			_add_box(self, Vector3(0.85, 1.0, 0.06), Vector3(wx, wy, plot.y - depth * 0.5 - 0.035), Color(0.16, 0.27, 0.32))
 			_add_box(self, Vector3(0.06, 1.0, 0.85), Vector3(plot.x + width * 0.5 + 0.035, wy, plot.y - depth * 0.5 + 1.5 + float(column) * 1.8), Color(0.16, 0.27, 0.32))
@@ -95,7 +95,7 @@ func _add_windows(plot: Vector2, width: float, depth: float, height: float) -> v
 func _add_street_lights() -> void:
 	for z in range(-48, 50, 24):
 		for side in [-1.0, 1.0]:
-			var pole_x: float := side * 12.8
+			var pole_x: float = float(side) * 12.8
 			_add_box(self, Vector3(0.16, 5.5, 0.16), Vector3(pole_x, 2.75, float(z)), Color(0.18, 0.19, 0.18))
 			_add_box(self, Vector3(1.0, 0.16, 0.16), Vector3(pole_x + side * 0.4, 5.35, float(z)), Color(0.18, 0.19, 0.18))
 
