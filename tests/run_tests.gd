@@ -162,6 +162,7 @@ func _test_visual_meshes() -> void:
 	_check(player.body_mesh.mesh is ArrayMesh, "player avatar uses a custom tapered torso mesh rather than a capsule")
 	_check(player.camera_pivot is SpringArm3D, "player uses a collision-aware third-person spring arm")
 	_check(player.camera_mount is Node3D and is_equal_approx(player.camera_mount.rotation.x, deg_to_rad(-14.0)), "camera pitch is isolated from spring-arm collision direction")
+	_check(player.camera_mount.get_parent() == player.camera_pivot and is_zero_approx(player.camera_pivot.rotation.x), "spring-arm collision cast remains level while camera mount controls pitch")
 	_check(is_equal_approx(player.camera_pivot.rotation.x, deg_to_rad(14.0)), "third-person camera pitches down toward the street instead of looking at the sky")
 	_check(player.camera.rotation.is_equal_approx(Vector3.ZERO), "camera orientation is controlled by the spring arm without cancelling its aim")
 	_check(player.body_mesh.get_node_or_null("Head") != null or player.body_mesh.get_child_count() >= 8, "player avatar includes layered head, hair and articulated body details")
