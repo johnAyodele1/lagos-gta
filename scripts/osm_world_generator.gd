@@ -341,10 +341,10 @@ func _add_road_network() -> void:
 				var grate_point := segment_start + segment_direction * segment_cursor
 				for side_sign in [-1.0, 1.0]:
 					var grate_position: Vector2 = grate_point + grate_side * (width * 0.5 + 0.20) * float(side_sign)
-					drain_grate_transforms.append(Transform3D(grate_basis.scaled(Vector3(0.30, 0.035, 0.55)), Vector3(grate_position.x, 0.065, grate_position.y)))
+					drain_grate_transforms.append(Transform3D(grate_basis.scaled(Vector3(0.30, 0.035, 0.55)), Vector3(grate_position.x, deck_y + 0.05, grate_position.y)))
 				segment_cursor += 9.0
 		if width >= 7.0 and str(road.get("highway", "")) in ["primary", "secondary", "tertiary"]:
-			_append_road_markings(points, marking_vertices, marking_normals, marking_indices, marking_uvs)
+			_append_road_markings(points, marking_vertices, marking_normals, marking_indices, marking_uvs, deck_y + 0.013)
 	var asphalt_material := _material("asphalt", ROAD_COLOR)
 	asphalt_material.albedo_texture = _make_noise_texture(17, 0.24)
 	asphalt_material.roughness_texture = _make_noise_texture(81, 0.18)
@@ -434,7 +434,8 @@ func _append_road_markings(
 	vertices: PackedVector3Array,
 	normals: PackedVector3Array,
 	indices: PackedInt32Array,
-	uvs: PackedVector2Array
+	uvs: PackedVector2Array,
+	height: float = 0.028
 ) -> void:
 	var distance_along := 0.0
 	for index in range(points.size() - 1):
@@ -452,10 +453,10 @@ func _append_road_markings(
 			var dash_start := start + direction * cursor
 			var dash_end := start + direction * (cursor + 4.0)
 			var base := vertices.size()
-			vertices.append(Vector3(dash_start.x + side.x, 0.028, dash_start.y + side.y))
-			vertices.append(Vector3(dash_start.x - side.x, 0.028, dash_start.y - side.y))
-			vertices.append(Vector3(dash_end.x + side.x, 0.028, dash_end.y + side.y))
-			vertices.append(Vector3(dash_end.x - side.x, 0.028, dash_end.y - side.y))
+			vertices.append(Vector3(dash_start.x + side.x, height, dash_start.y + side.y))
+			vertices.append(Vector3(dash_start.x - side.x, height, dash_start.y - side.y))
+			vertices.append(Vector3(dash_end.x + side.x, height, dash_end.y + side.y))
+			vertices.append(Vector3(dash_end.x - side.x, height, dash_end.y - side.y))
 			for _vertex in range(4):
 				normals.append(Vector3.UP)
 			indices.append_array(PackedInt32Array([base, base + 2, base + 1, base + 1, base + 2, base + 3]))
