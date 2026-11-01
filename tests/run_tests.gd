@@ -159,7 +159,7 @@ func _test_graphics_profiles() -> void:
 func _test_visual_meshes() -> void:
 	var player = PlayerScript.new()
 	root.add_child(player)
-	_check(player.body_mesh.mesh is ArrayMesh, "player avatar uses a custom tapered torso mesh rather than a capsule")
+	_check(player.body_mesh.mesh == null and player.body_mesh.get_node_or_null("RiggedLagosPlayer") != null, "player avatar is a rigged imported 3D character rather than primitive body parts")
 	_check(player.camera_pivot is SpringArm3D, "player uses a collision-aware third-person spring arm")
 	_check(player.camera_yaw_pivot is Node3D and player.camera_yaw_pivot.get_parent() == player, "camera has a dedicated yaw pivot under the player")
 	_check(player.camera_pivot.get_parent() == player.camera_yaw_pivot and is_zero_approx(player.camera_pivot.rotation.x), "spring-arm remains level and camera stays a direct spring-arm child")
@@ -277,12 +277,11 @@ func _test_vehicle_speed_limits() -> void:
 	var player = PlayerScript.new()
 	root.add_child(player)
 	await physics_frame
-	_check(player.body_mesh.get_child_count() >= 5, "player spawns with a low-poly 3D head and articulated limbs")
+	_check(player._rigged_animation_player != null and player._rigged_animation_player.has_animation("HumanArmature|Man_Walk"), "player spawns with a rigged character and authored animation clips")
 	_check(player.camera_pivot != null and player.camera != null, "player character rig includes a working follow camera")
 	player.velocity = Vector3(0.0, 0.0, 2.0)
 	player._update_character_animation(0.1)
-	_check(not is_zero_approx(player._left_leg_pivot.rotation.x), "player leg animation responds to movement")
-	_check(not is_zero_approx(player._right_arm_pivot.rotation.x), "player arms counter-swing during movement")
+	_check(player._rigged_animation_player.current_animation == "HumanArmature|Man_Walk", "player switches to the authored walk cycle when moving")
 	vehicle.position = Vector3(0.0, 0.0, 5.0)
 	player.position = Vector3.ZERO
 	_check(player._get_nearest_vehicle() == vehicle, "player detects a danfo within interaction range")
