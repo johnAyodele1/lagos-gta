@@ -46,7 +46,7 @@ No third-party asset packs are required to launch the initial scene.
 ## Roadmap
 
 1. Stabilise the third-person vertical slice on desktop and touch devices (movement, Yaba blockout and legal gate are in place).
-2. Driving: drivable danfo and enter/exit interaction are implemented; ambient eight-car traffic now moves through the district. Next add traffic lights, collision-aware driving and more vehicle types.
+2. Driving: drivable danfo and enter/exit interaction are implemented; eight-car ambient traffic and four animated sidewalk pedestrians now populate the district. Next add traffic lights, collision-aware driving and more vehicle types.
 3. Add Lagos street life: danfos, traffic, pedestrians, markets and audio.
 4. Add Android/iOS export presets, signing setup, device profiling and store-ready release builds.
 5. Build mission, interaction and save systems.
