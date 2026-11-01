@@ -271,6 +271,7 @@ func _test_osm_world_generator() -> void:
 	_check(fence_collision != null, "player capsule collides with an OSM-mapped compound wall")
 	fence_player.queue_free()
 	await physics_frame
+	world.visible = false
 	var compound_player = PlayerScript.new()
 	root.add_child(compound_player)
 	compound_player.global_position = Vector3(3.0, 0.5, -6.2)
