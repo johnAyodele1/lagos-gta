@@ -148,6 +148,7 @@ func _create_rigged_visuals() -> void:
 			push_error("Pedestrian model instance has no Node3D root.")
 			continue
 		visual.name = "PedestrianVisual_%02d" % index
+		visual.rotation.y = PI
 		_apply_pedestrian_materials(visual, CLOTHING_COLORS[index % CLOTHING_COLORS.size()], SKIN_COLORS[index % SKIN_COLORS.size()])
 		add_child(visual)
 		if not ModelBoundsScript.fit_height(visual, 1.68):
