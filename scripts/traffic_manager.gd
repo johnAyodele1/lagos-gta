@@ -57,19 +57,19 @@ func _create_render_batches() -> void:
 	wheel_mesh.top_radius = 0.34
 	wheel_mesh.bottom_radius = 0.34
 	wheel_mesh.height = 0.18
-	_wheel_batch = _create_batch_from_mesh(wheel_mesh, _material())
+	_wheel_batch = _create_batch_from_mesh(wheel_mesh, _material(), BODY_COLORS.size() * 4)
 
 func _create_batch(box_size: Vector3, material: StandardMaterial3D) -> MultiMeshInstance3D:
 	var box := BoxMesh.new()
 	box.size = box_size
 	return _create_batch_from_mesh(box, material)
 
-func _create_batch_from_mesh(mesh: Mesh, material: StandardMaterial3D) -> MultiMeshInstance3D:
+func _create_batch_from_mesh(mesh: Mesh, material: StandardMaterial3D, instance_count: int = BODY_COLORS.size()) -> MultiMeshInstance3D:
 	var multi_mesh := MultiMesh.new()
 	multi_mesh.transform_format = MultiMesh.TRANSFORM_3D
 	multi_mesh.use_colors = true
 	multi_mesh.mesh = mesh
-	multi_mesh.instance_count = BODY_COLORS.size()
+	multi_mesh.instance_count = instance_count
 	var batch := MultiMeshInstance3D.new()
 	batch.multimesh = multi_mesh
 	batch.material_override = material
