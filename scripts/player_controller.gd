@@ -181,28 +181,21 @@ func _try_attach_rigged_character() -> bool:
 	return true
 
 func _apply_rigged_character_materials(model: Node3D, shirt_color: Color, skin_color: Color, pants_color: Color) -> void:
+	var palette: Array[Color] = [
+		shirt_color, shirt_color, skin_color, pants_color,
+		Color(0.025, 0.025, 0.025), Color(0.28, 0.27, 0.25),
+		Color(0.025, 0.022, 0.018), Color(0.025, 0.022, 0.018), Color(0.015, 0.012, 0.01)
+	]
 	for node in model.find_children("*", "MeshInstance3D", true, false):
 		var mesh_instance := node as MeshInstance3D
 		if mesh_instance.mesh == null:
 			continue
 		for surface_index in range(mesh_instance.mesh.get_surface_count()):
-			var source_material: Material = mesh_instance.get_active_material(surface_index)
-			if source_material == null:
-				var fallback := StandardMaterial3D.new()
-				fallback.albedo_color = shirt_color if surface_index <= 1 else pants_color if surface_index == 3 else skin_color if surface_index == 2 else Color(0.06, 0.055, 0.05)
-				fallback.roughness = 0.88
-				mesh_instance.set_surface_override_material(surface_index, fallback)
-				continue
-			if not source_material is StandardMaterial3D:
-				continue
-			var material := (source_material as StandardMaterial3D).duplicate() as StandardMaterial3D
-			var material_name := source_material.resource_name.to_lower()
-			if material_name.contains("shirt") or surface_index <= 1:
-				material.albedo_color = shirt_color
-				mesh_instance.set_surface_override_material(surface_index, material)
-			elif material_name.contains("pants") or surface_index == 3:
-				material.albedo_color = pants_color
-				mesh_instance.set_surface_override_material(surface_index, material)
+			var material := StandardMaterial3D.new()
+			material.albedo_color = palette[mini(surface_index, palette.size() - 1)]
+			material.roughness = 0.88
+			mesh_instance.set_surface_override_material(surface_index, material)
+
 
 func _build_camera_rig() -> void:
 	# SpringArm3D keeps the third-person camera outside mapped walls and vehicles.
