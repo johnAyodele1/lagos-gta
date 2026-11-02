@@ -14,6 +14,24 @@ var look_delta: Vector2 = Vector2.ZERO
 var jump_requested: bool = false
 var _mobile_enabled: bool = false
 
+static func calculate_safe_insets(viewport_size: Vector2, screen_size: Vector2, safe_rect: Rect2i) -> Vector4:
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0 or screen_size.x <= 0.0 or screen_size.y <= 0.0:
+		return Vector4.ZERO
+	var scale := viewport_size / screen_size
+	var right := float(screen_size.x - safe_rect.end.x) * scale.x
+	var bottom := float(screen_size.y - safe_rect.end.y) * scale.y
+	return Vector4(
+		clampf(float(safe_rect.position.x) * scale.x, 0.0, viewport_size.x),
+		clampf(float(safe_rect.position.y) * scale.y, 0.0, viewport_size.y),
+		clampf(right, 0.0, viewport_size.x),
+		clampf(bottom, 0.0, viewport_size.y)
+	)
+
+func _safe_area_insets(viewport_size: Vector2) -> Vector4:
+	var screen_size := Vector2(DisplayServer.screen_get_size())
+	var safe_rect := DisplayServer.get_display_safe_area()
+	return calculate_safe_insets(viewport_size, screen_size, safe_rect)
+
 static func joystick_vector(center: Vector2, touch_position: Vector2, radius: float, deadzone: float = JOYSTICK_DEADZONE) -> Vector2:
 	if radius <= 0.0:
 		return Vector2.ZERO
@@ -94,16 +112,19 @@ func _button_radius(size: Vector2) -> float:
 
 func _joystick_center() -> Vector2:
 	var size := get_viewport_rect().size
+	var insets := _safe_area_insets(size)
 	var margin := _joystick_radius() + 24.0
-	return Vector2(maxf(margin, size.x * 0.22), size.y - maxf(margin, size.y * 0.19))
+	return Vector2(maxf(margin + insets.x, size.x * 0.22), size.y - maxf(margin + insets.w, size.y * 0.19))
 
 func _sprint_center(size: Vector2) -> Vector2:
 	var radius := _button_radius(size)
-	return Vector2(size.x - radius * 3.5, size.y - radius * 2.3)
+	var insets := _safe_area_insets(size)
+	return Vector2(size.x - radius * 3.5 - insets.z, size.y - radius * 2.3 - insets.w)
 
 func _jump_center(size: Vector2) -> Vector2:
 	var radius := _button_radius(size)
-	return Vector2(size.x - radius, size.y - radius * 4.2)
+	var insets := _safe_area_insets(size)
+	return Vector2(size.x - radius - insets.z, size.y - radius * 4.2 - insets.w)
 
 func _is_sprint_button(position: Vector2, size: Vector2) -> bool:
 	return position.distance_to(_sprint_center(size)) <= _button_radius(size) * 1.15

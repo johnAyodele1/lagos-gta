@@ -56,3 +56,19 @@ At minimum, test:
 - Pause/resume, incoming interruptions, audio focus and thermal throttling.
 
 Record device model, OS version, average frame time, memory use and any crashes for each test run.
+
+
+## Player terms and privacy
+
+The project includes an in-game first-run Terms & Conditions / Privacy Notice screen and a persistent LEGAL button. This is the player-facing agreement, not the developer's acceptance of the Google Play or Apple Developer distribution agreements. The publisher must accept those separately in Play Console and App Store Connect.
+
+The current legal documents are development drafts: [Terms & Conditions](TERMS_OF_SERVICE.md), [Privacy Policy](PRIVACY_POLICY.md), and [Store Submission Checklist](STORE_SUBMISSION_CHECKLIST.md). Before store submission, complete the real publisher identity and support/privacy contact, obtain legal review, and host the final privacy policy at a stable, public, non-geofenced HTTPS URL.
+
+
+## Low-budget device profile
+
+See [LOW_END_DEVICE_PROFILE.md](LOW_END_DEVICE_PROFILE.md) for the current rendering baseline, MultiMesh/material batching, proposed performance targets and required device matrix. The targets are not yet measured; do not advertise low-end compatibility until physical-device profiling passes.
+
+## Public legal site deployment
+
+Static Terms & Conditions and Privacy Policy pages are prepared in `site/`. A GitHub Pages workflow deploys them from `main` after the pull request is merged and GitHub Pages is enabled for the repository. The pages are still labelled as development drafts and are not store-ready until publisher details and legal review are complete.

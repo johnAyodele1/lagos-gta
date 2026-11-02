@@ -1,0 +1,65 @@
+name: Import generated Yaba vehicle model pack
+
+on:
+  push:
+    branches:
+      - "**"
+    paths:
+      - "assets/models/import-manifest.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-yaba-vehicle-pack-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  import-model-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Download and validate GLB
+        shell: bash
+        run: |
+          set -euo pipefail
+          MODEL_PATH="assets/models/yaba-vehicle-model-pack.glb"
+          DOWNLOAD_URL="$(python -c 'import json; print(json.load(open("assets/models/import-manifest.json", encoding="utf-8"))["download_url"])')"
+          EXPECTED_SIZE="$(python -c 'import json; print(json.load(open("assets/models/import-manifest.json", encoding="utf-8"))["expected_size"])')"
+          mkdir -p assets/models
+          curl --fail --location --retry 3 --retry-all-errors --output "$MODEL_PATH" "$DOWNLOAD_URL"
+          ACTUAL_SIZE="$(stat -c '%s' "$MODEL_PATH")"
+          test "$ACTUAL_SIZE" = "$EXPECTED_SIZE"
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("assets/models/yaba-vehicle-model-pack.glb")
+          with path.open("rb") as model:
+              if model.read(4) != b"glTF":
+                  raise SystemExit("Downloaded asset is not a binary glTF file.")
+          print(f"Validated GLB: {path.stat().st_size} bytes")
+          PY
+          rm assets/models/import-manifest.json
+
+      - name: Commit model pack to the feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/models/yaba-vehicle-model-pack.glb
+          git add -u assets/models/import-manifest.json
+          git commit -m "assets: import generated Yaba vehicle model pack"
+          for attempt in 1 2 3; do
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+          done
+          echo "Unable to publish the vehicle model pack after three attempts."
+          exit 1

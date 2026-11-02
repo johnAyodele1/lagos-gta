@@ -1,0 +1,91 @@
+name: Import licensed Yaba architecture asset
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/yaba-world-legal-driving-mobile
+    paths:
+      - tools/import_polyhaven_architecture.py
+      - .github/workflows/import-polyhaven-architecture.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: yaba-polyhaven-architecture
+  cancel-in-progress: true
+
+jobs:
+  import-architecture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node for glTF conversion
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Test architecture importer without network access
+        run: python -m unittest tools/test_import_polyhaven_architecture.py -v
+
+      - name: Download and verify CC0 Poly Haven source
+        run: python tools/import_polyhaven_architecture.py --output-dir assets/models/architecture
+
+      - name: Convert imported glTF scene to a self-contained GLB
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_GLB="assets/models/architecture/modular_urban_apartments_facade.glb"
+          if [ ! -f "$SOURCE_GLB" ]; then
+            SOURCE_GLTF="$(find assets/models/architecture/source -type f -name 'source.gltf' -print -quit)"
+            test -n "$SOURCE_GLTF"
+            npm install --global @gltf-transform/cli
+            gltf-transform copy "$SOURCE_GLTF" "$SOURCE_GLB"
+          fi
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("assets/models/architecture/modular_urban_apartments_facade.glb")
+          data = path.read_bytes()
+          if len(data) < 20 or data[:4] != b"glTF":
+              raise SystemExit("Imported architecture file is not a valid binary glTF.")
+          if len(data) > 90 * 1024 * 1024:
+              raise SystemExit("Imported architecture GLB exceeds the 90 MiB repository budget.")
+          print(f"Validated runtime GLB: {len(data):,} bytes")
+          PY
+          # The packed GLB contains its textures. Keep the source tree out of
+          # the mobile runtime repository to avoid shipping duplicate textures.
+          rm -rf assets/models/architecture/source
+
+      - name: Commit imported model to this feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/models/architecture
+          if git diff --cached --quiet; then
+            echo "Architecture asset is unchanged."
+            exit 0
+          fi
+          git commit -m "assets: import CC0 modular Yaba architecture facade"
+          for attempt in 1 2 3; do
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+          done
+          echo "Unable to publish the architecture asset after three attempts."
+          exit 1
