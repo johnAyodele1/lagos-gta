@@ -4,9 +4,9 @@
   "author": "James Ray Cock",
   "source": "https://polyhaven.com/a/modular_urban_apartments_facade",
   "license": "CC0 1.0",
-  "api_download_url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/2k/modular_urban_apartments_facade/modular_urban_apartments_facade_2k.gltf",
+  "api_download_url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/modular_urban_apartments_facade/modular_urban_apartments_facade_1k.gltf",
   "api_package_size": 270799,
-  "source_md5": "1ce22fcd5537779fcfbf941f6375a8a7",
+  "source_md5": "81f4252c7816d0e93149c1ca814134ff",
   "imported_scene": "source/source.gltf",
   "runtime_network_dependency": false
 }
