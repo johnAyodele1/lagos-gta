@@ -233,6 +233,22 @@ func _add_hud() -> void:
 	map_attribution.add_theme_color_override("font_color", Color(0.92, 0.92, 0.88))
 	layer.add_child(map_attribution)
 
+	var asset_credit := Label.new()
+	asset_credit.name = "PolyHavenAssetAttribution"
+	asset_credit.text = "Selected environment assets: Poly Haven (CC0)"
+	asset_credit.anchor_left = 1.0
+	asset_credit.anchor_right = 1.0
+	asset_credit.anchor_top = 0.0
+	asset_credit.anchor_bottom = 0.0
+	asset_credit.offset_left = -300.0
+	asset_credit.offset_right = -16.0
+	asset_credit.offset_top = 84.0
+	asset_credit.offset_bottom = 104.0
+	asset_credit.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	asset_credit.add_theme_font_size_override("font_size", 10)
+	asset_credit.add_theme_color_override("font_color", Color(0.92, 0.92, 0.88))
+	layer.add_child(asset_credit)
+
 func _cycle_graphics_quality() -> void:
 	var options := ["low", "balanced", "high"]
 	var current := str(_graphics_profile.get("name", "balanced"))

@@ -1,6 +1,7 @@
 extends RefCounted
 class_name LagosUnderpassSetpiece
 const Bounds=preload("res://scripts/model_bounds.gd")
+const DistrictPBR=preload("res://scripts/district_pbr_materials.gd")
 const ROOT="res://assets/models/lagos_underpass/"
 static func build(parent:Node3D,roads:Array[Dictionary])->int:
  var count:=0
@@ -42,9 +43,9 @@ static func _build_mechanic_bay(parent:Node3D,points:Array,width:float)->void:
  var centre:Vector2=span_midpoint+side*(width*0.5+1.5)
  var bay:=Node3D.new(); bay.name="YabaUnderpassMechanicBay"
  bay.position=Vector3(centre.x,0,centre.y); bay.rotation.y=atan2(direction.x,direction.y)-PI/2.0; parent.add_child(bay)
- var wall:=_mat(Color(0.42,0.37,0.29)); var dark:=_mat(Color(0.12,0.13,0.12)); var yellow:=_mat(Color(0.94,0.68,0.08))
+ var wall:=_mat(Color(0.42,0.37,0.29)); var dark:=_mat(Color(0.12,0.13,0.12)); var corrugated:=_mat(Color.WHITE); DistrictPBR.apply(corrugated,"corrugated_iron",Vector3(1.8,1.8,1.0),Color(0.68,0.66,0.60)); var yellow:=_mat(Color(0.94,0.68,0.08))
  _box(bay,Vector3(8,3.4,0.35),Vector3(0,1.7,0),0,wall,"WorkshopWall")
- _box(bay,Vector3(8.4,0.22,3.5),Vector3(0,3.48,1.55),0,dark,"CorrugatedCanopy")
+ _box(bay,Vector3(8.4,0.22,3.5),Vector3(0,3.48,1.55),0,corrugated,"CorrugatedCanopy")
  _box(bay,Vector3(5.8,0.85,0.12),Vector3(0,2.78,-0.22),0,yellow,"AutoElectricSign")
  var sign:=Label3D.new(); sign.name="YabaMechanicSign"; sign.text="AUTO ELECTRICAL  •  YABA"
  sign.font=load("res://assets/fonts/Roboto.ttf"); sign.font_size=42; sign.pixel_size=0.012
